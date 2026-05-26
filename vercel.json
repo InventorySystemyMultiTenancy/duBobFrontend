@@ -1,6 +1,13 @@
 {
   "routes": [
+    {
+      "src": "/sw.js",
+      "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" },
+      "continue": true
+    },
     { "handle": "filesystem" },
+    { "src": "/assets/(.*)", "status": 404 },
+    { "src": "/(.*\\..*)", "status": 404 },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
