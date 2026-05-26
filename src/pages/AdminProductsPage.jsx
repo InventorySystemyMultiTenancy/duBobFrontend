@@ -6,14 +6,15 @@ import Swal from "sweetalert2";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 
-const emptyForm = () => ({
+const emptyForm = (initialValues = {}) => ({
   name: "",
   description: "",
   imageUrl: "",
   category: "",
   availableDays: [],
   waiterOnly: false,
-  sizes: [emptySize()],
+  ...initialValues,
+  sizes: initialValues.sizes ?? [emptySize()],
 });
 
 function getPrimarySize(product) {
@@ -46,6 +47,126 @@ const WEEKDAY_OPTIONS = [
   { value: "SAT", label: "Sab" },
   { value: "SUN", label: "Dom" },
 ];
+
+const GUIDED_ADMIN_SECTIONS = [
+  {
+    id: "all",
+    label: "Tudo",
+    description: "Todos os cadastros do sistema.",
+  },
+  {
+    id: "bases",
+    label: "Bases e tamanhos",
+    description: "Produtos base usados para calcular valor e enviar o pedido.",
+    preset: { category: "Base cardapio" },
+  },
+  {
+    id: "milkshake_tradicional",
+    label: "Sabores milk shake",
+    description: "Sabores da linha tradicional do milk shake.",
+    preset: {
+      category: "sabor milkshake tradicional",
+      sizes: [{ ...emptySize(), label: "Config", price: "0" }],
+    },
+  },
+  {
+    id: "milkshake_especial",
+    label: "Linha especial",
+    description: "Sabores da linha especial.",
+    preset: {
+      category: "sabor milkshake especial",
+      sizes: [{ ...emptySize(), label: "Config", price: "0" }],
+    },
+  },
+  {
+    id: "milkshake_premium",
+    label: "Linha premium",
+    description: "Sabores premium.",
+    preset: {
+      category: "sabor milkshake premium",
+      sizes: [{ ...emptySize(), label: "Config", price: "0" }],
+    },
+  },
+  {
+    id: "milkshake_alcoolico",
+    label: "Linha alcoolica",
+    description: "Sabores alcoolicos.",
+    preset: {
+      category: "sabor milkshake alcoolico",
+      sizes: [{ ...emptySize(), label: "Config", price: "0" }],
+    },
+  },
+  {
+    id: "acai_sabores",
+    label: "Sabores acai",
+    description: "Sabores que aparecem depois do tamanho do acai.",
+    preset: {
+      category: "sabor acai",
+      sizes: [{ ...emptySize(), label: "Config", price: "0" }],
+    },
+  },
+  {
+    id: "acai_complementos",
+    label: "Complementos",
+    description: "Complementos selecionaveis na montagem do acai.",
+    preset: {
+      category: "complemento acai",
+      sizes: [{ ...emptySize(), label: "Config", price: "0" }],
+    },
+  },
+];
+
+const BASE_PRODUCT_IDS = new Set([
+  "db_milkshake_tradicional",
+  "db_milkshake_especial",
+  "db_milkshake_alcoolico",
+  "db_milkshake_premium",
+  "db_acai_copo",
+  "db_acai_tradicional",
+  "db_acai_extra_complementos",
+]);
+
+const normalizeText = (value) =>
+  String(value ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+function isConfigCategory(category) {
+  const normalized = normalizeText(category);
+  return (
+    normalized.includes("sabor ") ||
+    normalized.includes("complemento") ||
+    normalized.includes("adicionais")
+  );
+}
+
+function productMatchesAdminSection(product, sectionId) {
+  const category = normalizeText(product.category);
+  if (sectionId === "all") return true;
+  if (sectionId === "bases") {
+    return BASE_PRODUCT_IDS.has(product.id) || !isConfigCategory(product.category);
+  }
+  if (sectionId === "milkshake_tradicional") {
+    return category.includes("sabor milkshake tradicional");
+  }
+  if (sectionId === "milkshake_especial") {
+    return category.includes("sabor milkshake especial");
+  }
+  if (sectionId === "milkshake_premium") {
+    return category.includes("sabor milkshake premium");
+  }
+  if (sectionId === "milkshake_alcoolico") {
+    return category.includes("sabor milkshake alcool");
+  }
+  if (sectionId === "acai_sabores") {
+    return category.includes("sabor acai");
+  }
+  if (sectionId === "acai_complementos") {
+    return category.includes("complemento acai") || category.includes("adicionais acai");
+  }
+  return true;
+}
 
 function formatAvailableDays(days) {
   if (!Array.isArray(days) || days.length === 0) return "Todos os dias";
@@ -94,13 +215,18 @@ function tProductField(t, productId, field, fallback) {
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function ProductModal({ product, onClose, existingCategories = [] }) {
+function ProductModal({
+  product,
+  onClose,
+  existingCategories = [],
+  initialValues = {},
+}) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const isEdit = !!product;
 
   const [form, setForm] = useState(() => {
-    if (!isEdit) return emptyForm();
+    if (!isEdit) return emptyForm(initialValues);
     return {
       name: product.name,
       description: product.description ?? "",
@@ -155,6 +281,7 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
     const errs = {};
     if (!form.name.trim()) errs.name = "Nome obrigatÃ³rio";
     if (!form.sizes.length) errs.sizes = "Informe ao menos um tamanho";
+    const configItem = isConfigCategory(form.category);
     const usedSizes = new Set();
     form.sizes.forEach((size, index) => {
       if (usedSizes.has(size.size)) errs[`size_${index}`] = "Tamanho repetido";
@@ -162,9 +289,12 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
       if (
         size.price === "" ||
         isNaN(Number(size.price)) ||
-        Number(size.price) <= 0
+        Number(size.price) < 0 ||
+        (!configItem && Number(size.price) <= 0)
       ) {
-        errs[`price_${index}`] = "Preco invalido";
+        errs[`price_${index}`] = configItem
+          ? "Preco invalido"
+          : "Preco precisa ser maior que zero";
       }
       if (
         size.costPrice !== "" &&
@@ -402,7 +532,9 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
                   Tamanhos e valores
                 </p>
                 <p className="mt-1 text-xs text-smoke">
-                  Crie, edite ou remova os tamanhos que aparecem no cardapio.
+                  {isConfigCategory(form.category)
+                    ? "Item tecnico do fluxo: pode ficar com valor zero."
+                    : "Crie, edite ou remova os tamanhos que aparecem no cardapio."}
                 </p>
               </div>
               <button
@@ -548,6 +680,7 @@ function ProductCard({ product, onEdit }) {
   const productDescription = product.description
     ? tProductField(t, product.id, "DESC", product.description)
     : null;
+  const configItem = isConfigCategory(product.category);
   const translatedCategory = product.category
     ? t(normalizeCategoryKey(product.category), product.category)
     : null;
@@ -772,7 +905,9 @@ function ProductCard({ product, onEdit }) {
             key={size.id ?? size.size}
             className="rounded-xl bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700"
           >
-            {size.label || size.size}: R$ {Number(size.price).toFixed(2)}
+            {configItem
+              ? "Config do fluxo"
+              : `${size.label || size.size}: R$ ${Number(size.price).toFixed(2)}`}
           </span>
         ))}
         {primarySize?.costPrice != null && (
@@ -839,6 +974,7 @@ function ProductCard({ product, onEdit }) {
 function AdminProductsPage() {
   const { t } = useTranslation();
   const [modal, setModal] = useState(null); // null | "new" | product object
+  const [activeSection, setActiveSection] = useState("all");
 
   const {
     data: products = [],
@@ -857,6 +993,20 @@ function AdminProductsPage() {
       products.map((p) => p.category).filter((c) => c && c !== "Geral"),
     ),
   ];
+  const activeSectionConfig =
+    GUIDED_ADMIN_SECTIONS.find((section) => section.id === activeSection) ??
+    GUIDED_ADMIN_SECTIONS[0];
+  const filteredProducts = products.filter((product) =>
+    productMatchesAdminSection(product, activeSection),
+  );
+  const sectionCounts = Object.fromEntries(
+    GUIDED_ADMIN_SECTIONS.map((section) => [
+      section.id,
+      products.filter((product) => productMatchesAdminSection(product, section.id))
+        .length,
+    ]),
+  );
+  const isNewModal = modal?.mode === "new";
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-gray-900 sm:px-6">
@@ -878,7 +1028,12 @@ function AdminProductsPage() {
           </Link>
           <button
             type="button"
-            onClick={() => setModal("new")}
+            onClick={() =>
+              setModal({
+                mode: "new",
+                preset: activeSectionConfig.preset ?? {},
+              })
+            }
             className="rounded-2xl bg-amber-400 px-4 py-2 text-sm font-bold text-[#11161d] transition hover:bg-amber-300"
           >
             + {t("ADMIN_PRODUCTS_NEW_BUTTON", "Novo Produto")}
@@ -902,26 +1057,64 @@ function AdminProductsPage() {
 
       {!isLoading && !isError && (
         <>
+          <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-smoke">
+                  Fluxo do cardapio
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-gray-900">
+                  {activeSectionConfig.label}
+                </h2>
+                <p className="mt-1 text-sm text-smoke">
+                  {activeSectionConfig.description}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {GUIDED_ADMIN_SECTIONS.map((section) => (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => setActiveSection(section.id)}
+                  className={`rounded-xl border px-3 py-3 text-left transition ${
+                    activeSection === section.id
+                      ? "border-gold bg-gold/15 text-gold"
+                      : "border-gray-200 bg-gray-50 text-gray-800 hover:border-gold/40"
+                  }`}
+                >
+                  <span className="block text-sm font-bold">
+                    {section.label}
+                  </span>
+                  <span className="mt-1 block text-xs text-smoke">
+                    {sectionCounts[section.id] ?? 0} itens
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
           <p className="mt-4 text-xs text-smoke">
             {t("ADMIN_PRODUCTS_ACTIVE_COUNT", "{{count}} ativos").replace(
               "{{count}}",
-              String(products.filter((p) => p.isActive).length),
+              String(filteredProducts.filter((p) => p.isActive).length),
             )}
             {" Â· "}
             {t("ADMIN_PRODUCTS_INACTIVE_COUNT", "{{count}} inativos").replace(
               "{{count}}",
-              String(products.filter((p) => !p.isActive).length),
+              String(filteredProducts.filter((p) => !p.isActive).length),
             )}
           </p>
           <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
                 onEdit={(p) => setModal(p)}
               />
             ))}
-            {products.length === 0 && (
+            {filteredProducts.length === 0 && (
               <div className="col-span-full rounded-2xl border border-dashed border-white/15 p-10 text-center text-sm text-smoke">
                 {t("ADMIN_PRODUCTS_EMPTY", "Nenhum produto cadastrado ainda.")}
               </div>
@@ -932,9 +1125,10 @@ function AdminProductsPage() {
 
       {modal && (
         <ProductModal
-          product={modal === "new" ? null : modal}
+          product={isNewModal ? null : modal}
           onClose={() => setModal(null)}
           existingCategories={existingCategories}
+          initialValues={isNewModal ? modal.preset : {}}
         />
       )}
     </main>

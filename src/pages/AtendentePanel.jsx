@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -19,8 +19,8 @@ const ACTIVE_STATUSES = ["RECEBIDO", "PREPARANDO", "PRONTO", "LEVAR_PARA_MESA"];
 const STATUS_LABEL = {
   RECEBIDO: "Recebido",
   PREPARANDO: "Preparando",
-  PRONTO: "Pronto ✓",
-  LEVAR_PARA_MESA: "Levar à mesa",
+  PRONTO: "Pronto",
+  LEVAR_PARA_MESA: "Levar para mesa",
   AGUARDANDO_PAGAMENTO: "Ag. pagamento",
 };
 
@@ -199,12 +199,12 @@ function TerminalChargeModal({ order, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl">
-        <p className="mb-3 text-5xl">🖲️</p>
+        <p className="mb-3 text-5xl">ðŸ–²ï¸</p>
         <h2 className="font-display text-xl text-gray-900">
           Cobrança na maquininha
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          Pedido #{order.id.slice(-6).toUpperCase()} • {currency(order.total)}
+          Pedido #{order.id.slice(-6).toUpperCase()} â€¢ {currency(order.total)}
         </p>
 
         {terminalMutation.isPending ? (
@@ -216,15 +216,15 @@ function TerminalChargeModal({ order, onClose }) {
           </div>
         ) : terminalMutation.isError ? (
           <p className="py-6 text-sm text-red-500">
-            Não foi possível iniciar a cobrança.
+            Não foi possí­vel iniciar a cobrança.
           </p>
         ) : (
           <div className="py-5">
             <p className="text-sm text-gray-600">
-              Aguardando confirmação do pagamento na maquininha.
+              Aguardando confirmassão do pagamento na maquininha.
             </p>
             <p className="mt-2 text-xs text-gray-400">
-              Se a cobrança cair, você também pode usar “Dar baixa / pago”.
+              Se a cobranssa cair, você também pode usar para Dar baixa / pago.
             </p>
           </div>
         )}
@@ -260,6 +260,7 @@ export default function AtendentePanel() {
   const [selectedMesaId, setSelectedMesaId] = useState("");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [showProducts, setShowProducts] = useState(false);
   const [showPhotos, setShowPhotos] = useState(false);
   const [mesaNotes, setMesaNotes] = useState({});
   const [chargingOrder, setChargingOrder] = useState(null);
@@ -415,9 +416,19 @@ export default function AtendentePanel() {
     [selectedMesaOrders],
   );
 
+  const readyMesaOrders = useMemo(
+    () =>
+      selectedMesaOrders.filter((order) =>
+        ["PRONTO", "SAIU_PARA_ENTREGA", "LEVAR_PARA_MESA"].includes(
+          order.status,
+        ),
+      ),
+    [selectedMesaOrders],
+  );
+
   const notes = mesaNotes[selectedMesaId] ?? "";
 
-  // Avançar status do pedido
+  // Avanssar status do pedido
   const advanceMutation = useMutation({
     mutationFn: async ({ orderId, status }) => {
       const res = await api.patch(`/orders/${orderId}/status`, { status });
@@ -485,7 +496,7 @@ export default function AtendentePanel() {
     onError: (error) => {
       const message =
         error?.response?.data?.error?.message ||
-        "Não foi possível baixar o pagamento.";
+        "Não foi possí­vel baixar o pagamento.";
       toast.error(message);
     },
   });
@@ -561,13 +572,6 @@ export default function AtendentePanel() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => navigate("/cozinha")}
-              className="rounded-lg border border-accent/30 px-3 py-2 text-xs font-semibold text-accent transition hover:bg-accent/10"
-            >
-              Ver Cozinha
-            </button>
-            <button
-              type="button"
               onClick={() => navigate("/comandas")}
               className="rounded-lg border border-accent/30 px-3 py-2 text-xs font-semibold text-accent transition hover:bg-accent/10"
             >
@@ -595,12 +599,12 @@ export default function AtendentePanel() {
       </header>
 
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-6 sm:px-8">
-        {/* ── Chamadas de mesa ───────────────────────────────────── */}
+        {/* â”€â”€ Chamadas de mesa â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <section>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-xl text-primary">
-                🛎 Chamadas de Mesa
+                ðŸ›Ž Chamadas de Mesa
               </h2>
               <p className="mt-1 text-xs text-gray-500">
                 Pedidos de atendimento enviados pelas mesas via QR code.
@@ -630,7 +634,7 @@ export default function AtendentePanel() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-display text-xl text-primary">
-                      Mesa {call?.mesaNumber ?? "—"}
+                      Mesa {call?.mesaNumber ?? "â€”"}
                     </p>
                     <span className="rounded-full bg-secondary/10 px-2 py-1 text-[11px] font-semibold text-secondary">
                       {formatRelativeTime(call?.timestamp)}
@@ -655,7 +659,7 @@ export default function AtendentePanel() {
         <section>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="font-display text-xl text-primary">🪑 Mesas</h2>
+              <h2 className="font-display text-xl text-primary">ðŸª‘ Mesas</h2>
               <p className="mt-1 text-xs text-gray-500">
                 Selecione a mesa para tirar o pedido e acompanhar o histórico do
                 dia.
@@ -719,7 +723,7 @@ export default function AtendentePanel() {
               </button>
               <button
                 type="button"
-                onClick={() => scrollToPanelSection("mesa-cardapio")}
+                onClick={() => { setShowProducts(true); scrollToPanelSection("mesa-cardapio"); }}
                 className="rounded-2xl border border-secondary/40 bg-white px-4 py-3 text-sm font-bold text-secondary shadow-sm transition hover:bg-secondary/10"
               >
                 Cardápio
@@ -744,81 +748,176 @@ export default function AtendentePanel() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="font-display text-xl text-primary">
-                    🍽 Novo pedido{" "}
-                    {selectedMesa ? `• ${selectedMesa.name}` : ""}
+                    Novo pedido{" "}
+                    {selectedMesa ? `da ${selectedMesa.name}` : ""}
                   </h2>
                   <p className="mt-1 text-xs text-gray-500">
-                    Monte o pedido, vincule à mesa e o histórico fica salvo para
-                    cobrança depois.
+                    Monte o pedido
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowProducts((value) => !value)}
+                    className={`rounded-full border px-4 py-2 text-xs font-bold transition ${
+                      showProducts
+                        ? "border-primary bg-primary text-white"
+                        : "border-secondary/40 bg-white text-secondary hover:bg-secondary/10"
+                    }`}
+                  >
+                    {showProducts ? "Ocultar produtos" : "Mostrar produtos"}
+                  </button>
                   <button
                     type="button"
                     onClick={() => setShowPhotos((v) => !v)}
+                    disabled={!showProducts}
                     className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                       showPhotos
                         ? "border-secondary bg-secondary text-white"
                         : "border-gray-300 bg-white text-gray-600 hover:border-secondary/40"
-                    }`}
+                    } disabled:cursor-not-allowed disabled:opacity-40`}
                   >
                     🖼 {showPhotos ? "Ocultar fotos" : "Ver fotos"}
                   </button>
-                  <input
-                    type="search"
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Buscar item do cardápio"
-                    className="w-full rounded-2xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-secondary/50 sm:max-w-xs"
-                  />
+                  {showProducts ? (
+                    <input
+                      type="search"
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                      placeholder="Buscar item do cardapio"
+                      className="w-full rounded-2xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-secondary/50 sm:max-w-xs"
+                    />
+                  ) : null}
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              {showProducts ? (
+                <>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCategory("")}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                        selectedCategory === ""
+                          ? "bg-primary text-white"
+                          : "bg-secondary/10 text-secondary hover:bg-secondary/20"
+                      }`}
+                    >
+                      Todos
+                    </button>
+                    {categories.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() =>
+                          setSelectedCategory((prev) => (prev === cat ? "" : cat))
+                        }
+                        className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                          selectedCategory === cat
+                            ? "bg-primary text-white"
+                            : "bg-secondary/10 text-secondary hover:bg-secondary/20"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  {isLoadingProducts ? (
+                    <div className="mt-6 text-sm text-gray-500">
+                      Carregando cardapio...
+                    </div>
+                  ) : (
+                    <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                      {filteredProducts.map((product) => (
+                        <AttendantProductCard
+                          key={product.id}
+                          product={product}
+                          featured={topProducts.some(
+                            (entry) => entry.id === product.id,
+                          )}
+                          showPhoto={showPhotos}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
                 <button
                   type="button"
-                  onClick={() => setSelectedCategory("")}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                    selectedCategory === ""
-                      ? "bg-primary text-white"
-                      : "bg-secondary/10 text-secondary hover:bg-secondary/20"
-                  }`}
+                  onClick={() => setShowProducts(true)}
+                  className="mt-5 w-full rounded-2xl border border-dashed border-secondary/40 bg-secondary/5 px-5 py-5 text-sm font-bold text-secondary transition hover:bg-secondary/10"
                 >
-                  Todos
+                  Mostrar produtos para montar o pedido
                 </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() =>
-                      setSelectedCategory((prev) => (prev === cat ? "" : cat))
-                    }
-                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                      selectedCategory === cat
-                        ? "bg-primary text-white"
-                        : "bg-secondary/10 text-secondary hover:bg-secondary/20"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+              )}
+            </section>
+
+            <section
+              id="mesa-prontos"
+              className="scroll-mt-6 rounded-3xl border border-green-200 bg-white p-5 shadow-sm"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="font-display text-xl text-primary">
+                    Pedidos prontos
+                  </h2>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Pedidos liberados para levar ate a mesa selecionada.
+                  </p>
+                </div>
+                <span className="rounded-2xl bg-green-100 px-3 py-2 text-xs font-semibold text-green-700">
+                  {readyMesaOrders.length} pronto(s)
+                </span>
               </div>
 
-              {isLoadingProducts ? (
-                <div className="mt-6 text-sm text-gray-500">
-                  Carregando cardápio…
+              {readyMesaOrders.length === 0 ? (
+                <div className="mt-4 rounded-2xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
+                  Nenhum pedido pronto para esta mesa.
                 </div>
               ) : (
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  {filteredProducts.map((product) => (
-                    <AttendantProductCard
-                      key={product.id}
-                      product={product}
-                      featured={topProducts.some(
-                        (entry) => entry.id === product.id,
-                      )}
-                      showPhoto={showPhotos}
-                    />
+                <div className="mt-4 space-y-3">
+                  {readyMesaOrders.map((order) => (
+                    <article
+                      key={`ready-${order.id}`}
+                      className="rounded-2xl border border-green-200 bg-green-50/40 p-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="font-display text-lg text-primary">
+                            Pedido #{order.id.slice(-6).toUpperCase()}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {selectedMesa?.name ?? "Mesa"} •{" "}
+                            {formatRelativeTime(order.createdAt)}
+                          </p>
+                        </div>
+                        <span
+                          className={`rounded-full px-2 py-1 text-[11px] font-semibold ${STATUS_COLOR[order.status] ?? "bg-gray-100 text-gray-500"}`}
+                        >
+                          {STATUS_LABEL[order.status] ?? order.status}
+                        </span>
+                      </div>
+
+                      <ul className="mt-3 space-y-1 text-xs text-gray-600">
+                        {(order.items ?? []).map((item) => (
+                          <li key={item.id}>
+                            {item.quantity}x {item.product?.name ?? "Item"}
+                          </li>
+                        ))}
+                      </ul>
+
+                      <div className="mt-4 flex justify-end border-t border-green-100 pt-3">
+                        <button
+                          type="button"
+                          onClick={() => handleMarkDelivered(order.id)}
+                          disabled={advanceMutation.isPending}
+                          className="rounded-xl bg-green-600 px-4 py-2 text-xs font-black uppercase text-white transition hover:bg-green-700 disabled:opacity-50"
+                        >
+                          Entregue a mesa
+                        </button>
+                      </div>
+                    </article>
                   ))}
                 </div>
               )}
@@ -831,11 +930,10 @@ export default function AtendentePanel() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="font-display text-xl text-primary">
-                    📜 Histórico da mesa
+                    Pedidos pendentes
                   </h2>
                   <p className="mt-1 text-xs text-gray-500">
-                    Pedidos do dia da mesa selecionada, com status e baixa de
-                    pagamento.
+                    Pedidos com pendencia no pagamento ou que ainda não foram entregues.
                   </p>
                 </div>
                 <div className="rounded-2xl bg-accent px-3 py-2 text-xs text-gray-600">
@@ -845,7 +943,7 @@ export default function AtendentePanel() {
 
               {isLoadingMesaOrders ? (
                 <div className="mt-4 text-sm text-gray-500">
-                  Carregando histórico…
+                  Carregando historico de pedidos da mesa...
                 </div>
               ) : visibleMesaOrders.length === 0 ? (
                 <div className="mt-4 rounded-2xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
@@ -894,7 +992,7 @@ export default function AtendentePanel() {
                             className="flex justify-between gap-3"
                           >
                             <span>
-                              {item.quantity}× {item.product?.name ?? "Item"}
+                              {item.quantity}Ã— {item.product?.name ?? "Item"}
                             </span>
                             <span>
                               {currency(
@@ -919,18 +1017,6 @@ export default function AtendentePanel() {
                               className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10"
                             >
                               Cobrar maquininha
-                            </button>
-                          ) : null}
-                          {(order.status === "PRONTO" ||
-                            order.status === "LEVAR_PARA_MESA") &&
-                          order.status !== "ENTREGUE" ? (
-                            <button
-                              type="button"
-                              onClick={() => handleMarkDelivered(order.id)}
-                              disabled={advanceMutation.isPending}
-                              className="rounded-xl bg-secondary px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-                            >
-                              Entregue
                             </button>
                           ) : null}
                           {order.paymentStatus !== "APROVADO" ? (
@@ -959,7 +1045,7 @@ export default function AtendentePanel() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="font-display text-xl text-primary">
-                  🧾 Fechamento da mesa
+                  Fechamento da mesa
                 </h2>
                 <p className="mt-1 text-xs text-gray-500">
                   Revise os itens do pedido atual antes de lançar para a mesa.
@@ -974,7 +1060,7 @@ export default function AtendentePanel() {
 
             {items.length === 0 ? (
               <div className="mt-6 rounded-2xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
-                Adicione itens do cardápio para montar o pedido desta mesa.
+                Adicione itens do cardÃ¡pio para montar o pedido desta mesa.
               </div>
             ) : (
               <div className="mt-5 space-y-3">
@@ -1052,7 +1138,7 @@ export default function AtendentePanel() {
             )}
 
             <label className="mt-5 block text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-              Observações do pedido
+              ObservaÃ§Ãµes do pedido
             </label>
             <textarea
               rows={4}
@@ -1097,8 +1183,8 @@ export default function AtendentePanel() {
                 className="flex-[1.4] rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-secondary disabled:opacity-50"
               >
                 {createMesaOrderMutation.isPending
-                  ? "Lançando..."
-                  : "Lançar pedido na mesa"}
+                  ? "LanÃ§ando..."
+                  : "LanÃ§ar pedido na mesa"}
               </button>
             </div>
           </section>
@@ -1113,3 +1199,6 @@ export default function AtendentePanel() {
     </div>
   );
 }
+
+
+

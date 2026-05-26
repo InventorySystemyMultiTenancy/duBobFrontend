@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import CartDrawer from "../components/CartDrawer.jsx";
 import ChamarGarcomButton from "../components/ChamarGarcomButton.jsx";
 import Navbar from "../components/Navbar.jsx";
-import ProductCustomizer from "../components/ProductCustomizer.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
@@ -13,111 +12,6 @@ import { useTranslation } from "../context/I18nContext.jsx";
 const fmt = (value) =>
   Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const getProductPrice = (product) =>
-  Number(product?.price ?? product?.basePrice ?? product?.sizes?.[0]?.price ?? 0);
-
-function tProductField(t, productId, field, fallback) {
-  const id = String(productId ?? "");
-  return t(
-    `PRODUCT_${id}_${field}`,
-    t(`PRODUCT_${id.toUpperCase()}_${field}`, fallback),
-  );
-}
-
-function MenuCard({ product, featured }) {
-  const [showCustomizer, setShowCustomizer] = useState(false);
-  const { t } = useTranslation();
-  const productName = tProductField(t, product.id, "NAME", product.name);
-  const productDesc = product.description
-    ? tProductField(t, product.id, "DESC", product.description)
-    : null;
-
-  return (
-    <>
-      <article
-        className="relative flex cursor-pointer overflow-hidden rounded-lg border border-border-soft bg-white shadow-card transition hover:border-secondary/40 hover:shadow-card-hover"
-        onClick={() => setShowCustomizer(true)}
-      >
-        {featured && (
-          <span className="absolute left-2 top-2 z-10 rounded bg-secondary px-2 py-0.5 text-[0.6rem] font-black uppercase tracking-widest text-white shadow">
-            &#9733; {t("FEATURED_LABEL", "Destaque")}
-          </span>
-        )}
-
-        {product.imageUrl ? (
-          <img
-            src={product.imageUrl}
-            alt={productName}
-            className="h-24 w-24 shrink-0 object-cover sm:h-28 sm:w-28"
-            onError={(e) => (e.currentTarget.style.display = "none")}
-          />
-        ) : (
-          <div className="flex h-24 w-24 shrink-0 items-center justify-center bg-accent text-2xl sm:h-28 sm:w-28">
-            &#129481;
-          </div>
-        )}
-
-        <div className="flex flex-1 flex-col justify-between p-3 sm:p-4">
-          <div>
-            <h3 className="line-clamp-1 font-display text-sm font-black text-primary sm:text-[0.95rem]">
-              {productName}
-            </h3>
-            {productDesc && (
-              <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-text-muted">
-                {productDesc}
-              </p>
-            )}
-          </div>
-          <div className="mt-2 flex items-center justify-between">
-            <span className="font-body text-sm font-black text-secondary">
-              {fmt(getProductPrice(product))}
-            </span>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowCustomizer(true);
-              }}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white shadow-sm transition hover:bg-secondary"
-              aria-label="Adicionar"
-            >
-              +
-            </button>
-          </div>
-        </div>
-      </article>
-
-      {showCustomizer && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
-          <div
-            className="absolute inset-0 bg-primary/60 backdrop-blur-sm"
-            onClick={() => setShowCustomizer(false)}
-          />
-          <div className="relative z-10 w-full max-w-sm">
-            <ProductCustomizer
-              product={product}
-              addonsOptions={product.addons ?? []}
-              onClose={() => setShowCustomizer(false)}
-            />
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-const CATEGORY_ORDER = [
-  "acai",
-  "açaí",
-  "milkshake",
-  "milk shake",
-  "krekole",
-  "premium",
-  "especial",
-  "complemento",
-  "bebida",
-  "sobremesa",
-];
 
 const MILKSHAKE_LINES = [
   {
@@ -371,8 +265,6 @@ function buildAcaiOptions(products) {
 }
 
 function CardapioPage() {
-  const [activeCategory, setActiveCategory] = useState("Todos");
-  const [search, setSearch] = useState("");
   const { user } = useAuth();
   const { addItem, addItems, openCart } = useCart();
   const { t } = useTranslation();
@@ -409,82 +301,7 @@ function CardapioPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: topProducts = [] } = useQuery({
-    queryKey: ["top-products"],
-    queryFn: async () => {
-      const res = await api.get("/products/top?limit=6");
-      return res.data?.data ?? [];
-    },
-    staleTime: 10 * 60 * 1000,
-  });
-
-  const tCategory = (cat) => {
-    const key = `CAT_${(cat ?? "GERAL")
-      .toUpperCase()
-      .replace(/\s+/g, "_")
-      .replace(/[^A-Z0-9_]/g, "")}`;
-    return t(key, cat ?? "Geral");
-  };
-
-  function getDubobCategoryLabel(category) {
-    const raw = String(category ?? "").toLowerCase();
-    if (raw.includes("aça") || raw.includes("acai")) return t("CAT_DUBOB_ACAI", "Acai");
-    if (raw.includes("milk")) return t("CAT_DUBOB_MILKSHAKES", "Milkshakes");
-    if (raw.includes("especial")) return t("CAT_DUBOB_ESPECIAL", "Linha Especial");
-    if (raw.includes("premium")) return t("CAT_DUBOB_PREMIUM", "Linha Premium");
-    if (raw.includes("alcool") || raw.includes("alco")) return t("CAT_DUBOB_ALCOOLICA", "Linha Alcoolica");
-    if (raw.includes("complement") || raw.includes("adicional")) return t("CAT_DUBOB_COMPLEMENTOS", "Complementos");
-    if (raw.includes("krekole") || raw.includes("picole")) return t("CAT_DUBOB_KREKOLE", "Krekole");
-    if (raw.includes("bebida") || raw.includes("suco") || raw.includes("agua")) return t("CAT_DUBOB_BEBIDAS", "Bebidas");
-    return tCategory(category);
-  }
-
   const displayProducts = products.filter((product) => !isConfigProduct(product));
-
-  const rawCategories = Array.from(
-    new Set(displayProducts.map((p) => p.category ?? "Geral").filter(Boolean)),
-  ).sort((a, b) => {
-    const ai = CATEGORY_ORDER.findIndex((k) => a.toLowerCase().includes(k));
-    const bi = CATEGORY_ORDER.findIndex((k) => b.toLowerCase().includes(k));
-    if (ai === -1 && bi === -1) return a.localeCompare(b, "pt-BR");
-    if (ai === -1) return 1;
-    if (bi === -1) return -1;
-    return ai - bi;
-  });
-
-  const ALL_LABEL = t("CARDAPIO_CAT_ALL", "Todos");
-  const categoryGroups = rawCategories.reduce((acc, rawCategory) => {
-    const label = getDubobCategoryLabel(rawCategory);
-    acc[label] = [...(acc[label] ?? []), rawCategory];
-    return acc;
-  }, {});
-  const categories = [ALL_LABEL, ...Object.keys(categoryGroups)];
-  const normalizedSearch = search.trim().toLowerCase();
-
-  const filtered =
-    activeCategory === ALL_LABEL || activeCategory === "Todos"
-      ? displayProducts
-      : displayProducts.filter((p) =>
-          (categoryGroups[activeCategory] ?? [activeCategory]).includes(
-            p.category ?? "Geral",
-          ),
-        );
-
-  const searched = normalizedSearch
-    ? filtered.filter((product) =>
-        [product.name, product.description, product.category]
-          .filter(Boolean)
-          .some((v) => v.toLowerCase().includes(normalizedSearch)),
-      )
-    : filtered;
-
-  const dailyProducts = displayProducts.filter(
-    (product) =>
-      Array.isArray(product.availableDays) && product.availableDays.length > 0,
-  );
-  const topIds = new Set(topProducts.map((p) => p.id));
-  const showHomeSections =
-    normalizedSearch === "" && activeCategory === ALL_LABEL;
 
   const handleGuidedAdd = ({ line, flavor, size }) => {
     const product =
@@ -604,111 +421,18 @@ function CardapioPage() {
       </div>
 
       <GuidedMenu
-        isProductReady={displayProducts.length > 0}
+        isProductReady={!isLoading && !isError && displayProducts.length > 0}
         milkshakeLines={milkshakeLines}
         acaiOptions={acaiOptions}
         onAddMilkshake={handleGuidedAdd}
         onAddAcai={handleAcaiAdd}
       />
 
-      <div className="sticky top-[73px] z-20 overflow-x-auto border-b border-border-soft bg-white shadow-sm">
-        <div className="mx-auto flex max-w-7xl px-4 sm:px-8">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setActiveCategory(cat)}
-              className={`shrink-0 border-b-2 px-4 py-3 text-sm font-semibold transition-colors sm:px-5 ${
-                activeCategory === cat
-                  ? "border-secondary text-secondary"
-                  : "border-transparent text-text-muted hover:text-primary"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <section className="mx-auto max-w-7xl px-4 pt-5 sm:px-8">
-        <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-white px-4 py-2.5 shadow-card">
-          <span className="text-text-muted">&#128269;</span>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("CARDAPIO_SEARCH_PH", "Buscar no cardapio...")}
-            className="flex-1 bg-transparent text-sm text-text-main outline-none placeholder:text-text-muted/60"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch("")}
-              className="text-lg leading-none text-text-muted hover:text-primary"
-            >
-              &times;
-            </button>
-          )}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-8">
-        {!isLoading && !isError && dailyProducts.length > 0 && showHomeSections && (
-          <MenuSection
-            label={t("CARDAPIO_DAILY_LABEL", "Especial de hoje")}
-            title={t("CARDAPIO_DAILY_TITLE", "Especiais do Dia")}
-            products={dailyProducts}
-            topIds={topIds}
-          />
-        )}
-
-        {!isLoading && !isError && topProducts.length > 0 && showHomeSections && (
-          <MenuSection
-            label={t("CARDAPIO_TOP_LABEL", "Favoritos da casa")}
-            title={t("CARDAPIO_TOP_TITLE", "Mais Pedidos")}
-            products={topProducts}
-            featured
-            topIds={topIds}
-          />
-        )}
-
-        {isLoading && (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {[...Array(9)].map((_, i) => (
-              <div
-                key={i}
-                className="h-24 animate-pulse rounded-lg border border-border-soft bg-white/70"
-              />
-            ))}
-          </div>
-        )}
-
-        {isError && (
-          <p className="py-16 text-center text-text-muted">
-            {t("CARDAPIO_ERROR", "Nao foi possivel carregar o cardapio. Tente novamente.")}
-          </p>
-        )}
-
-        {!isLoading && !isError && searched.length === 0 && (
-          <p className="py-16 text-center text-text-muted">
-            {normalizedSearch
-              ? t("CARDAPIO_EMPTY_SEARCH", "Nenhum item encontrado.")
-              : t("CARDAPIO_EMPTY_CAT", "Nenhum item nesta categoria.")}
-          </p>
-        )}
-
-        {!isLoading && !isError && searched.length > 0 && (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {searched.map((product) => (
-              <MenuCard
-                key={product.id}
-                product={product}
-                featured={topIds.has(product.id)}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      {isError && (
+        <p className="mx-auto max-w-7xl px-4 pb-8 text-center text-sm text-red-500 sm:px-8">
+          {t("CARDAPIO_ERROR", "Nao foi possivel carregar o cardapio. Tente novamente.")}
+        </p>
+      )}
 
       <footer className="border-t border-border-soft bg-white py-6 text-center text-xs text-text-muted">
         {t("FOOTER_COPYRIGHT", "Dubob Acai e Milkshake - Desde 2000")}
@@ -731,34 +455,6 @@ function CardapioPage() {
       <CartDrawer />
       <ChamarGarcomButton />
     </main>
-  );
-}
-
-function MenuSection({ label, title, products, featured = false, topIds }) {
-  return (
-    <div className="mb-8">
-      <div className="mb-4 flex items-center gap-3">
-        <div className="h-px flex-1 bg-border-soft" />
-        <div className="text-center">
-          <p className="font-body text-[0.65rem] uppercase tracking-[0.3em] text-secondary">
-            {label}
-          </p>
-          <h2 className="font-display text-xl font-black text-primary">
-            {title}
-          </h2>
-        </div>
-        <div className="h-px flex-1 bg-border-soft" />
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {products.map((product) => (
-          <MenuCard
-            key={`${title}-${product.id}`}
-            product={product}
-            featured={featured || topIds.has(product.id)}
-          />
-        ))}
-      </div>
-    </div>
   );
 }
 
