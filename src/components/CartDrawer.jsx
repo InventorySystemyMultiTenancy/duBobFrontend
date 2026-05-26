@@ -8,6 +8,7 @@ function CartDrawer() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const { t } = useTranslation();
+  const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
   const {
     items,
     isCartOpen,
@@ -105,7 +106,9 @@ function CartDrawer() {
                 : "cursor-not-allowed bg-border-soft/60 text-text-muted"
             }`}
           >
-            {t("CART_BTN_CHECKOUT", "Finalizar Compra")}
+            {isTotemMode
+              ? "Ir para pagamento"
+              : t("CART_BTN_CHECKOUT", "Finalizar Compra")}
           </button>
         </footer>
       </aside>

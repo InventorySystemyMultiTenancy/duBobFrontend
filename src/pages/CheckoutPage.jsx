@@ -45,6 +45,7 @@ function CheckoutPage() {
   const { isAuthenticated } = useAuth();
   const { t } = useTranslation();
   const { items, subtotal, clearCart } = useCart();
+  const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
   const [paymentMode, setPaymentMode] = useState("online");
   const [waitingOrderId, setWaitingOrderId] = useState(null);
   const pollRef = useRef(null);
@@ -183,6 +184,15 @@ function CheckoutPage() {
         items: items.map(mapItemToApi).filter(Boolean),
       };
 
+      if (isTotemMode) {
+        payload.deliveryAddress = "Totem - retirada no local";
+        payload.isPickup = true;
+        payload.notes = "Pedido feito no Totem";
+        payload.deliveryFee = 0;
+        delete payload.deliveryLat;
+        delete payload.deliveryLon;
+      }
+
       console.log("[CheckoutPage] create order payload", {
         paymentMethod,
         itemsCount: payload.items.length,
@@ -206,6 +216,10 @@ function CheckoutPage() {
     try {
       const order = await createOrderMutation.mutateAsync("PIX");
       const pref = await preferenceMutation.mutateAsync(order.id);
+      if (isTotemMode) {
+        window.location.assign(pref.initPoint);
+        return;
+      }
       window.open(pref.initPoint, "_blank", "noopener,noreferrer");
       setWaitingOrderId(order.id);
     } catch (err) {
@@ -254,7 +268,7 @@ function CheckoutPage() {
     items.length > 0 &&
     subtotal > 0 &&
     !isLoading &&
-    (deliveryType === "retirada" || freight !== null);
+    (isTotemMode || deliveryType === "retirada" || freight !== null);
 
   // Waiting for payment screen
   if (waitingOrderId) {
