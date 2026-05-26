@@ -35,6 +35,14 @@ function HomePage() {
     },
   ];
 
+  const carouselItems = Array.from({ length: 14 }, (_, index) => ({
+    image: `/carrossel/${index + 1}.png`,
+    titleKey: `HOME_CAROUSEL_${index + 1}_TITLE`,
+    titleDefault: `Dubob ${index + 1}`,
+    descKey: `HOME_CAROUSEL_${index + 1}_DESC`,
+    descDefault: "Foto do cardapio Dubob.",
+  }));
+
   return (
     <main className="min-h-screen bg-accent bg-texture font-body text-text-main">
       <Navbar activeLink="home" />
@@ -82,6 +90,27 @@ function HomePage() {
                 {t("HOME_BTN_FLAVORS", "Sabores")}
               </a>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-border-soft bg-white/75 py-5">
+        <div className="overflow-hidden">
+          <div className="dubob-carousel-track flex w-max gap-4 px-4">
+            {[...carouselItems, ...carouselItems].map((item, index) => (
+              <button
+                key={`${item.titleKey}-${index}`}
+                type="button"
+                onClick={() => setExpandedImage(item)}
+                className="h-36 w-64 shrink-0 overflow-hidden rounded-lg border border-border-soft bg-white shadow-card transition hover:border-secondary/40 hover:shadow-card-hover focus:outline-none focus:ring-2 focus:ring-secondary/30 sm:h-44 sm:w-80"
+              >
+                <img
+                  src={item.image}
+                  alt={t(item.titleKey, item.titleDefault)}
+                  className="h-full w-full object-cover"
+                />
+              </button>
+            ))}
           </div>
         </div>
       </section>

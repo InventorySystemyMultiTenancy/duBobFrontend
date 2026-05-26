@@ -30,3 +30,27 @@ body {
 body.install-prompt-open {
   padding-bottom: 6rem;
 }
+
+@keyframes dubob-carousel-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.dubob-carousel-track {
+  animation: dubob-carousel-scroll 30s linear infinite;
+}
+
+.dubob-carousel-track:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dubob-carousel-track {
+    animation: none;
+  }
+}
