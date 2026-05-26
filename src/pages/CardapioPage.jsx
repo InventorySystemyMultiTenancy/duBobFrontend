@@ -8,6 +8,8 @@ import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
+import MilkShake1 from "../assets/milkshake1.png";
+import acai1 from "../assets/acai1.png";
 
 const fmt = (value) =>
   Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -545,7 +547,7 @@ function GuidedMenu({
           }`}
         >
           <img
-            src="/cardapio.png"
+            src={MilkShake1}
             alt="Milk shake Dubob"
             className="h-44 w-full object-cover"
           />
@@ -573,7 +575,7 @@ function GuidedMenu({
           }`}
         >
           <img
-            src="/cardapio2.png"
+            src={acai1}
             alt="Acai Dubob"
             className="h-44 w-full object-cover"
           />
