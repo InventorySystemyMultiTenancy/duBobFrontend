@@ -6,6 +6,10 @@ function PrivateRoute({ allowedRoles = [] }) {
   const location = useLocation();
 
   if (!isAuthenticated) {
+    if (localStorage.getItem("pc_totem_mode") === "true") {
+      return <Navigate to="/totem" replace />;
+    }
+
     return (
       <Navigate
         to={`/login?redirect=${encodeURIComponent(location.pathname)}`}

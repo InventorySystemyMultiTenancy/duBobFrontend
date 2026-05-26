@@ -12,6 +12,7 @@ import CheckoutPage from "./pages/CheckoutPage.jsx";
 import CheckoutReturnPage from "./pages/CheckoutReturnPage.jsx";
 import ClientDashboardPage from "./pages/ClientDashboardPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
+import TotemPage from "./pages/TotemPage.jsx";
 import KitchenPage from "./pages/KitchenPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import MotoboyPage from "./pages/MotoboyPage.jsx";
@@ -24,10 +25,19 @@ import ComandaSummaryPage from "./pages/ComandaSummaryPage.jsx";
 import CaixaPage from "./pages/CaixaPage.jsx";
 import PrivateRoute from "./routes/PrivateRoute.js";
 
+function HomeEntry() {
+  if (localStorage.getItem("pc_totem_mode") === "true") {
+    return <Navigate to="/totem" replace />;
+  }
+
+  return <HomePage />;
+}
+
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={<HomeEntry />} />
+      <Route path="/totem" element={<TotemPage />} />
       <Route path="/cardapio" element={<CardapioPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/checkout/retorno" element={<CheckoutReturnPage />} />

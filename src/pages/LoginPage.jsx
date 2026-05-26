@@ -163,14 +163,17 @@ function LoginPage() {
               <p className="mt-1 text-sm text-gray-500">
                 {t(
                   "LOGIN_SUBTITLE",
-                  "Entre com email ou telefone para continuar.",
+                "Entre com email, telefone ou CPF para continuar.",
                 )}
               </p>
               <form onSubmit={onLoginSubmit} className="mt-6 space-y-4">
                 <input
                   type="text"
                   required
-                  placeholder={t("LOGIN_PH_IDENTIFIER", "Email ou telefone")}
+                  placeholder={t(
+                    "LOGIN_PH_IDENTIFIER",
+                    "Email, telefone ou CPF",
+                  )}
                   value={loginForm.identifier}
                   onChange={(e) =>
                     setLoginForm((p) => ({ ...p, identifier: e.target.value }))

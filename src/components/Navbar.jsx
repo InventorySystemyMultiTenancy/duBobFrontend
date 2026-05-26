@@ -43,6 +43,7 @@ export default function Navbar({ activeLink }) {
   const longPressTimer = useRef(null);
 
   const LOGOUT_PIN = import.meta.env.VITE_MESA_LOGOUT_PIN || "2468";
+  const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
 
   const handleLogoMouseDown = () => {
     if (user?.role !== "MESA") return;
@@ -94,6 +95,10 @@ export default function Navbar({ activeLink }) {
           : user?.role === "COZINHA"
             ? "/cozinha"
             : "/dashboard";
+
+  if (isTotemMode) {
+    return null;
+  }
 
   return (
     <>
