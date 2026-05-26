@@ -502,7 +502,9 @@ function ProductModal({
           {/* Image URL */}
           <div>
             <label className="mb-1 block text-xs uppercase tracking-widest text-smoke">
-              {t("ADMIN_PRODUCTS_IMAGE_URL", "URL da Imagem")}
+              {isConfigCategory(form.category)
+                ? "Foto do sabor ou complemento"
+                : t("ADMIN_PRODUCTS_IMAGE_URL", "URL da Imagem")}
             </label>
             <input
               value={form.imageUrl}

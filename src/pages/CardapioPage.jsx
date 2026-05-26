@@ -203,12 +203,24 @@ const isConfigProduct = (product) =>
     normalizeText(product?.category).includes(keyword),
   );
 
-function productNamesByCategory(products, categoryNeedle, fallback) {
+function fallbackOptions(items) {
+  return items.map((item) => ({
+    id: item,
+    name: item,
+    imageUrl: "",
+  }));
+}
+
+function productOptionsByCategory(products, categoryNeedle, fallback) {
   const matches = products
     .filter((product) => normalizeText(product.category).includes(categoryNeedle))
-    .map((product) => product.name)
-    .filter(Boolean);
-  return matches.length ? matches : fallback;
+    .map((product) => ({
+      id: product.id,
+      name: product.name,
+      imageUrl: product.imageUrl ?? "",
+    }))
+    .filter((product) => product.name);
+  return matches.length ? matches : fallbackOptions(fallback);
 }
 
 function sizeDisplayParts(size, fallback = {}) {
@@ -235,8 +247,10 @@ function buildMilkshakeLines(products) {
     const categoryNeedle =
       line.id === "tradicional"
         ? "sabor milkshake tradicional"
+        : line.id === "alcoolica"
+          ? "sabor milkshake alcool"
         : `sabor milkshake ${line.id}`;
-    const flavors = productNamesByCategory(products, categoryNeedle, line.flavors);
+    const flavors = productOptionsByCategory(products, categoryNeedle, line.flavors);
     return {
       ...line,
       flavors,
@@ -255,8 +269,8 @@ function buildAcaiOptions(products) {
           sizeDisplayParts(size, ACAI_SIZES[index] ?? {}),
         )
       : ACAI_SIZES,
-    flavors: productNamesByCategory(products, "sabor acai", ACAI_FLAVORS),
-    complements: productNamesByCategory(
+    flavors: productOptionsByCategory(products, "sabor acai", ACAI_FLAVORS),
+    complements: productOptionsByCategory(
       products,
       "complemento acai",
       ACAI_COMPLEMENTS,
@@ -348,7 +362,7 @@ function CardapioPage() {
     const observation = [
       `Sabor: ${flavor}`,
       `Tamanho: ${size.label} ${size.ml}`,
-      `Complementos: ${complements.join(", ") || "nenhum"}`,
+      `Complementos: ${complements.map((item) => item.name).join(", ") || "nenhum"}`,
       extraComplements ? "Adicional: +4 complementos" : "",
     ]
       .filter(Boolean)
@@ -356,7 +370,13 @@ function CardapioPage() {
 
     const cartItems = [
       {
-        key: [product.id, "acai", flavor, size.id, complements.join(".")].join("|"),
+        key: [
+          product.id,
+          "acai",
+          flavor,
+          size.id,
+          complements.map((item) => item.name).join("."),
+        ].join("|"),
         id: product.id,
         nome: `Acai ${flavor} ${size.label} (${size.ml})`,
         price: size.price,
@@ -381,13 +401,23 @@ function CardapioPage() {
         );
       if (extraProduct?.id) {
         cartItems.push({
-          key: [extraProduct.id, "acai-extra", complements.slice(4).join(".")].join("|"),
+          key: [
+            extraProduct.id,
+            "acai-extra",
+            complements
+              .slice(4)
+              .map((item) => item.name)
+              .join("."),
+          ].join("|"),
           id: extraProduct.id,
           nome: "Adicional +4 complementos acai",
           price: 5,
           addons: [],
           removals: [],
-          observation: `Complementos extras: ${complements.slice(4).join(", ")}`,
+          observation: `Complementos extras: ${complements
+            .slice(4)
+            .map((item) => item.name)
+            .join(", ")}`,
           quantity: 1,
           payload: {
             productId: extraProduct.id,
@@ -471,6 +501,7 @@ function GuidedMenu({
   const [selectedAcaiSize, setSelectedAcaiSize] = useState(null);
   const [selectedAcaiFlavor, setSelectedAcaiFlavor] = useState("");
   const [selectedComplements, setSelectedComplements] = useState([]);
+  const [showFlavorPhotos, setShowFlavorPhotos] = useState(false);
 
   const selectedLine =
     milkshakeLines.find((line) => line.id === selectedLineId) ??
@@ -478,8 +509,8 @@ function GuidedMenu({
 
   const toggleComplement = (complement) => {
     setSelectedComplements((prev) => {
-      if (prev.includes(complement)) {
-        return prev.filter((item) => item !== complement);
+      if (prev.some((item) => item.name === complement.name)) {
+        return prev.filter((item) => item.name !== complement.name);
       }
       if (prev.length >= 8) return prev;
       return [...prev, complement];
@@ -588,24 +619,28 @@ function GuidedMenu({
             </div>
 
             <div>
-              <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-secondary">
-                2. Sabor do acai
-              </p>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-secondary">
+                  2. Sabor do acai
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowFlavorPhotos((value) => !value)}
+                  className="rounded-lg border border-border-soft px-3 py-1.5 text-xs font-black text-primary transition hover:border-secondary hover:text-secondary"
+                >
+                  {showFlavorPhotos ? "Ocultar fotos" : "Mostrar fotos"}
+                </button>
+              </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 {acaiOptions.flavors.map((flavor) => (
-                  <button
-                    key={flavor}
-                    type="button"
+                  <FlavorOptionButton
+                    key={flavor.id}
+                    option={flavor}
+                    selected={selectedAcaiFlavor === flavor.name}
                     disabled={!selectedAcaiSize}
-                    onClick={() => setSelectedAcaiFlavor(flavor)}
-                    className={`rounded-lg border px-3 py-3 text-left text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                      selectedAcaiFlavor === flavor
-                        ? "border-secondary bg-secondary/10 text-primary"
-                        : "border-border-soft bg-accent/50 text-text-muted hover:border-secondary/40 hover:text-primary"
-                    }`}
-                  >
-                    {flavor}
-                  </button>
+                    showPhoto={showFlavorPhotos}
+                    onClick={() => setSelectedAcaiFlavor(flavor.name)}
+                  />
                 ))}
               </div>
 
@@ -614,10 +649,12 @@ function GuidedMenu({
               </p>
               <div className="grid max-h-[320px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
                 {acaiOptions.complements.map((complement) => {
-                  const selected = selectedComplements.includes(complement);
+                  const selected = selectedComplements.some(
+                    (item) => item.name === complement.name,
+                  );
                   return (
                     <button
-                      key={complement}
+                      key={complement.id}
                       type="button"
                       disabled={!selectedAcaiFlavor}
                       onClick={() => toggleComplement(complement)}
@@ -627,7 +664,7 @@ function GuidedMenu({
                           : "border-border-soft bg-accent/50 text-text-muted hover:border-secondary/40 hover:text-primary"
                       }`}
                     >
-                      {complement}
+                      {complement.name}
                     </button>
                   );
                 })}
@@ -717,23 +754,27 @@ function GuidedMenu({
 
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
             <div>
-              <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-secondary">
-                1. Escolha o sabor
-              </p>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-secondary">
+                  1. Escolha o sabor
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowFlavorPhotos((value) => !value)}
+                  className="rounded-lg border border-border-soft px-3 py-1.5 text-xs font-black text-primary transition hover:border-secondary hover:text-secondary"
+                >
+                  {showFlavorPhotos ? "Ocultar fotos" : "Mostrar fotos"}
+                </button>
+              </div>
               <div className="grid max-h-[420px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
                 {selectedLine.flavors.map((flavor) => (
-                  <button
-                    key={flavor}
-                    type="button"
-                    onClick={() => setSelectedFlavor(flavor)}
-                    className={`rounded-lg border px-3 py-2.5 text-left text-sm font-semibold transition ${
-                      selectedFlavor === flavor
-                        ? "border-secondary bg-secondary/10 text-primary"
-                        : "border-border-soft bg-accent/50 text-text-muted hover:border-secondary/40 hover:text-primary"
-                    }`}
-                  >
-                    {flavor}
-                  </button>
+                  <FlavorOptionButton
+                    key={flavor.id}
+                    option={flavor}
+                    selected={selectedFlavor === flavor.name}
+                    showPhoto={showFlavorPhotos}
+                    onClick={() => setSelectedFlavor(flavor.name)}
+                  />
                 ))}
               </div>
             </div>
@@ -781,6 +822,39 @@ function GuidedMenu({
         </div>
       )}
     </section>
+  );
+}
+
+function FlavorOptionButton({
+  option,
+  selected,
+  disabled = false,
+  showPhoto,
+  onClick,
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`overflow-hidden rounded-lg border text-left text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+        selected
+          ? "border-secondary bg-secondary/10 text-primary"
+          : "border-border-soft bg-accent/50 text-text-muted hover:border-secondary/40 hover:text-primary"
+      }`}
+    >
+      {showPhoto && option.imageUrl ? (
+        <img
+          src={option.imageUrl}
+          alt={option.name}
+          className="h-28 w-full object-cover"
+          onError={(event) => {
+            event.currentTarget.style.display = "none";
+          }}
+        />
+      ) : null}
+      <span className="block px-3 py-3">{option.name}</span>
+    </button>
   );
 }
 
