@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import CartDrawer from "../components/CartDrawer.jsx";
 import Navbar from "../components/Navbar.jsx";
 import { useTranslation } from "../context/I18nContext.jsx";
 
 function HomePage() {
   const { t } = useTranslation();
+  const [expandedImage, setExpandedImage] = useState(null);
 
   const highlights = [
     {
@@ -96,9 +98,11 @@ function HomePage() {
 
         <div className="grid gap-5 md:grid-cols-3">
           {highlights.map((item) => (
-            <article
+            <button
               key={item.titleKey}
-              className="overflow-hidden rounded-lg border border-border-soft bg-white shadow-card"
+              type="button"
+              onClick={() => setExpandedImage(item)}
+              className="overflow-hidden rounded-lg border border-border-soft bg-white text-left shadow-card transition hover:border-secondary/40 hover:shadow-card-hover focus:outline-none focus:ring-2 focus:ring-secondary/30"
             >
               <img
                 src={item.image}
@@ -113,7 +117,7 @@ function HomePage() {
                   {t(item.descKey, item.descDefault)}
                 </p>
               </div>
-            </article>
+            </button>
           ))}
         </div>
       </section>
@@ -140,6 +144,39 @@ function HomePage() {
       <footer className="border-t border-border-soft bg-white py-6 text-center text-xs text-text-muted">
         {t("FOOTER_COPYRIGHT", "Dubob Acai e Milkshake - Desde 2000")}
       </footer>
+
+      {expandedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-primary/80 p-4 backdrop-blur-sm"
+          onClick={() => setExpandedImage(null)}
+        >
+          <div
+            className="relative max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-lg border border-border-soft bg-white shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setExpandedImage(null)}
+              className="absolute right-3 top-3 z-10 rounded-lg bg-white/95 px-3 py-2 text-sm font-bold text-primary shadow-card transition hover:bg-secondary hover:text-white"
+            >
+              Fechar
+            </button>
+            <img
+              src={expandedImage.image}
+              alt={t(expandedImage.titleKey, expandedImage.titleDefault)}
+              className="max-h-[82vh] w-full bg-accent object-contain"
+            />
+            <div className="border-t border-border-soft p-4">
+              <h3 className="text-lg font-black text-primary">
+                {t(expandedImage.titleKey, expandedImage.titleDefault)}
+              </h3>
+              <p className="mt-1 text-sm text-text-muted">
+                {t(expandedImage.descKey, expandedImage.descDefault)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <CartDrawer />
     </main>
