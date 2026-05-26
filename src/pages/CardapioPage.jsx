@@ -8,8 +8,6 @@ import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
-import MilkShake1 from "/milkshake1.png";
-import acai1 from "/acai1.png";
 
 const fmt = (value) =>
   Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -437,17 +435,17 @@ function CardapioPage() {
     <main className="min-h-screen bg-accent bg-texture font-body text-text-main">
       <Navbar activeLink="cardapio" />
 
-      <div className="relative overflow-hidden border-b border-secondary/30 bg-primary py-8 text-center text-white">
+      <div className="relative overflow-hidden border-b border-secondary/30 bg-primary py-4 text-center text-white sm:py-5">
         <img
           src="/cardapio2.png"
           alt=""
           className="absolute inset-0 h-full w-full object-cover opacity-20"
         />
         <div className="absolute inset-0 bg-primary/70" />
-        <p className="relative font-body text-[0.65rem] uppercase tracking-[0.35em] text-gold">
+        <p className="relative font-body text-[0.6rem] uppercase tracking-[0.3em] text-gold">
           {t("CARDAPIO_SINCE", "Acai - Milkshake - Krekole")}
         </p>
-        <h1 className="relative mt-1 font-display text-3xl font-black text-white sm:text-4xl">
+        <h1 className="relative mt-0.5 font-display text-2xl font-black text-white sm:text-3xl">
           {t("CARDAPIO_TITLE", "Cardapio Dubob")}
         </h1>
       </div>
@@ -520,17 +518,17 @@ function GuidedMenu({
   };
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-6 sm:px-8">
-      <div className="mb-4">
+    <section className="mx-auto max-w-7xl px-4 py-5 sm:px-8">
+      <div className="mb-3">
         <p className="text-xs font-black uppercase tracking-[0.28em] text-secondary">
           Monte seu pedido
         </p>
-        <h2 className="mt-1 text-2xl font-black text-primary sm:text-3xl">
+        <h2 className="mt-1 text-2xl font-black text-primary sm:text-[1.7rem]">
           Escolha o produto primeiro
         </h2>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
         <button
           type="button"
           onClick={() => {
@@ -540,20 +538,20 @@ function GuidedMenu({
             setSelectedAcaiFlavor("");
             setSelectedComplements([]);
           }}
-          className={`overflow-hidden rounded-lg border text-left shadow-card transition hover:shadow-card-hover ${
+          className={`overflow-hidden rounded-lg border text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover ${
             productType === "milkshake"
               ? "border-secondary bg-white"
               : "border-border-soft bg-white"
           }`}
         >
           <img
-            src={MilkShake1}
+            src="/cardapio.png"
             alt="Milk shake Dubob"
-            className="h-44 w-full object-cover"
+            className="h-64 w-full object-cover sm:h-72 lg:h-80"
           />
-          <div className="p-4">
-            <h3 className="text-xl font-black text-primary">Milk shake</h3>
-            <p className="mt-1 text-sm text-text-muted">
+          <div className="p-5">
+            <h3 className="text-2xl font-black text-primary">Milk shake</h3>
+            <p className="mt-1 text-base leading-relaxed text-text-muted">
               Escolha a linha, depois o sabor, depois o tamanho.
             </p>
           </div>
@@ -568,20 +566,20 @@ function GuidedMenu({
             setSelectedAcaiFlavor("");
             setSelectedComplements([]);
           }}
-          className={`overflow-hidden rounded-lg border text-left shadow-card transition hover:shadow-card-hover ${
+          className={`overflow-hidden rounded-lg border text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover ${
             productType === "acai"
               ? "border-secondary bg-white"
               : "border-border-soft bg-white"
           }`}
         >
           <img
-            src={acai1}
+            src="/cardapio2.png"
             alt="Acai Dubob"
-            className="h-44 w-full object-cover"
+            className="h-64 w-full object-cover sm:h-72 lg:h-80"
           />
-          <div className="p-4">
-            <h3 className="text-xl font-black text-primary">Acai</h3>
-            <p className="mt-1 text-sm text-text-muted">
+          <div className="p-5">
+            <h3 className="text-2xl font-black text-primary">Acai</h3>
+            <p className="mt-1 text-base leading-relaxed text-text-muted">
               Escolha tamanho, sabor e ate 4 complementos inclusos.
             </p>
           </div>
