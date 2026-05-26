@@ -38,6 +38,12 @@ const COLUMNS = [
     color: "border-amber-500/40 bg-amber-500/10",
   },
   {
+    key: "RECEBIDO",
+    label: "Recebido",
+    next: "PREPARANDO",
+    color: "border-blue-500/40 bg-blue-500/10",
+  },
+  {
     key: "PREPARANDO",
     label: "Preparando",
     next: "PRONTO",
@@ -798,7 +804,6 @@ function KitchenPage() {
       return roleFiltered
         .map((order) => ({
           ...order,
-          status: order.status === "RECEBIDO" ? "PREPARANDO" : order.status,
           items: getKitchenItems(order),
         }))
         .filter(hasKitchenItems);
