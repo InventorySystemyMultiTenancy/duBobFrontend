@@ -13,7 +13,7 @@ import { useTranslation } from "../context/I18nContext.jsx";
 const DUBOB_WHATSAPP =
   import.meta.env.VITE_DUBOB_WHATSAPP ??
   import.meta.env.VITE_PIZZARIA_WHATSAPP ??
-  "";
+  "5543996714390";
 
 function buildWhatsAppUrl(order, userName, t) {
   const shortId = `#${order.id.slice(-6).toUpperCase()}`;

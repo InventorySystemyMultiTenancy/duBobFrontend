@@ -6,7 +6,10 @@ import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 
-const WHATSAPP_NUMBER = "5511971174080";
+const WHATSAPP_NUMBER =
+  import.meta.env.VITE_DUBOB_WHATSAPP ||
+  import.meta.env.VITE_PIZZARIA_WHATSAPP ||
+  "5543996714390";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
 
 // Ícone SVG oficial do WhatsApp
