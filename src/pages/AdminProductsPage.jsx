@@ -373,7 +373,7 @@ function ProductModal({
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4">
       <div className="fixed inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative z-10 my-auto w-full max-w-lg rounded-3xl border border-gold/20 bg-white p-6 shadow-2xl">
+      <div className="relative z-10 my-auto w-full max-w-2xl rounded-3xl border border-border-soft bg-white p-5 shadow-2xl sm:p-6">
         <h2 className="font-display text-2xl text-gold">
           {isEdit
             ? t("ADMIN_PRODUCTS_EDIT_TITLE", "Editar Produto")
@@ -527,9 +527,9 @@ function ProductModal({
             )}
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
+          <div className="rounded-2xl border border-border-soft bg-accent/35 p-4">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-widest text-smoke">
                   Tamanhos e valores
                 </p>
@@ -543,7 +543,7 @@ function ProductModal({
                 type="button"
                 onClick={addSizeRow}
                 disabled={form.sizes.length >= SIZE_OPTIONS.length}
-                className="rounded-xl bg-gold px-3 py-2 text-xs font-bold text-[#11161d] disabled:opacity-50"
+                className="w-full rounded-xl bg-gold px-4 py-3 text-xs font-bold text-primary shadow-sm transition hover:bg-secondary hover:text-white disabled:opacity-50 sm:w-auto"
               >
                 + Tamanho
               </button>
@@ -557,9 +557,9 @@ function ProductModal({
               {form.sizes.map((sizeRow, index) => (
                 <div
                   key={`${sizeRow.size}-${index}`}
-                  className="rounded-xl border border-gray-200 bg-white p-3"
+                  className="rounded-xl border border-border-soft bg-white p-3 shadow-sm"
                 >
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-[130px_1fr_120px_120px_auto]">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[150px_minmax(0,1fr)_120px_120px]">
                     <div>
                       <label className="mb-1 block text-[10px] uppercase tracking-widest text-smoke">
                         Codigo
@@ -567,7 +567,7 @@ function ProductModal({
                       <select
                         value={sizeRow.size}
                         onChange={(e) => updateSizeRow(index, { size: e.target.value })}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gold/50"
+                        className="w-full min-w-0 rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
                       >
                         {SIZE_OPTIONS.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -582,14 +582,14 @@ function ProductModal({
                       )}
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <label className="mb-1 block text-[10px] uppercase tracking-widest text-smoke">
                         Nome no cardapio
                       </label>
                       <input
                         value={sizeRow.label}
                         onChange={(e) => updateSizeRow(index, { label: e.target.value })}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gold/50"
+                        className="w-full min-w-0 rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
                         placeholder="Ex: P - 300 ml"
                       />
                     </div>
@@ -604,7 +604,7 @@ function ProductModal({
                         min="0"
                         value={sizeRow.price}
                         onChange={(e) => updateSizeRow(index, { price: e.target.value })}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gold/50"
+                        className="w-full min-w-0 rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
                         placeholder="0,00"
                       />
                       {errors[`price_${index}`] && (
@@ -624,7 +624,7 @@ function ProductModal({
                         min="0"
                         value={sizeRow.costPrice}
                         onChange={(e) => updateSizeRow(index, { costPrice: e.target.value })}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gold/50"
+                        className="w-full min-w-0 rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
                         placeholder="0,00"
                       />
                       {errors[`cost_${index}`] && (
@@ -634,11 +634,13 @@ function ProductModal({
                       )}
                     </div>
 
+                  </div>
+                  <div className="mt-3 flex justify-end border-t border-border-soft pt-3">
                     <button
                       type="button"
                       onClick={() => removeSizeRow(index)}
                       disabled={form.sizes.length <= 1}
-                      className="self-end rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-500 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Remover
                     </button>
