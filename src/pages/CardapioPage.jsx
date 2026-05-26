@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import CartDrawer from "../components/CartDrawer.jsx";
@@ -504,6 +504,8 @@ function GuidedMenu({
   const [selectedAcaiFlavor, setSelectedAcaiFlavor] = useState("");
   const [selectedComplements, setSelectedComplements] = useState([]);
   const [showFlavorPhotos, setShowFlavorPhotos] = useState(false);
+  const milkshakeFlowRef = useRef(null);
+  const acaiFlowRef = useRef(null);
 
   const selectedLine =
     milkshakeLines.find((line) => line.id === selectedLineId) ??
@@ -517,6 +519,15 @@ function GuidedMenu({
       if (prev.length >= 8) return prev;
       return [...prev, complement];
     });
+  };
+
+  const scrollToFlow = (ref) => {
+    window.setTimeout(() => {
+      ref.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
   };
 
   return (
@@ -539,6 +550,7 @@ function GuidedMenu({
             setSelectedAcaiSize(null);
             setSelectedAcaiFlavor("");
             setSelectedComplements([]);
+            scrollToFlow(milkshakeFlowRef);
           }}
           className={`overflow-hidden rounded-lg border text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover ${
             productType === "milkshake"
@@ -567,6 +579,7 @@ function GuidedMenu({
             setSelectedAcaiSize(null);
             setSelectedAcaiFlavor("");
             setSelectedComplements([]);
+            scrollToFlow(acaiFlowRef);
           }}
           className={`overflow-hidden rounded-lg border text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover ${
             productType === "acai"
@@ -589,7 +602,10 @@ function GuidedMenu({
       </div>
 
       {productType === "acai" && (
-        <div className="mt-5 rounded-lg border border-border-soft bg-white p-4 shadow-card sm:p-5">
+        <div
+          ref={acaiFlowRef}
+          className="mt-5 scroll-mt-24 rounded-lg border border-border-soft bg-white p-4 shadow-card sm:p-5"
+        >
           <div className="grid gap-5 lg:grid-cols-[240px_1fr_300px]">
             <div>
               <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-secondary">
@@ -733,7 +749,10 @@ function GuidedMenu({
       )}
 
       {productType === "milkshake" && (
-        <div className="mt-5 rounded-lg border border-border-soft bg-white p-4 shadow-card sm:p-5">
+        <div
+          ref={milkshakeFlowRef}
+          className="mt-5 scroll-mt-24 rounded-lg border border-border-soft bg-white p-4 shadow-card sm:p-5"
+        >
           <div className="mb-4 flex flex-wrap gap-2">
             {milkshakeLines.map((line) => (
               <button
