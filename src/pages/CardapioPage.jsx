@@ -8,8 +8,8 @@ import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
-import MilkShake1 from "../milkshake1.png";
-import acai1 from "../acai1.png";
+import MilkShake1 from "/milkshake1.png";
+import acai1 from "/acai1.png";
 
 const fmt = (value) =>
   Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
