@@ -22,7 +22,7 @@ function CartDrawer() {
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-black/70 transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 bg-primary/35 backdrop-blur-sm transition-opacity duration-300 ${
           isCartOpen
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
@@ -31,27 +31,27 @@ function CartDrawer() {
       />
 
       <aside
-        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-md transform flex-col bg-[#0f141b] p-4 text-[#e7ebf3] shadow-2xl transition-transform duration-300 ease-in-out sm:p-6 ${
+        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-md transform flex-col border-l border-border-soft bg-accent bg-texture p-4 text-text-main shadow-2xl transition-transform duration-300 ease-in-out sm:p-6 ${
           isCartOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between border-b border-[#2a313d] pb-4">
-          <h3 className="font-display text-2xl text-amber-400">
+        <div className="flex items-center justify-between border-b border-border-soft pb-4">
+          <h3 className="font-display text-2xl font-black text-primary">
             {t("CART_TITLE", "Seu Carrinho")}
           </h3>
           <button
             type="button"
             onClick={closeCart}
-            className="rounded-xl border border-[#2f3745] px-3 py-2 text-sm text-[#98a1b3] transition hover:bg-[#1a212c]"
+            className="rounded-xl border border-border-soft bg-white px-3 py-2 text-sm font-semibold text-text-muted shadow-sm transition hover:border-secondary/40 hover:text-secondary"
           >
-            ✕ {t("CART_CLOSE", "Fechar")}
+            x {t("CART_CLOSE", "Fechar")}
           </button>
         </div>
 
         <div className="mt-5 flex-1 space-y-3 overflow-y-auto overscroll-contain pb-4 pr-1">
           {!items.length ? (
-            <div className="rounded-2xl border border-dashed border-[#3c4555] p-6 text-center text-sm text-[#9ca5b8]">
-              {t("CART_EMPTY", "Seu carrinho está vazio.")}
+            <div className="rounded-2xl border border-dashed border-border-soft bg-white/85 p-6 text-center text-sm text-text-muted shadow-card">
+              {t("CART_EMPTY", "Seu carrinho esta vazio.")}
             </div>
           ) : (
             items.map((item) => (
@@ -70,19 +70,19 @@ function CartDrawer() {
           )}
         </div>
 
-        <footer className="mt-3 border-t border-[#2a313d] bg-[#0f141b] pt-4 sm:pt-6">
+        <footer className="mt-3 border-t border-border-soft bg-white/70 pt-4 sm:pt-6">
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between text-[#9da5b7]">
+            <div className="flex justify-between text-text-muted">
               <span>{t("CART_SUBTOTAL", "Subtotal")}</span>
               <span>{formatted.subtotal}</span>
             </div>
-            <div className="flex justify-between text-[#9da5b7]">
+            <div className="flex justify-between text-text-muted">
               <span>{t("CART_FREIGHT", "Frete")}</span>
               <span>{formatted.freight}</span>
             </div>
-            <div className="flex justify-between text-lg font-bold text-amber-400">
+            <div className="flex justify-between text-lg font-black text-primary">
               <span>{t("CART_TOTAL", "Total")}</span>
-              <span>{formatted.total}</span>
+              <span className="text-secondary">{formatted.total}</span>
             </div>
           </div>
 
@@ -101,8 +101,8 @@ function CartDrawer() {
             }}
             className={`mt-4 block w-full rounded-2xl px-5 py-4 text-center text-base font-bold transition ${
               total
-                ? "bg-amber-400 text-[#10151d] shadow-md hover:bg-amber-300"
-                : "cursor-not-allowed bg-[#232b36] text-[#667085]"
+                ? "bg-secondary text-white shadow-card hover:bg-primary"
+                : "cursor-not-allowed bg-border-soft/60 text-text-muted"
             }`}
           >
             {t("CART_BTN_CHECKOUT", "Finalizar Compra")}

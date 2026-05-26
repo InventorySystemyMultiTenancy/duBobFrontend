@@ -18,13 +18,13 @@ function CartProductCard({
   const unit = Number(item.price || 0) + addonTotal(item.addons || []);
 
   return (
-    <article className="rounded-2xl border border-[#2a313d] bg-[#161c25] p-3 text-[#e8ebf2] transition-all hover:border-amber-400/40">
-      <h4 className="font-semibold text-[#f2f4f8]">{nome}</h4>
+    <article className="rounded-2xl border border-border-soft bg-white p-3 text-text-main shadow-card transition-all hover:border-secondary/40 hover:shadow-card-hover">
+      <h4 className="font-display text-base font-black text-primary">{nome}</h4>
 
       {item.addons?.length ? (
         <div className="mt-1.5 space-y-1">
           {item.addons.map((addon) => (
-            <p key={addon.id || addon.nome} className="text-xs text-amber-300">
+            <p key={addon.id || addon.nome} className="text-xs text-secondary">
               + {addon.nome} ({currency(addon.price)})
             </p>
           ))}
@@ -32,13 +32,13 @@ function CartProductCard({
       ) : null}
 
       {item.removals?.length ? (
-        <p className="mt-1 text-xs text-[#9da5b7]">
+        <p className="mt-1 text-xs text-text-muted">
           Remocoes: {item.removals.join(", ")}
         </p>
       ) : null}
 
       <div className="mt-3">
-        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-[#8f97aa]">
+        <label className="mb-1 block text-[11px] font-black uppercase tracking-wide text-secondary">
           Observacao
         </label>
         <textarea
@@ -46,7 +46,7 @@ function CartProductCard({
           placeholder="Ex: sem molho"
           value={observation}
           onChange={(event) => onObservationChange(event.target.value)}
-          className="w-full resize-none rounded-xl border border-[#2a313d] bg-[#0f141b] px-3 py-2 text-sm text-[#dae0ec] outline-none placeholder:text-[#6f788b] focus:border-amber-400/60"
+          className="w-full resize-none rounded-xl border border-border-soft bg-accent/60 px-3 py-2 text-sm text-text-main outline-none placeholder:text-text-muted/60 focus:border-secondary/60 focus:bg-white"
         />
       </div>
 
@@ -54,15 +54,17 @@ function CartProductCard({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="h-9 w-9 rounded-xl border border-[#343d4c] bg-[#111722] text-lg"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border-soft bg-accent text-lg font-bold text-primary transition hover:border-secondary hover:text-secondary"
             onClick={() => onQuantityChange(item.quantity - 1)}
           >
             -
           </button>
-          <span className="w-7 text-center text-sm">{item.quantity}</span>
+          <span className="w-7 text-center text-sm font-semibold text-primary">
+            {item.quantity}
+          </span>
           <button
             type="button"
-            className="h-9 w-9 rounded-xl border border-[#343d4c] bg-[#111722] text-lg"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border-soft bg-accent text-lg font-bold text-primary transition hover:border-secondary hover:text-secondary"
             onClick={() => onQuantityChange(item.quantity + 1)}
           >
             +
@@ -70,13 +72,13 @@ function CartProductCard({
         </div>
 
         <div className="text-right">
-          <p className="text-sm font-bold text-amber-400">
+          <p className="text-sm font-black text-secondary">
             {currency(unit * item.quantity)}
           </p>
           <button
             type="button"
             onClick={onRemove}
-            className="text-xs text-red-400"
+            className="text-xs font-semibold text-text-muted transition hover:text-red-500"
           >
             remover
           </button>
