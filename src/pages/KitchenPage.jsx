@@ -922,6 +922,7 @@ function KitchenPage() {
             (o.status === "RECEBIDO" || o.status === "PREPARANDO") &&
             o.paymentStatus === "PENDENTE" &&
             o.paymentMethod !== "PAGAR_DEPOIS" &&
+            o.paymentMethod !== "MAQUININHA_TOTEM" &&
             !o.mesaId,
         );
       }

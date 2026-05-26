@@ -356,7 +356,9 @@ function MesaCard({ mesa, onEdit, onQr }) {
 // ── Página principal ──────────────────────────────────────────────────────────
 function AdminMesasPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [modal, setModal] = useState(null); // null | { type: "create"|"edit"|"qr", mesa? }
+  const [totemTerminalId, setTotemTerminalId] = useState("");
 
   const {
     data: mesas = [],
@@ -367,6 +369,35 @@ function AdminMesasPage() {
     queryFn: async () => {
       const res = await api.get("/mesas");
       return res.data?.data ?? [];
+    },
+  });
+
+  const { isLoading: isLoadingTotemTerminal } = useQuery({
+    queryKey: ["admin-totem-terminal"],
+    queryFn: async () => {
+      const res = await api.get("/admin/settings/totem-terminal");
+      const terminalId = res.data?.data?.terminalId ?? "";
+      setTotemTerminalId(terminalId);
+      return terminalId;
+    },
+  });
+
+  const saveTotemTerminalMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.put("/admin/settings/totem-terminal", {
+        terminalId: totemTerminalId.trim(),
+      });
+      return res.data?.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-totem-terminal"] });
+      toast.success("Maquininha do Totem salva.");
+    },
+    onError: (err) => {
+      toast.error(
+        err?.response?.data?.error?.message ??
+          "Erro ao salvar maquininha do Totem.",
+      );
     },
   });
 
@@ -399,6 +430,37 @@ function AdminMesasPage() {
           )}{" "}
           <code className="font-mono">PAX_A867EC0ED627</code>).
         </p>
+      </div>
+
+      <div className="mb-5 rounded-2xl border border-secondary/20 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-gray-600">
+              Maquininha do Totem
+            </label>
+            <input
+              type="text"
+              maxLength={100}
+              placeholder="Ex: PAX_A867EC0ED627"
+              value={totemTerminalId}
+              onChange={(event) => setTotemTerminalId(event.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 font-mono text-sm focus:border-gold/60 focus:outline-none"
+            />
+            <p className="mt-1 text-[10px] text-gray-400">
+              Esta maquininha recebe as cobranças do modo Totem.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => saveTotemTerminalMutation.mutate()}
+            disabled={
+              saveTotemTerminalMutation.isPending || isLoadingTotemTerminal
+            }
+            className="rounded-xl bg-secondary px-4 py-2.5 text-sm font-bold text-white transition hover:bg-primary disabled:opacity-50"
+          >
+            {saveTotemTerminalMutation.isPending ? "Salvando..." : "Salvar"}
+          </button>
+        </div>
       </div>
 
       <button

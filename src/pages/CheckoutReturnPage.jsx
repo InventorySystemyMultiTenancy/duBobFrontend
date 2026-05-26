@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { api } from "../lib/api.js";
@@ -8,6 +8,7 @@ function CheckoutReturnPage() {
   const [searchParams] = useSearchParams();
   const { clearCart } = useCart();
   const { t } = useTranslation();
+  const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
 
   const status = searchParams.get("status"); // approved | failure | pending | null
   const orderId = searchParams.get("external_reference");
@@ -15,8 +16,6 @@ function CheckoutReturnPage() {
 
   const isApproved = status === "approved";
   const isPending = status === "pending" || status === "in_process";
-
-  const [confirmed, setConfirmed] = useState(isApproved);
 
   useEffect(() => {
     if (isApproved) {
@@ -27,7 +26,6 @@ function CheckoutReturnPage() {
       if (orderId && paymentId) {
         api
           .post("/payments/checkout-confirm", { orderId, paymentId })
-          .then(() => setConfirmed(true))
           .catch((err) =>
             console.warn(
               `[checkout-confirm] ${t("CHECKOUT_RETURN_CONFIRM_ERROR", "Erro ao confirmar")}:`,
@@ -60,10 +58,12 @@ function CheckoutReturnPage() {
               </p>
             )}
             <Link
-              to="/dashboard"
+              to={isTotemMode ? "/totem" : "/dashboard"}
               className="mt-6 block rounded-2xl bg-rosso py-4 font-bold text-white transition hover:bg-ember"
             >
-              {t("CHECKOUT_RETURN_SUCCESS_BUTTON", "Acompanhar meu pedido")}
+              {isTotemMode
+                ? "Novo atendimento"
+                : t("CHECKOUT_RETURN_SUCCESS_BUTTON", "Acompanhar meu pedido")}
             </Link>
           </>
         ) : isPending ? (
@@ -79,10 +79,12 @@ function CheckoutReturnPage() {
               )}
             </p>
             <Link
-              to="/dashboard"
+              to={isTotemMode ? "/totem" : "/dashboard"}
               className="mt-6 block rounded-2xl bg-rosso py-4 font-bold text-white transition hover:bg-ember"
             >
-              {t("CHECKOUT_RETURN_PENDING_BUTTON", "Ver meus pedidos")}
+              {isTotemMode
+                ? "Voltar ao inicio"
+                : t("CHECKOUT_RETURN_PENDING_BUTTON", "Ver meus pedidos")}
             </Link>
           </>
         ) : (

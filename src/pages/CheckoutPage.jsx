@@ -42,12 +42,13 @@ const mapItemToApi = (item) => {
 
 function CheckoutPage() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const { t } = useTranslation();
   const { items, subtotal, clearCart } = useCart();
   const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
   const [paymentMode, setPaymentMode] = useState("online");
   const [waitingOrderId, setWaitingOrderId] = useState(null);
+  const [paidTotemOrder, setPaidTotemOrder] = useState(null);
   const pollRef = useRef(null);
 
   // Address
@@ -79,6 +80,11 @@ function CheckoutPage() {
         if (status === "APROVADO") {
           clearInterval(pollRef.current);
           clearCart();
+          if (isTotemMode) {
+            setPaidTotemOrder(order);
+            setWaitingOrderId(null);
+            return;
+          }
           toast.success("Pagamento confirmado! Preparando seu pedido.");
           navigate("/dashboard");
         } else if (status === "RECUSADO") {
@@ -93,7 +99,7 @@ function CheckoutPage() {
     pollRef.current = setInterval(poll, POLL_INTERVAL_MS);
     poll();
     return () => clearInterval(pollRef.current);
-  }, [waitingOrderId, clearCart, navigate]);
+  }, [waitingOrderId, clearCart, navigate, isTotemMode]);
 
   // ViaCEP auto-fill
   const fetchViaCep = useCallback(async (rawCep) => {
@@ -212,6 +218,13 @@ function CheckoutPage() {
     },
   });
 
+  const terminalMutation = useMutation({
+    mutationFn: async (orderId) => {
+      const response = await api.post("/totem/payments/terminal", { orderId });
+      return response.data?.data;
+    },
+  });
+
   const handleOnlineCheckout = async () => {
     try {
       const order = await createOrderMutation.mutateAsync("PIX");
@@ -234,6 +247,21 @@ function CheckoutPage() {
         data?.error?.message
           ? `${data.error.message}${detailText ? `: ${detailText}` : ""}`
           : "Erro ao gerar pagamento. Tente novamente.",
+      );
+    }
+  };
+
+  const handleTotemTerminalCheckout = async () => {
+    try {
+      const order = await createOrderMutation.mutateAsync("MAQUININHA_TOTEM");
+      await terminalMutation.mutateAsync(order.id);
+      setWaitingOrderId(order.id);
+    } catch (err) {
+      const data = err?.response?.data;
+      toast.error(
+        data?.error?.message ||
+          data?.message ||
+          "Erro ao enviar cobranca para a maquininha.",
       );
     }
   };
@@ -261,7 +289,9 @@ function CheckoutPage() {
   };
 
   const isLoading =
-    createOrderMutation.isPending || preferenceMutation.isPending;
+    createOrderMutation.isPending ||
+    preferenceMutation.isPending ||
+    terminalMutation.isPending;
 
   const canConfirm =
     isAuthenticated &&
@@ -269,6 +299,47 @@ function CheckoutPage() {
     subtotal > 0 &&
     !isLoading &&
     (isTotemMode || deliveryType === "retirada" || freight !== null);
+
+  if (isTotemMode && paidTotemOrder) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-accent bg-texture px-8 py-10 text-primary">
+        <section className="w-full max-w-2xl rounded-2xl border border-border-soft bg-white p-10 text-center shadow-card">
+          <p className="text-sm font-black uppercase tracking-[0.32em] text-secondary">
+            Pagamento aprovado
+          </p>
+          <h1 className="mt-3 text-5xl font-black">Pedido recebido</h1>
+          <div className="mt-8 rounded-2xl border border-border-soft bg-accent/70 p-6">
+            <p className="text-sm font-black uppercase tracking-[0.22em] text-text-muted">
+              Numero do pedido
+            </p>
+            <p className="mt-2 text-6xl font-black text-secondary">
+              #{paidTotemOrder.id.slice(-6).toUpperCase()}
+            </p>
+            <p className="mt-5 text-sm font-black uppercase tracking-[0.22em] text-text-muted">
+              Nome
+            </p>
+            <p className="mt-2 text-3xl font-black text-primary">
+              {user?.name || "Cliente"}
+            </p>
+          </div>
+          <p className="mt-6 text-lg text-text-muted">
+            Seu pedido foi enviado para a cozinha.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              logout();
+              clearCart();
+              navigate("/totem", { replace: true });
+            }}
+            className="mt-8 rounded-2xl bg-secondary px-10 py-5 text-xl font-black uppercase tracking-wide text-white transition hover:bg-primary"
+          >
+            Novo atendimento
+          </button>
+        </section>
+      </main>
+    );
+  }
 
   // Waiting for payment screen
   if (waitingOrderId) {
@@ -298,9 +369,19 @@ function CheckoutPage() {
             </svg>
           </div>
           <h1 className="mt-5 font-display text-2xl text-gold">
-            {t("CHECKOUT_WAITING_TITLE", "Aguardando pagamento")}
+            {isTotemMode
+              ? "Aguardando pagamento na maquininha"
+              : t("CHECKOUT_WAITING_TITLE", "Aguardando pagamento")}
           </h1>
-          <p className="mt-2 text-sm text-smoke">
+          {isTotemMode && (
+            <p className="mt-2 text-sm text-smoke">
+              Finalize o pagamento na maquininha. Assim que aprovar, esta tela
+              mostra o numero do pedido.
+            </p>
+          )}
+          <p
+            className={`mt-2 text-sm text-smoke ${isTotemMode ? "hidden" : ""}`}
+          >
             {t(
               "CHECKOUT_WAITING_DESC",
               "A página do Mercado Pago foi aberta em outra aba. Conclua o pagamento por lá e aguarde a confirmação aqui.",
@@ -316,6 +397,115 @@ function CheckoutPage() {
             )}
           </p>
         </div>
+      </main>
+    );
+  }
+
+  if (isTotemMode) {
+    return (
+      <main className="min-h-screen bg-accent bg-texture px-8 py-10 text-primary">
+        <section className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-5xl flex-col justify-center">
+          <div className="mb-8 text-center">
+            <p className="text-sm font-black uppercase tracking-[0.32em] text-secondary">
+              Pagamento
+            </p>
+            <h1 className="mt-3 text-5xl font-black">Confira seu pedido</h1>
+            <p className="mt-3 text-lg text-text-muted">
+              Confirme o carrinho e toque em pagar para enviar a cobranca para
+              a maquininha do Totem.
+            </p>
+          </div>
+
+          {!items.length ? (
+            <div className="mx-auto w-full max-w-xl rounded-2xl border border-border-soft bg-white p-8 text-center shadow-card">
+              <p className="text-xl font-bold text-primary">
+                Seu carrinho esta vazio.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/cardapio")}
+                className="mt-6 rounded-2xl bg-secondary px-8 py-4 text-lg font-black text-white transition hover:bg-primary"
+              >
+                Voltar ao cardapio
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+              <section className="rounded-2xl border border-border-soft bg-white p-6 shadow-card">
+                <h2 className="text-3xl font-black">Itens escolhidos</h2>
+                <div className="mt-5 space-y-3">
+                  {items.map((item) => (
+                    <div
+                      key={item.key}
+                      className="rounded-2xl border border-border-soft bg-accent/60 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-xl font-black text-primary">
+                            {item.nome || item.title || "Item"}
+                          </p>
+                          {(item.observation || item.description) && (
+                            <p className="mt-1 text-sm text-text-muted">
+                              {item.observation || item.description}
+                            </p>
+                          )}
+                        </div>
+                        <span className="rounded-xl bg-secondary px-3 py-1 text-lg font-black text-white">
+                          x{item.quantity}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <aside className="rounded-2xl border border-border-soft bg-white p-6 shadow-card">
+                <h2 className="text-3xl font-black">Resumo</h2>
+                <div className="mt-5 space-y-3 text-lg">
+                  <div className="flex justify-between text-text-muted">
+                    <span>Subtotal</span>
+                    <span>{currency(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-text-muted">
+                    <span>Retirada</span>
+                    <span>R$ 0,00</span>
+                  </div>
+                  <div className="flex justify-between border-t border-border-soft pt-4 text-2xl font-black text-primary">
+                    <span>Total</span>
+                    <span className="text-secondary">{currency(subtotal)}</span>
+                  </div>
+                </div>
+
+                <div className="mt-6 rounded-2xl border border-border-soft bg-accent/70 p-4">
+                  <p className="text-sm font-black uppercase tracking-[0.18em] text-secondary">
+                    Maquininha Mercado Pago
+                  </p>
+                  <p className="mt-2 text-sm text-text-muted">
+                    A cobranca aparece na maquininha cadastrada no painel. O
+                    pedido entra na cozinha depois da aprovacao.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={!canConfirm}
+                  onClick={handleTotemTerminalCheckout}
+                  className="mt-6 w-full rounded-2xl bg-secondary px-6 py-5 text-xl font-black uppercase tracking-wide text-white shadow-card transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isLoading ? "Enviando para maquininha..." : "Pagar"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate("/cardapio")}
+                  className="mt-3 w-full rounded-2xl border border-border-soft bg-white px-6 py-4 text-lg font-black text-primary transition hover:border-secondary"
+                >
+                  Voltar e alterar
+                </button>
+              </aside>
+            </div>
+          )}
+        </section>
       </main>
     );
   }
