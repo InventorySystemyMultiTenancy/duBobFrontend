@@ -199,12 +199,12 @@ function TerminalChargeModal({ order, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl">
-        <p className="mb-3 text-5xl">ðŸ–²ï¸</p>
+        <p className="mb-3 text-5xl">$</p>
         <h2 className="font-display text-xl text-gray-900">
           Cobrança na maquininha
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          Pedido #{order.id.slice(-6).toUpperCase()} â€¢ {currency(order.total)}
+          Pedido #{order.id.slice(-6).toUpperCase()} - {currency(order.total)}
         </p>
 
         {terminalMutation.isPending ? (
@@ -216,15 +216,15 @@ function TerminalChargeModal({ order, onClose }) {
           </div>
         ) : terminalMutation.isError ? (
           <p className="py-6 text-sm text-red-500">
-            Não foi possí­vel iniciar a cobrança.
+            Nao foi possivel iniciar a cobranca.
           </p>
         ) : (
           <div className="py-5">
             <p className="text-sm text-gray-600">
-              Aguardando confirmassão do pagamento na maquininha.
+              Aguardando confirmacao do pagamento na maquininha.
             </p>
             <p className="mt-2 text-xs text-gray-400">
-              Se a cobranssa cair, você também pode usar para Dar baixa / pago.
+              Se a cobranca cair, voce tambem pode usar Dar baixa / pago.
             </p>
           </div>
         )}
@@ -599,12 +599,12 @@ export default function AtendentePanel() {
       </header>
 
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-6 sm:px-8">
-        {/* â”€â”€ Chamadas de mesa â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* Chamadas de mesa */}
         <section>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-xl text-primary">
-                ðŸ›Ž Chamadas de Mesa
+                Chamadas de Mesa
               </h2>
               <p className="mt-1 text-xs text-gray-500">
                 Pedidos de atendimento enviados pelas mesas via QR code.
@@ -634,7 +634,7 @@ export default function AtendentePanel() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-display text-xl text-primary">
-                      Mesa {call?.mesaNumber ?? "â€”"}
+                      Mesa {call?.mesaNumber ?? "-"}
                     </p>
                     <span className="rounded-full bg-secondary/10 px-2 py-1 text-[11px] font-semibold text-secondary">
                       {formatRelativeTime(call?.timestamp)}
@@ -659,7 +659,7 @@ export default function AtendentePanel() {
         <section>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="font-display text-xl text-primary">ðŸª‘ Mesas</h2>
+              <h2 className="font-display text-xl text-primary">Mesas</h2>
               <p className="mt-1 text-xs text-gray-500">
                 Selecione a mesa para tirar o pedido e acompanhar o histórico do
                 dia.
@@ -777,7 +777,7 @@ export default function AtendentePanel() {
                         : "border-gray-300 bg-white text-gray-600 hover:border-secondary/40"
                     } disabled:cursor-not-allowed disabled:opacity-40`}
                   >
-                    🖼 {showPhotos ? "Ocultar fotos" : "Ver fotos"}
+                    {showPhotos ? "Ocultar fotos" : "Ver fotos"}
                   </button>
                   {showProducts ? (
                     <input
@@ -992,7 +992,7 @@ export default function AtendentePanel() {
                             className="flex justify-between gap-3"
                           >
                             <span>
-                              {item.quantity}Ã— {item.product?.name ?? "Item"}
+                              {item.quantity}x {item.product?.name ?? "Item"}
                             </span>
                             <span>
                               {currency(
@@ -1060,7 +1060,7 @@ export default function AtendentePanel() {
 
             {items.length === 0 ? (
               <div className="mt-6 rounded-2xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
-                Adicione itens do cardÃ¡pio para montar o pedido desta mesa.
+                Adicione itens do cardapio para montar o pedido desta mesa.
               </div>
             ) : (
               <div className="mt-5 space-y-3">
@@ -1138,7 +1138,7 @@ export default function AtendentePanel() {
             )}
 
             <label className="mt-5 block text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-              ObservaÃ§Ãµes do pedido
+              Observacoes do pedido
             </label>
             <textarea
               rows={4}
@@ -1183,8 +1183,8 @@ export default function AtendentePanel() {
                 className="flex-[1.4] rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-secondary disabled:opacity-50"
               >
                 {createMesaOrderMutation.isPending
-                  ? "LanÃ§ando..."
-                  : "LanÃ§ar pedido na mesa"}
+                  ? "Lancando..."
+                  : "Lancar pedido na mesa"}
               </button>
             </div>
           </section>

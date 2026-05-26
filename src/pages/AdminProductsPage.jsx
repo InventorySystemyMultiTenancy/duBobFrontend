@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
@@ -37,7 +37,7 @@ const SIZE_OPTIONS = [
   { value: "FAMILIA", label: "FAMILIA" },
 ];
 
-// â”€â”€ TraduÃ§Ã£o automÃ¡tica de produtos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Traducao automatica de produtos
 const WEEKDAY_OPTIONS = [
   { value: "MON", label: "Seg" },
   { value: "TUE", label: "Ter" },
@@ -213,7 +213,7 @@ function tProductField(t, productId, field, fallback) {
   return resolved;
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Modal de cadastro e edicao
 
 function ProductModal({
   product,
@@ -279,7 +279,7 @@ function ProductModal({
 
   const validate = () => {
     const errs = {};
-    if (!form.name.trim()) errs.name = "Nome obrigatÃ³rio";
+    if (!form.name.trim()) errs.name = "Nome obrigatorio";
     if (!form.sizes.length) errs.sizes = "Informe ao menos um tamanho";
     const configItem = isConfigCategory(form.category);
     const usedSizes = new Set();
@@ -304,7 +304,7 @@ function ProductModal({
       }
     });
     if (form.imageUrl && !/^https?:\/\/.+/.test(form.imageUrl))
-      errs.imageUrl = "URL invÃ¡lida (deve comeÃ§ar com http)";
+      errs.imageUrl = "URL invalida (deve comecar com http)";
     setErrors(errs);
     return !Object.keys(errs).length;
   };
@@ -403,7 +403,7 @@ function ProductModal({
           {/* Description */}
           <div>
             <label className="mb-1 block text-xs uppercase tracking-widest text-smoke">
-              {t("ADMIN_PRODUCTS_DESCRIPTION_LABEL", "DescriÃ§Ã£o")}
+              {t("ADMIN_PRODUCTS_DESCRIPTION_LABEL", "Descricao")}
             </label>
             <textarea
               value={form.description}
@@ -414,7 +414,7 @@ function ProductModal({
               className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
               placeholder={t(
                 "ADMIN_PRODUCTS_DESCRIPTION_PLACEHOLDER",
-                "Breve descriÃ§Ã£o do sabor...",
+                "Breve descricao do sabor...",
               )}
             />
           </div>
@@ -738,7 +738,7 @@ function ProductCard({ product, onEdit }) {
       console.log("[MUTATION] Summary retornado:", summary);
 
       if (!summary.total || summary.succeeded === 0) {
-        console.error("[MUTATION] Erro - summary.total Ã© 0 ou falsy");
+        console.error("[MUTATION] Erro - summary.total e 0 ou falsy");
         throw new Error("Translation sync failed");
       }
 
@@ -873,7 +873,7 @@ function ProductCard({ product, onEdit }) {
         />
       ) : (
         <div className="mb-3 flex h-32 w-full items-center justify-center rounded-xl bg-gray-100 text-3xl">
-          ï¿½
+          Sem foto
         </div>
       )}
 
@@ -1026,7 +1026,7 @@ function AdminProductsPage() {
             to="/admin/produtos"
             className="rounded-xl border border-gray-200 px-3 py-2 text-sm transition hover:border-gold/30"
           >
-            â† Produtos
+            &larr; Produtos
           </Link>
           <button
             type="button"
@@ -1102,7 +1102,7 @@ function AdminProductsPage() {
               "{{count}}",
               String(filteredProducts.filter((p) => p.isActive).length),
             )}
-            {" Â· "}
+            {" - "}
             {t("ADMIN_PRODUCTS_INACTIVE_COUNT", "{{count}} inativos").replace(
               "{{count}}",
               String(filteredProducts.filter((p) => !p.isActive).length),

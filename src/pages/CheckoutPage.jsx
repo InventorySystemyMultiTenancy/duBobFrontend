@@ -42,7 +42,7 @@ const mapItemToApi = (item) => {
 
 function CheckoutPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { t } = useTranslation();
   const { items, subtotal, clearCart } = useCart();
   const [paymentMode, setPaymentMode] = useState("online");
@@ -63,7 +63,7 @@ function CheckoutPage() {
   const [freight, setFreight] = useState(null);
   const [freightLoading, setFreightLoading] = useState(false);
   const [freightError, setFreightError] = useState("");
-  const [pollStatus, setPollStatus] = useState("PENDENTE");
+  const [, setPollStatus] = useState("PENDENTE");
   const [deliveryType, setDeliveryType] = useState("entrega"); // "entrega" | "retirada"
 
   // Payment polling
@@ -78,7 +78,7 @@ function CheckoutPage() {
         if (status === "APROVADO") {
           clearInterval(pollRef.current);
           clearCart();
-          toast.success("Pagamento confirmado! Preparando seu pedido 🍕");
+          toast.success("Pagamento confirmado! Preparando seu pedido.");
           navigate("/dashboard");
         } else if (status === "RECUSADO") {
           clearInterval(pollRef.current);
@@ -501,7 +501,7 @@ function CheckoutPage() {
                         Frete: {freight.valorFrete}
                       </p>
                       <p className="mt-0.5 text-xs text-green-700">
-                        Distância: {freight.distanciaKm} km · Tempo estimado: ~
+                        Distancia: {freight.distanciaKm} km - Tempo estimado: ~
                         {freight.tempoEstimado} min
                       </p>
                       <p
