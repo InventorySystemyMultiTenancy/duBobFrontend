@@ -70,7 +70,15 @@ function TotemIdleGuard() {
       if (exitTotem) {
         localStorage.removeItem(TOTEM_MODE_KEY);
         window.dispatchEvent(new Event("pc_totem_mode_change"));
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
         navigate("/", { replace: true });
+        window.setTimeout(() => {
+          if (localStorage.getItem(TOTEM_MODE_KEY) !== "true") {
+            window.location.replace("/");
+          }
+        }, 50);
         return;
       }
 
@@ -225,8 +233,9 @@ function TotemIdleGuard() {
 
   const handleExitPasswordSubmit = (event) => {
     event.preventDefault();
+    const normalizedPassword = exitPassword.replace(/\D/g, "");
 
-    if (exitPassword !== EXIT_PASSWORD) {
+    if (normalizedPassword !== EXIT_PASSWORD) {
       setExitPasswordError("Senha incorreta.");
       setExitPassword("");
       return;
