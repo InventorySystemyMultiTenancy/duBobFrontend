@@ -94,15 +94,15 @@ function HomePage() {
         </div>
       </section>
 
-      <section className="border-y border-border-soft bg-white/75 py-5">
+      <section className="border-y border-border-soft bg-white/75 py-3">
         <div className="overflow-hidden">
-          <div className="dubob-carousel-track flex w-max gap-4 px-4">
+          <div className="dubob-carousel-track flex w-max">
             {[...carouselItems, ...carouselItems].map((item, index) => (
               <button
                 key={`${item.titleKey}-${index}`}
                 type="button"
                 onClick={() => setExpandedImage(item)}
-                className="h-36 w-64 shrink-0 overflow-hidden rounded-lg border border-border-soft bg-white shadow-card transition hover:border-secondary/40 hover:shadow-card-hover focus:outline-none focus:ring-2 focus:ring-secondary/30 sm:h-44 sm:w-80"
+                className="h-48 w-80 shrink-0 overflow-hidden border-y border-r border-border-soft bg-white transition hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-secondary/40 sm:h-60 sm:w-[30rem]"
               >
                 <img
                   src={item.image}

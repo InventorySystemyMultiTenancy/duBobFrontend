@@ -42,7 +42,7 @@ body.install-prompt-open {
 }
 
 .dubob-carousel-track {
-  animation: dubob-carousel-scroll 30s linear infinite;
+  animation: dubob-carousel-scroll 60s linear infinite;
 }
 
 .dubob-carousel-track:hover {
