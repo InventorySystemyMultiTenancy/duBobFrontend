@@ -1,0 +1,18 @@
+{
+  "name": "Dubob Acai e Milkshake",
+  "short_name": "Dubob",
+  "description": "Cardapio digital e pedidos da Dubob Acai e Milkshake",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#EAF9FF",
+  "theme_color": "#5B0638",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/LogoDuBob.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
