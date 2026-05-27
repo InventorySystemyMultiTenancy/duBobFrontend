@@ -89,6 +89,8 @@ function InstallPrompt() {
     };
   }, [deferredPrompt, dismissed, isInstalled, isIos, isMobile]);
 
+  if (localStorage.getItem("pc_totem_mode") === "true") return null;
+
   const handleInstall = async () => {
     if (!deferredPrompt) return;
     await deferredPrompt.prompt();

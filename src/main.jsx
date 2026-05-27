@@ -8,9 +8,14 @@ import { AuthProvider } from "./context/AuthContext.js";
 import { CartProvider } from "./context/CartContext.jsx";
 import { I18nProvider } from "./context/I18nContext.jsx";
 import "./index.css";
+import { clearTotemMode, shouldForceExitTotem } from "./lib/totemMode.js";
 import RealtimeBridge from "./realtime/RealtimeBridge.jsx";
 
 const queryClient = new QueryClient();
+
+if (shouldForceExitTotem()) {
+  clearTotemMode();
+}
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {

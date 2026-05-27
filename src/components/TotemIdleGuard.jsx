@@ -2,8 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import { useCart } from "../context/CartContext.jsx";
-
-const TOTEM_MODE_KEY = "pc_totem_mode";
+import {
+  clearTotemMode,
+  TOTEM_FULLSCREEN_REQUESTED_KEY,
+  TOTEM_MODE_KEY,
+} from "../lib/totemMode.js";
 const IDLE_TIME_MS = 90_000;
 const WARNING_TIME = 20;
 const EXIT_HOLD_MS = 10_000;
@@ -22,6 +25,10 @@ function isTotemModeEnabled() {
   return localStorage.getItem(TOTEM_MODE_KEY) === "true";
 }
 
+function isTotemFullscreenRequested() {
+  return sessionStorage.getItem(TOTEM_FULLSCREEN_REQUESTED_KEY) === "true";
+}
+
 function requestTotemFullscreen() {
   const element = document.documentElement;
   if (!document.fullscreenElement && element.requestFullscreen) {
@@ -38,6 +45,9 @@ function TotemIdleGuard() {
   const [isTotemMode, setIsTotemMode] = useState(isTotemModeEnabled);
   const [showWarning, setShowWarning] = useState(false);
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
+  const [fullscreenRequested, setFullscreenRequested] = useState(
+    isTotemFullscreenRequested,
+  );
   const [showExitPassword, setShowExitPassword] = useState(false);
   const [exitPassword, setExitPassword] = useState("");
   const [exitPasswordError, setExitPasswordError] = useState("");
@@ -70,14 +80,13 @@ function TotemIdleGuard() {
 
       if (exitTotem) {
         isExitingTotemRef.current = true;
-        localStorage.removeItem(TOTEM_MODE_KEY);
-        localStorage.removeItem("pc_token");
-        localStorage.removeItem("pc_user");
+        clearTotemMode();
         window.dispatchEvent(new Event("pc_totem_mode_change"));
+        window.dispatchEvent(new Event("pc_totem_fullscreen_request_change"));
         if (document.fullscreenElement && document.exitFullscreen) {
           document.exitFullscreen().catch(() => {});
         }
-        navigate("/sair-totem", { replace: true });
+        navigate("/normal", { replace: true });
         return;
       }
 
@@ -102,12 +111,22 @@ function TotemIdleGuard() {
 
   useEffect(() => {
     const syncMode = () => setIsTotemMode(isTotemModeEnabled());
+    const syncFullscreenRequest = () =>
+      setFullscreenRequested(isTotemFullscreenRequested());
     window.addEventListener("storage", syncMode);
     window.addEventListener("pc_totem_mode_change", syncMode);
+    window.addEventListener(
+      "pc_totem_fullscreen_request_change",
+      syncFullscreenRequest,
+    );
 
     return () => {
       window.removeEventListener("storage", syncMode);
       window.removeEventListener("pc_totem_mode_change", syncMode);
+      window.removeEventListener(
+        "pc_totem_fullscreen_request_change",
+        syncFullscreenRequest,
+      );
     };
   }, []);
 
@@ -117,7 +136,10 @@ function TotemIdleGuard() {
     }
 
     const handleFullscreenChange = () => {
-      if (isExitingTotemRef.current) return;
+      if (isExitingTotemRef.current || !fullscreenRequested) {
+        setShowFullscreenPrompt(false);
+        return;
+      }
       setShowFullscreenPrompt(!document.fullscreenElement);
     };
 
@@ -159,7 +181,7 @@ function TotemIdleGuard() {
       window.removeEventListener("keydown", handleKeyDown, { capture: true });
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [isTotemMode, showExitPassword]);
+  }, [fullscreenRequested, isTotemMode, showExitPassword]);
 
   useEffect(() => {
     if (!isTotemMode) {

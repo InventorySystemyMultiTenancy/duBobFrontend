@@ -5,8 +5,12 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import { useCart } from "../context/CartContext.jsx";
 import { api } from "../lib/api.js";
-
-const TOTEM_MODE_KEY = "pc_totem_mode";
+import {
+  clearTotemMode,
+  TOTEM_FULLSCREEN_REQUESTED_KEY,
+  TOTEM_MODE_KEY,
+  shouldForceExitTotem,
+} from "../lib/totemMode.js";
 const IDLE_TIME_MS = 90_000;
 const WARNING_TIME = 20;
 const ACTIVITY_EVENTS = [
@@ -54,6 +58,17 @@ function TotemPage() {
   });
 
   useEffect(() => {
+    if (shouldForceExitTotem()) {
+      clearTotemMode();
+      window.dispatchEvent(new Event("pc_totem_mode_change"));
+      window.dispatchEvent(new Event("pc_totem_fullscreen_request_change"));
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+      window.location.replace("/");
+      return;
+    }
+
     localStorage.setItem(TOTEM_MODE_KEY, "true");
     window.dispatchEvent(new Event("pc_totem_mode_change"));
     logout();
@@ -215,6 +230,8 @@ function TotemPage() {
   };
 
   const handleIntroClick = () => {
+    sessionStorage.setItem(TOTEM_FULLSCREEN_REQUESTED_KEY, "true");
+    window.dispatchEvent(new Event("pc_totem_fullscreen_request_change"));
     requestTotemFullscreen().finally(() => {
       setStep("identify");
     });

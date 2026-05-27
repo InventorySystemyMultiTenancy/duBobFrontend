@@ -6,6 +6,8 @@
       "continue": true
     },
     { "handle": "filesystem" },
+    { "src": "/sair-totem", "dest": "/escape-totem.html" },
+    { "src": "/normal", "dest": "/escape-totem.html" },
     { "src": "/assets/(.*)", "status": 404 },
     { "src": "/(.*\\..*)", "status": 404 },
     { "src": "/(.*)", "dest": "/index.html" }

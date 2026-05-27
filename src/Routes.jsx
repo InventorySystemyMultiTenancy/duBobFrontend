@@ -24,8 +24,15 @@ import ComandasPage from "./pages/ComandasPage.jsx";
 import ComandaSummaryPage from "./pages/ComandaSummaryPage.jsx";
 import CaixaPage from "./pages/CaixaPage.jsx";
 import PrivateRoute from "./routes/PrivateRoute.js";
+import { clearTotemMode } from "./lib/totemMode.js";
 
 function HomeEntry() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("normal") === "1" || params.get("sairTotem") === "1") {
+    clearTotemMode();
+    return <HomePage />;
+  }
+
   if (localStorage.getItem("pc_totem_mode") === "true") {
     return <Navigate to="/totem" replace />;
   }
@@ -34,10 +41,9 @@ function HomeEntry() {
 }
 
 function ExitTotemEntry() {
-  localStorage.removeItem("pc_totem_mode");
-  localStorage.removeItem("pc_token");
-  localStorage.removeItem("pc_user");
+  clearTotemMode();
   window.dispatchEvent(new Event("pc_totem_mode_change"));
+  window.dispatchEvent(new Event("pc_totem_fullscreen_request_change"));
 
   if (document.fullscreenElement && document.exitFullscreen) {
     document.exitFullscreen().catch(() => {});
@@ -50,6 +56,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/sair-totem" element={<ExitTotemEntry />} />
+      <Route path="/normal" element={<ExitTotemEntry />} />
       <Route path="/" element={<HomeEntry />} />
       <Route path="/totem" element={<TotemPage />} />
       <Route path="/cardapio" element={<CardapioPage />} />
