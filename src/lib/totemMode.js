@@ -18,11 +18,12 @@ export function clearTotemMode() {
 export function shouldForceExitTotem() {
   const path = window.location.pathname;
   const params = new URLSearchParams(window.location.search);
+  const isHomePath = path === "/" || path === "";
 
   return (
     path === "/sair-totem" ||
     path === "/normal" ||
-    params.get("normal") === "1" ||
-    params.get("sairTotem") === "1"
+    (isHomePath &&
+      (params.get("normal") === "1" || params.get("sairTotem") === "1"))
   );
 }
