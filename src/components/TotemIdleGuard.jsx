@@ -46,6 +46,7 @@ function TotemIdleGuard() {
   const idleTimerRef = useRef(null);
   const holdTimerRef = useRef(null);
   const holdStartedAtRef = useRef(null);
+  const isExitingTotemRef = useRef(false);
 
   const clearIdleTimer = useCallback(() => {
     if (idleTimerRef.current) {
@@ -68,17 +69,15 @@ function TotemIdleGuard() {
       setRemaining(WARNING_TIME);
 
       if (exitTotem) {
+        isExitingTotemRef.current = true;
         localStorage.removeItem(TOTEM_MODE_KEY);
+        localStorage.removeItem("pc_token");
+        localStorage.removeItem("pc_user");
         window.dispatchEvent(new Event("pc_totem_mode_change"));
         if (document.fullscreenElement && document.exitFullscreen) {
           document.exitFullscreen().catch(() => {});
         }
-        navigate("/", { replace: true });
-        window.setTimeout(() => {
-          if (localStorage.getItem(TOTEM_MODE_KEY) !== "true") {
-            window.location.replace("/");
-          }
-        }, 50);
+        navigate("/sair-totem", { replace: true });
         return;
       }
 
@@ -118,10 +117,15 @@ function TotemIdleGuard() {
     }
 
     const handleFullscreenChange = () => {
+      if (isExitingTotemRef.current) return;
       setShowFullscreenPrompt(!document.fullscreenElement);
     };
 
     const handleKeyDown = (event) => {
+      if (showExitPassword) {
+        return;
+      }
+
       const key = event.key.toLowerCase();
       const shouldBlock =
         event.key === "F11" ||
@@ -137,6 +141,10 @@ function TotemIdleGuard() {
     };
 
     const handleBeforeUnload = (event) => {
+      if (isExitingTotemRef.current) {
+        return;
+      }
+
       event.preventDefault();
       event.returnValue = "";
     };
@@ -151,7 +159,7 @@ function TotemIdleGuard() {
       window.removeEventListener("keydown", handleKeyDown, { capture: true });
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [isTotemMode]);
+  }, [isTotemMode, showExitPassword]);
 
   useEffect(() => {
     if (!isTotemMode) {

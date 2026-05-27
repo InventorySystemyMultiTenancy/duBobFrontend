@@ -33,9 +33,23 @@ function HomeEntry() {
   return <HomePage />;
 }
 
+function ExitTotemEntry() {
+  localStorage.removeItem("pc_totem_mode");
+  localStorage.removeItem("pc_token");
+  localStorage.removeItem("pc_user");
+  window.dispatchEvent(new Event("pc_totem_mode_change"));
+
+  if (document.fullscreenElement && document.exitFullscreen) {
+    document.exitFullscreen().catch(() => {});
+  }
+
+  return <Navigate to="/" replace />;
+}
+
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="/sair-totem" element={<ExitTotemEntry />} />
       <Route path="/" element={<HomeEntry />} />
       <Route path="/totem" element={<TotemPage />} />
       <Route path="/cardapio" element={<CardapioPage />} />
