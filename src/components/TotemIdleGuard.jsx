@@ -59,6 +59,7 @@ function TotemIdleGuard() {
   const [remaining, setRemaining] = useState(WARNING_TIME);
   const [holdProgress, setHoldProgress] = useState(0);
   const idleTimerRef = useRef(null);
+  const countdownDeadlineRef = useRef(null);
   const holdTimerRef = useRef(null);
   const holdStartedAtRef = useRef(null);
   const isExitingTotemRef = useRef(false);
@@ -106,6 +107,7 @@ function TotemIdleGuard() {
 
     if (
       !isTotemMode ||
+      showWarning ||
       location.pathname === "/totem" ||
       /^\/totem\d+$/i.test(location.pathname)
     ) {
@@ -116,7 +118,7 @@ function TotemIdleGuard() {
       setRemaining(WARNING_TIME);
       setShowWarning(true);
     }, IDLE_TIME_MS);
-  }, [clearIdleTimer, isTotemMode, location.pathname]);
+  }, [clearIdleTimer, isTotemMode, location.pathname, showWarning]);
 
   useEffect(() => {
     const syncMode = () => setIsTotemMode(isTotemModeEnabled());
@@ -221,19 +223,28 @@ function TotemIdleGuard() {
 
   useEffect(() => {
     if (!showWarning) {
+      countdownDeadlineRef.current = null;
       return undefined;
     }
 
-    const intervalId = window.setInterval(() => {
-      setRemaining((current) => {
-        if (current <= 1) {
-          window.clearInterval(intervalId);
-          finishTotemSession();
-          return 0;
-        }
-        return current - 1;
-      });
-    }, 1000);
+    countdownDeadlineRef.current = Date.now() + WARNING_TIME * 1000;
+
+    const tick = () => {
+      if (!countdownDeadlineRef.current) return;
+      const remainingSeconds = Math.max(
+        0,
+        Math.ceil((countdownDeadlineRef.current - Date.now()) / 1000),
+      );
+      setRemaining(remainingSeconds);
+
+      if (remainingSeconds <= 0) {
+        countdownDeadlineRef.current = null;
+        finishTotemSession();
+      }
+    };
+
+    tick();
+    const intervalId = window.setInterval(tick, 250);
 
     return () => window.clearInterval(intervalId);
   }, [finishTotemSession, showWarning]);

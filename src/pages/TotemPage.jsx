@@ -51,6 +51,7 @@ function TotemPage() {
   const [showIdleWarning, setShowIdleWarning] = useState(false);
   const [idleRemaining, setIdleRemaining] = useState(WARNING_TIME);
   const idleTimerRef = useRef(null);
+  const idleDeadlineRef = useRef(null);
   const [cpf, setCpf] = useState("");
   const [guestName, setGuestName] = useState("");
   const [registerForm, setRegisterForm] = useState({
@@ -159,26 +160,46 @@ function TotemPage() {
 
   useEffect(() => {
     if (!showIdleWarning) {
+      idleDeadlineRef.current = null;
       return undefined;
     }
 
-    const intervalId = window.setInterval(() => {
-      setIdleRemaining((current) => {
-        if (current <= 1) {
-          window.clearInterval(intervalId);
-          logout();
-          clearCart();
-          closeCart();
-          setShowIdleWarning(false);
-          setStep("intro");
-          return WARNING_TIME;
-        }
-        return current - 1;
-      });
-    }, 1000);
+    idleDeadlineRef.current = Date.now() + WARNING_TIME * 1000;
+
+    const finishIdleSession = () => {
+      idleDeadlineRef.current = null;
+      logout();
+      clearCart();
+      closeCart();
+      setShowIdleWarning(false);
+      setIdleRemaining(WARNING_TIME);
+      setStep("intro");
+      const totemPath = totem?.slug
+        ? `/${totem.slug}`
+        : totemSlug
+          ? `/${totemSlug}`
+          : "/totem";
+      navigate(totemPath, { replace: true });
+    };
+
+    const tick = () => {
+      if (!idleDeadlineRef.current) return;
+      const remainingSeconds = Math.max(
+        0,
+        Math.ceil((idleDeadlineRef.current - Date.now()) / 1000),
+      );
+      setIdleRemaining(remainingSeconds);
+
+      if (remainingSeconds <= 0) {
+        finishIdleSession();
+      }
+    };
+
+    tick();
+    const intervalId = window.setInterval(tick, 250);
 
     return () => window.clearInterval(intervalId);
-  }, [clearCart, closeCart, logout, showIdleWarning]);
+  }, [clearCart, closeCart, logout, navigate, showIdleWarning, totem?.slug, totemSlug]);
 
   const enterCardapio = (data, message) => {
     login(data);
