@@ -59,7 +59,6 @@ function TotemIdleGuard() {
   const [remaining, setRemaining] = useState(WARNING_TIME);
   const [holdProgress, setHoldProgress] = useState(0);
   const idleTimerRef = useRef(null);
-  const countdownDeadlineRef = useRef(null);
   const holdTimerRef = useRef(null);
   const holdStartedAtRef = useRef(null);
   const isExitingTotemRef = useRef(false);
@@ -223,30 +222,31 @@ function TotemIdleGuard() {
 
   useEffect(() => {
     if (!showWarning) {
-      countdownDeadlineRef.current = null;
       return undefined;
     }
 
-    countdownDeadlineRef.current = Date.now() + WARNING_TIME * 1000;
+    const deadline = Date.now() + WARNING_TIME * 1000;
 
     const tick = () => {
-      if (!countdownDeadlineRef.current) return;
       const remainingSeconds = Math.max(
         0,
-        Math.ceil((countdownDeadlineRef.current - Date.now()) / 1000),
+        Math.ceil((deadline - Date.now()) / 1000),
       );
       setRemaining(remainingSeconds);
-
-      if (remainingSeconds <= 0) {
-        countdownDeadlineRef.current = null;
-        finishTotemSession();
-      }
     };
 
+    setRemaining(WARNING_TIME);
     tick();
     const intervalId = window.setInterval(tick, 250);
+    const timeoutId = window.setTimeout(
+      finishTotemSession,
+      WARNING_TIME * 1000,
+    );
 
-    return () => window.clearInterval(intervalId);
+    return () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(timeoutId);
+    };
   }, [finishTotemSession, showWarning]);
 
   const stopLogoHold = () => {

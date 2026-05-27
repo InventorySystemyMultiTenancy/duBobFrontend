@@ -51,7 +51,6 @@ function TotemPage() {
   const [showIdleWarning, setShowIdleWarning] = useState(false);
   const [idleRemaining, setIdleRemaining] = useState(WARNING_TIME);
   const idleTimerRef = useRef(null);
-  const idleDeadlineRef = useRef(null);
   const [cpf, setCpf] = useState("");
   const [guestName, setGuestName] = useState("");
   const [registerForm, setRegisterForm] = useState({
@@ -160,14 +159,10 @@ function TotemPage() {
 
   useEffect(() => {
     if (!showIdleWarning) {
-      idleDeadlineRef.current = null;
       return undefined;
     }
 
-    idleDeadlineRef.current = Date.now() + WARNING_TIME * 1000;
-
     const finishIdleSession = () => {
-      idleDeadlineRef.current = null;
       logout();
       clearCart();
       closeCart();
@@ -182,23 +177,25 @@ function TotemPage() {
       navigate(totemPath, { replace: true });
     };
 
+    const deadline = Date.now() + WARNING_TIME * 1000;
+
     const tick = () => {
-      if (!idleDeadlineRef.current) return;
       const remainingSeconds = Math.max(
         0,
-        Math.ceil((idleDeadlineRef.current - Date.now()) / 1000),
+        Math.ceil((deadline - Date.now()) / 1000),
       );
       setIdleRemaining(remainingSeconds);
-
-      if (remainingSeconds <= 0) {
-        finishIdleSession();
-      }
     };
 
+    setIdleRemaining(WARNING_TIME);
     tick();
     const intervalId = window.setInterval(tick, 250);
+    const timeoutId = window.setTimeout(finishIdleSession, WARNING_TIME * 1000);
 
-    return () => window.clearInterval(intervalId);
+    return () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(timeoutId);
+    };
   }, [clearCart, closeCart, logout, navigate, showIdleWarning, totem?.slug, totemSlug]);
 
   const enterCardapio = (data, message) => {
