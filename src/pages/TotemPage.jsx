@@ -361,7 +361,8 @@ function TotemPage() {
             >
               <h2 className="text-3xl font-black">Entrar com CPF</h2>
               <p className="mt-2 text-lg text-text-muted">
-                Se ja tiver cadastro, a gente encontra voce pelo CPF.
+                Entre com seu cadastro para acumular pontos e aproveitar
+                vantagens nas proximas compras.
               </p>
               <div className="mt-6 space-y-4">
                 <input
@@ -388,7 +389,8 @@ function TotemPage() {
             >
               <h2 className="text-3xl font-black">Entrar sem cadastro</h2>
               <p className="mt-2 text-lg text-text-muted">
-                Informe seu nome para seguir mais rapido.
+                Informe seu nome para seguir como convidado. Depois voce ja
+                escolhe seu pedido no cardapio.
               </p>
               <div className="mt-6 space-y-4">
                 <input
