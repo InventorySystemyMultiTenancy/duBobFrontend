@@ -6,6 +6,7 @@ import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
+import { TOTEM_ID_KEY, TOTEM_NAME_KEY, TOTEM_SLUG_KEY } from "../lib/totemMode.js";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -46,6 +47,10 @@ function CheckoutPage() {
   const { t } = useTranslation();
   const { items, subtotal, clearCart } = useCart();
   const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
+  const currentTotemId = localStorage.getItem(TOTEM_ID_KEY);
+  const currentTotemSlug = localStorage.getItem(TOTEM_SLUG_KEY);
+  const currentTotemName = localStorage.getItem(TOTEM_NAME_KEY);
+  const currentTotemPath = currentTotemSlug ? `/${currentTotemSlug}` : "/totem";
   const [paymentMode, setPaymentMode] = useState("online");
   const [waitingOrderId, setWaitingOrderId] = useState(null);
   const [paidTotemOrder, setPaidTotemOrder] = useState(null);
@@ -220,7 +225,11 @@ function CheckoutPage() {
 
   const terminalMutation = useMutation({
     mutationFn: async (orderId) => {
-      const response = await api.post("/totem/payments/terminal", { orderId });
+      const response = await api.post("/totem/payments/terminal", {
+        orderId,
+        totemId: currentTotemId || undefined,
+        totemSlug: currentTotemSlug || undefined,
+      });
       return response.data?.data;
     },
   });
@@ -330,7 +339,7 @@ function CheckoutPage() {
             onClick={() => {
               logout();
               clearCart();
-              navigate("/totem", { replace: true });
+              navigate(currentTotemPath, { replace: true });
             }}
             className="mt-8 rounded-2xl bg-secondary px-10 py-5 text-xl font-black uppercase tracking-wide text-white transition hover:bg-primary"
           >
@@ -412,7 +421,7 @@ function CheckoutPage() {
             <h1 className="mt-3 text-5xl font-black">Confira seu pedido</h1>
             <p className="mt-3 text-lg text-text-muted">
               Confirme o carrinho e toque em pagar para enviar a cobranca para
-              a maquininha do Totem.
+              a maquininha do {currentTotemName || "Totem"}.
             </p>
           </div>
 

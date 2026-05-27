@@ -6,6 +6,7 @@ import AtendentePanel from "./pages/AtendentePanel.jsx";
 import AdminOrderHistoryPage from "./pages/AdminOrderHistoryPage.jsx";
 import AdminUsersPage from "./pages/AdminUsersPage.jsx";
 import AdminMesasPage from "./pages/AdminMesasPage.jsx";
+import AdminTotensPage from "./pages/AdminTotensPage.jsx";
 import SalesAnalyticsPage from "./pages/SalesAnalyticsPage.jsx";
 import CardapioPage from "./pages/CardapioPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
@@ -24,7 +25,7 @@ import ComandasPage from "./pages/ComandasPage.jsx";
 import ComandaSummaryPage from "./pages/ComandaSummaryPage.jsx";
 import CaixaPage from "./pages/CaixaPage.jsx";
 import PrivateRoute from "./routes/PrivateRoute.js";
-import { clearTotemMode } from "./lib/totemMode.js";
+import { clearTotemMode, TOTEM_SLUG_KEY } from "./lib/totemMode.js";
 
 function HomeEntry() {
   const params = new URLSearchParams(window.location.search);
@@ -34,7 +35,8 @@ function HomeEntry() {
   }
 
   if (localStorage.getItem("pc_totem_mode") === "true") {
-    return <Navigate to="/totem" replace />;
+    const totemSlug = localStorage.getItem(TOTEM_SLUG_KEY);
+    return <Navigate to={totemSlug ? `/${totemSlug}` : "/totem"} replace />;
   }
 
   return <HomePage />;
@@ -59,6 +61,7 @@ function AppRoutes() {
       <Route path="/normal" element={<ExitTotemEntry />} />
       <Route path="/" element={<HomeEntry />} />
       <Route path="/totem" element={<TotemPage />} />
+      <Route path="/:totemSlug" element={<TotemPage />} />
       <Route path="/cardapio" element={<CardapioPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/checkout/retorno" element={<CheckoutReturnPage />} />
@@ -125,6 +128,7 @@ function AppRoutes() {
         <Route path="/admin/historico" element={<AdminOrderHistoryPage />} />
         <Route path="/admin/usuarios" element={<AdminUsersPage />} />
         <Route path="/admin/mesas" element={<AdminMesasPage />} />
+        <Route path="/admin/totens" element={<AdminTotensPage />} />
         <Route
           path="/admin/cardapio-mesa"
           element={<AdminMesaCardapioPage />}

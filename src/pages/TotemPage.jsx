@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import { useCart } from "../context/CartContext.jsx";
 import { api } from "../lib/api.js";
 import {
   clearTotemMode,
+  TOTEM_ID_KEY,
   TOTEM_FULLSCREEN_REQUESTED_KEY,
   TOTEM_MODE_KEY,
+  TOTEM_NAME_KEY,
+  TOTEM_SLUG_KEY,
   shouldForceExitTotem,
 } from "../lib/totemMode.js";
 const IDLE_TIME_MS = 90_000;
@@ -40,9 +43,12 @@ function requestTotemFullscreen() {
 
 function TotemPage() {
   const navigate = useNavigate();
+  const { totemSlug } = useParams();
   const { login, logout } = useAuth();
   const { clearCart, closeCart } = useCart();
   const [step, setStep] = useState("intro");
+  const [totem, setTotem] = useState(null);
+  const [totemLoading, setTotemLoading] = useState(Boolean(totemSlug));
   const [showIdleWarning, setShowIdleWarning] = useState(false);
   const [idleRemaining, setIdleRemaining] = useState(WARNING_TIME);
   const idleTimerRef = useRef(null);
@@ -69,12 +75,48 @@ function TotemPage() {
       return;
     }
 
+    if (!totemSlug) {
+      localStorage.removeItem(TOTEM_ID_KEY);
+      localStorage.removeItem(TOTEM_SLUG_KEY);
+      localStorage.removeItem(TOTEM_NAME_KEY);
+    } else if (!/^totem\d+$/i.test(totemSlug)) {
+      window.location.replace("/");
+      return;
+    } else {
+      let ignore = false;
+      api
+        .get(`/totens/slug/${totemSlug.toLowerCase()}`)
+        .then((response) => {
+          if (ignore) return;
+          const currentTotem = response.data?.data;
+          setTotem(currentTotem);
+          localStorage.setItem(TOTEM_ID_KEY, currentTotem.id);
+          localStorage.setItem(TOTEM_SLUG_KEY, currentTotem.slug);
+          localStorage.setItem(TOTEM_NAME_KEY, currentTotem.name);
+        })
+        .catch(() => {
+          if (!ignore) window.location.replace("/");
+        })
+        .finally(() => {
+          if (!ignore) setTotemLoading(false);
+        });
+
+      localStorage.setItem(TOTEM_MODE_KEY, "true");
+      window.dispatchEvent(new Event("pc_totem_mode_change"));
+      logout();
+      clearCart();
+      closeCart();
+      return () => {
+        ignore = true;
+      };
+    }
+
     localStorage.setItem(TOTEM_MODE_KEY, "true");
     window.dispatchEvent(new Event("pc_totem_mode_change"));
     logout();
     clearCart();
     closeCart();
-  }, [clearCart, closeCart, logout]);
+  }, [clearCart, closeCart, logout, totemSlug]);
 
   useEffect(() => {
     const clearIdleTimer = () => {
@@ -237,6 +279,23 @@ function TotemPage() {
     });
   };
 
+  if (totemLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-primary px-8 text-center text-white">
+        <div>
+          <img
+            src="/LogoDuBob.png"
+            alt="Dubob"
+            className="mx-auto h-28 w-auto rounded-2xl bg-white/95 p-4 shadow-2xl"
+          />
+          <p className="mt-6 text-xl font-black uppercase tracking-wide">
+            Carregando totem...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   if (step === "intro") {
     return (
       <main
@@ -271,6 +330,11 @@ function TotemPage() {
             <h1 className="mt-3 text-6xl font-black leading-tight">
               Monte seu pedido
             </h1>
+            {totem?.name ? (
+              <p className="mt-4 text-xl font-black text-white/85">
+                {totem.name}
+              </p>
+            ) : null}
           </div>
         </div>
       </main>
@@ -282,7 +346,7 @@ function TotemPage() {
       <section className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl flex-col justify-center">
         <div className="mb-8 text-center">
           <p className="text-sm font-black uppercase tracking-[0.32em] text-secondary">
-            Totem Dubob
+            {totem?.name ?? "Totem Dubob"}
           </p>
           <h1 className="mt-3 text-5xl font-black">
             {step === "register" ? "Criar cadastro" : "Como voce quer entrar?"}

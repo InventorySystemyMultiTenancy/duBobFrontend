@@ -6,6 +6,7 @@ import {
   clearTotemMode,
   TOTEM_FULLSCREEN_REQUESTED_KEY,
   TOTEM_MODE_KEY,
+  TOTEM_SLUG_KEY,
 } from "../lib/totemMode.js";
 const IDLE_TIME_MS = 90_000;
 const WARNING_TIME = 20;
@@ -35,6 +36,11 @@ function requestTotemFullscreen() {
     return element.requestFullscreen().catch(() => {});
   }
   return Promise.resolve();
+}
+
+function getTotemPath() {
+  const slug = localStorage.getItem(TOTEM_SLUG_KEY);
+  return slug ? `/${slug}` : "/totem";
 }
 
 function TotemIdleGuard() {
@@ -91,7 +97,7 @@ function TotemIdleGuard() {
       }
 
       localStorage.setItem(TOTEM_MODE_KEY, "true");
-      navigate("/totem", { replace: true });
+      navigate(getTotemPath(), { replace: true });
     },
     [clearCart, clearIdleTimer, closeCart, logout, navigate],
   );
@@ -99,7 +105,11 @@ function TotemIdleGuard() {
   const startIdleTimer = useCallback(() => {
     clearIdleTimer();
 
-    if (!isTotemMode || location.pathname === "/totem") {
+    if (
+      !isTotemMode ||
+      location.pathname === "/totem" ||
+      /^\/totem\d+$/i.test(location.pathname)
+    ) {
       return;
     }
 

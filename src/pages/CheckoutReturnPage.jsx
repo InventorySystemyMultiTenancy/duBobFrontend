@@ -3,12 +3,15 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
+import { TOTEM_SLUG_KEY } from "../lib/totemMode.js";
 
 function CheckoutReturnPage() {
   const [searchParams] = useSearchParams();
   const { clearCart } = useCart();
   const { t } = useTranslation();
   const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
+  const totemSlug = localStorage.getItem(TOTEM_SLUG_KEY);
+  const totemPath = totemSlug ? `/${totemSlug}` : "/totem";
 
   const status = searchParams.get("status"); // approved | failure | pending | null
   const orderId = searchParams.get("external_reference");
@@ -58,7 +61,7 @@ function CheckoutReturnPage() {
               </p>
             )}
             <Link
-              to={isTotemMode ? "/totem" : "/dashboard"}
+              to={isTotemMode ? totemPath : "/dashboard"}
               className="mt-6 block rounded-2xl bg-rosso py-4 font-bold text-white transition hover:bg-ember"
             >
               {isTotemMode
@@ -79,7 +82,7 @@ function CheckoutReturnPage() {
               )}
             </p>
             <Link
-              to={isTotemMode ? "/totem" : "/dashboard"}
+              to={isTotemMode ? totemPath : "/dashboard"}
               className="mt-6 block rounded-2xl bg-rosso py-4 font-bold text-white transition hover:bg-ember"
             >
               {isTotemMode
