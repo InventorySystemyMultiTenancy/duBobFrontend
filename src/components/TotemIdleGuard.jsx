@@ -8,15 +8,14 @@ import {
   TOTEM_MODE_KEY,
   TOTEM_SLUG_KEY,
 } from "../lib/totemMode.js";
-const IDLE_TIME_MS = 90_000;
-const WARNING_TIME = 20;
+const IDLE_TIME_MS = 60_000;
+const WARNING_TIME = 15;
 const EXIT_HOLD_MS = 10_000;
 const EXIT_PASSWORD = "2468";
 const BLOCKED_CTRL_KEYS = new Set(["r", "l", "n", "t", "w", "p", "s", "u"]);
 const ACTIVITY_EVENTS = [
   "click",
   "pointerdown",
-  "pointermove",
   "keydown",
   "touchstart",
   "wheel",

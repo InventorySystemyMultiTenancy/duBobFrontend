@@ -14,12 +14,11 @@ import {
   TOTEM_SLUG_KEY,
   shouldForceExitTotem,
 } from "../lib/totemMode.js";
-const IDLE_TIME_MS = 90_000;
-const WARNING_TIME = 20;
+const IDLE_TIME_MS = 60_000;
+const WARNING_TIME = 15;
 const ACTIVITY_EVENTS = [
   "click",
   "pointerdown",
-  "pointermove",
   "keydown",
   "touchstart",
   "wheel",
