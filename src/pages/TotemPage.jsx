@@ -52,6 +52,7 @@ function TotemPage() {
   const [idleRemaining, setIdleRemaining] = useState(WARNING_TIME);
   const idleTimerRef = useRef(null);
   const finishIdleSessionRef = useRef(() => {});
+  const resetTotemSessionRef = useRef(() => {});
   const [cpf, setCpf] = useState("");
   const [guestName, setGuestName] = useState("");
   const [registerForm, setRegisterForm] = useState({
@@ -62,6 +63,12 @@ function TotemPage() {
     password: "",
     address: "",
   });
+
+  resetTotemSessionRef.current = () => {
+    logout();
+    clearCart();
+    closeCart();
+  };
 
   useEffect(() => {
     if (shouldForceExitTotem()) {
@@ -122,9 +129,7 @@ function TotemPage() {
 
       localStorage.setItem(TOTEM_MODE_KEY, "true");
       window.dispatchEvent(new Event("pc_totem_mode_change"));
-      logout();
-      clearCart();
-      closeCart();
+      resetTotemSessionRef.current();
       return () => {
         ignore = true;
       };
@@ -132,10 +137,8 @@ function TotemPage() {
 
     localStorage.setItem(TOTEM_MODE_KEY, "true");
     window.dispatchEvent(new Event("pc_totem_mode_change"));
-    logout();
-    clearCart();
-    closeCart();
-  }, [clearCart, closeCart, logout, totemSlug]);
+    resetTotemSessionRef.current();
+  }, [totemSlug]);
 
   useEffect(() => {
     const clearIdleTimer = () => {
