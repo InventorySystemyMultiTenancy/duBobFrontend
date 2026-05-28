@@ -59,6 +59,7 @@ function TotemIdleGuard() {
   const [remaining, setRemaining] = useState(WARNING_TIME);
   const [holdProgress, setHoldProgress] = useState(0);
   const idleTimerRef = useRef(null);
+  const finishTotemSessionRef = useRef(() => {});
   const holdTimerRef = useRef(null);
   const holdStartedAtRef = useRef(null);
   const isExitingTotemRef = useRef(false);
@@ -100,6 +101,7 @@ function TotemIdleGuard() {
     },
     [clearCart, clearIdleTimer, closeCart, logout, navigate],
   );
+  finishTotemSessionRef.current = finishTotemSession;
 
   const startIdleTimer = useCallback(() => {
     clearIdleTimer();
@@ -239,7 +241,7 @@ function TotemIdleGuard() {
     tick();
     const intervalId = window.setInterval(tick, 250);
     const timeoutId = window.setTimeout(
-      finishTotemSession,
+      () => finishTotemSessionRef.current(),
       WARNING_TIME * 1000,
     );
 
@@ -247,7 +249,7 @@ function TotemIdleGuard() {
       window.clearInterval(intervalId);
       window.clearTimeout(timeoutId);
     };
-  }, [finishTotemSession, showWarning]);
+  }, [showWarning]);
 
   const stopLogoHold = () => {
     if (holdTimerRef.current) {
