@@ -84,8 +84,22 @@ function TotemPage() {
       return;
     } else {
       let ignore = false;
+      const normalizedSlug = totemSlug.toLowerCase();
+      const fallbackTotem = {
+        id: "",
+        name: `Totem ${normalizedSlug.replace("totem", "")}`,
+        number: Number.parseInt(normalizedSlug.replace("totem", ""), 10) || 0,
+        slug: normalizedSlug,
+      };
+
+      setTotem(fallbackTotem);
+      setTotemLoading(false);
+      localStorage.setItem(TOTEM_SLUG_KEY, normalizedSlug);
+      localStorage.setItem(TOTEM_NAME_KEY, fallbackTotem.name);
+      localStorage.removeItem(TOTEM_ID_KEY);
+
       api
-        .get(`/totens/slug/${totemSlug.toLowerCase()}`)
+        .get(`/totens/slug/${normalizedSlug}`)
         .then((response) => {
           if (ignore) return;
           const currentTotem = response.data?.data;
@@ -95,7 +109,12 @@ function TotemPage() {
           localStorage.setItem(TOTEM_NAME_KEY, currentTotem.name);
         })
         .catch(() => {
-          if (!ignore) window.location.replace("/");
+          if (!ignore) {
+            setTotem(fallbackTotem);
+            localStorage.setItem(TOTEM_SLUG_KEY, normalizedSlug);
+            localStorage.setItem(TOTEM_NAME_KEY, fallbackTotem.name);
+            localStorage.removeItem(TOTEM_ID_KEY);
+          }
         })
         .finally(() => {
           if (!ignore) setTotemLoading(false);
