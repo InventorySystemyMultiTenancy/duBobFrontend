@@ -126,6 +126,13 @@ function hasKitchenItems(order) {
   return getKitchenItems(order).length > 0;
 }
 
+function isTotemWaitingPayment(order) {
+  return (
+    order.paymentMethod === "MAQUININHA_TOTEM" &&
+    order.paymentStatus === "PENDENTE"
+  );
+}
+
 function getProductImage(item) {
   return (
     item?.product?.imageUrl ??
@@ -802,6 +809,7 @@ function KitchenPage() {
           : orders;
 
       return roleFiltered
+        .filter((order) => !isTotemWaitingPayment(order))
         .map((order) => ({
           ...order,
           items: getKitchenItems(order),

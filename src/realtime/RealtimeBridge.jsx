@@ -168,6 +168,7 @@ export default function RealtimeBridge() {
       }
 
       if (STAFF_ROLES.has(user.role)) {
+        queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
         invalidateAdminQueries(queryClient);
       }
     };
