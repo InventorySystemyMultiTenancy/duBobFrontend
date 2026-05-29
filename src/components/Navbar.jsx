@@ -41,7 +41,6 @@ export default function Navbar({ activeLink }) {
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState(false);
   const longPressTimer = useRef(null);
-  const navActionRef = useRef(false);
 
   const LOGOUT_PIN = import.meta.env.VITE_MESA_LOGOUT_PIN || "2468";
   const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
@@ -101,45 +100,6 @@ export default function Navbar({ activeLink }) {
     return null;
   }
 
-  const runOnce = (action) => {
-    if (navActionRef.current) return;
-    navActionRef.current = true;
-    action();
-    window.setTimeout(() => {
-      navActionRef.current = false;
-    }, 800);
-  };
-
-  const openWhatsApp = () => {
-    runOnce(() => {
-      const opened = window.open(
-        WHATSAPP_URL,
-        "_blank",
-        "noopener,noreferrer",
-      );
-
-      if (!opened) {
-        window.location.assign(WHATSAPP_URL);
-      }
-    });
-  };
-
-  const goToPath = (path) => {
-    runOnce(() => {
-      navigate(path);
-      window.setTimeout(() => {
-        if (window.location.pathname !== path) {
-          window.location.assign(path);
-        }
-      }, 100);
-    });
-  };
-
-  const handleInternalNav = (event, path) => {
-    event.preventDefault();
-    goToPath(path);
-  };
-
   return (
     <>
       <header className="sticky top-0 z-[90] border-b border-secondary/30 bg-primary shadow-sm backdrop-blur-sm">
@@ -163,29 +123,29 @@ export default function Navbar({ activeLink }) {
           </Link>
 
           {/* Links */}
-          <div className="relative z-[100] flex items-center gap-3 sm:gap-4">
+          <nav className="relative z-[100] flex items-center gap-3 sm:gap-4">
             {/* WhatsApp */}
-            <button
-              type="button"
-              onClick={openWhatsApp}
-              className="flex min-h-10 cursor-pointer items-center gap-1.5 rounded-lg border border-green-300/40 bg-green-950/30 px-3 py-2 text-sm font-semibold text-green-200 transition hover:bg-green-900/50"
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex min-h-10 items-center gap-1.5 rounded-lg border border-green-300/40 bg-green-950/30 px-3 py-2 text-sm font-semibold text-green-200 transition hover:bg-green-900/50"
               title={t("NAV_WHATSAPP_TITLE", "Falar no WhatsApp")}
             >
               <WhatsAppIcon />
               <span className="hidden sm:inline">WhatsApp</span>
-            </button>
+            </a>
 
-            <button
-              type="button"
-              onClick={(event) => handleInternalNav(event, "/cardapio")}
-              className={`min-h-10 cursor-pointer rounded-lg px-3 text-sm font-semibold transition-colors hover:text-secondary ${
+            <Link
+              to="/cardapio"
+              className={`flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold transition-colors hover:text-secondary ${
                 activeLink === "cardapio"
                   ? "text-secondary underline underline-offset-4"
                   : "text-white/80"
               }`}
             >
               {t("NAV_CARDAPIO", "Cardápio")}
-            </button>
+            </Link>
 
             {isAuthenticated && user?.role !== "MESA" ? (
               <>
@@ -204,13 +164,12 @@ export default function Navbar({ activeLink }) {
                 </button>
               </>
             ) : !isAuthenticated ? (
-              <button
-                type="button"
-                className="min-h-10 cursor-pointer rounded-lg px-3 text-sm text-white/80 transition-colors hover:text-secondary"
-                onClick={(event) => handleInternalNav(event, "/login")}
+              <Link
+                className="flex min-h-10 items-center rounded-lg px-3 text-sm text-white/80 transition-colors hover:text-secondary"
+                to="/login"
               >
                 {t("NAV_ENTRAR", "Entrar")}
-              </button>
+              </Link>
             ) : null}
 
             {/* Pagamento pendente (só MESA) */}
@@ -239,7 +198,7 @@ export default function Navbar({ activeLink }) {
                 </span>
               )}
             </button>
-          </div>
+          </nav>
         </div>
       </header>
 
