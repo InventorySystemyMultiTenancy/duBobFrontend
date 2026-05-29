@@ -116,6 +116,108 @@ const GUIDED_ADMIN_SECTIONS = [
   },
 ];
 
+const DEFAULT_SECTION_IMPORTS = {
+  milkshake_tradicional: [
+    "Abacaxi",
+    "Abacaxi com Menta",
+    "Acai",
+    "Acai com Guarana",
+    "Amora",
+    "Banana",
+    "Banana Caramelizada",
+    "Banana com Canela",
+    "Baunilha",
+    "Beijinho",
+    "Bombom",
+    "Blue Ice",
+    "Brigadeiro",
+    "Chocolate",
+    "Chocolate Branco",
+    "Creme",
+    "Creme de Papaya",
+    "Cereja",
+    "Caramelo",
+    "Coco",
+    "Coco Queimado",
+    "Casadinho",
+    "Chocomenta",
+    "Chicletes",
+    "Doce de Leite",
+    "Danoninho",
+    "Frutas Vermelhas",
+    "Floresta Negra",
+    "Goiaba",
+    "Iogurte",
+    "Kiwi",
+    "Laka",
+    "Limao Galego",
+    "Maca Verde",
+    "Mamao Papaya",
+    "Menta",
+    "Milho Verde",
+    "Morango",
+    "Mousse de Maracuja",
+    "Mousse de Abacaxi",
+    "Mousse de Morango",
+    "Mousse de Limao",
+    "Mousse de Uva",
+    "Melao",
+    "Napolitano",
+    "Passas ao Rum",
+    "Pessego",
+    "Prestigio",
+    "Pinta Lingua Azul",
+    "Pinta Lingua Verde",
+    "Rum",
+    "Refrescante",
+    "Sensacao",
+    "Sonho de Valsa",
+    "Tutti-frutti",
+    "Uva",
+  ],
+  milkshake_especial: [
+    "Bis Branco",
+    "Bis Preto",
+    "Bis Limao",
+    "Bis Yogo Frutas Vermelhas",
+    "Cafe",
+    "Cappucino",
+    "Chocolate Meio Amargo",
+    "Charger",
+    "Choquito Branco",
+    "Farinha Lactea",
+    "Flocos",
+    "Morango com Ovomaltine",
+    "Laka Maltine",
+    "Leite Ninho",
+    "Leite Ninho Trufado",
+    "Nescau",
+    "Ovomaltine",
+    "Pacoquinha",
+    "Trufa Branca",
+    "Trufa Chocolate",
+    "Trufa de Nozes",
+    "Trufa de Prestigio",
+  ],
+  milkshake_alcoolico: [
+    "Abacaxi ao Vinho",
+    "Amarula",
+    "Caipirinha de Limao",
+    "Leite Ninho ao Vinho",
+    "Morango ao Vinho",
+    "Uva ao Vinho",
+    "Vodka",
+  ],
+  milkshake_premium: [
+    "Ferrero Rocher",
+    "Kinder Bueno",
+    "Nutella",
+    "Kinder Ovo",
+    "Kit Kat",
+  ],
+  acai_sabores: ["Tradicional", "Chocolate", "Trufa Branca", "Iogurte Grego"],
+};
+
 const BASE_PRODUCT_IDS = new Set([
   "db_milkshake_tradicional",
   "db_milkshake_especial",
@@ -160,7 +262,12 @@ function productMatchesAdminSection(product, sectionId) {
     return category.includes("sabor milkshake alcool");
   }
   if (sectionId === "acai_sabores") {
-    return category.includes("sabor acai");
+    return (
+      category.includes("sabor acai") ||
+      category.includes("sabores acai") ||
+      category.includes("sabor do acai") ||
+      category.includes("sabores do acai")
+    );
   }
   if (sectionId === "acai_complementos") {
     return category.includes("complemento acai") || category.includes("adicionais acai");
@@ -977,6 +1084,7 @@ function ProductCard({ product, onEdit }) {
 
 function AdminProductsPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [modal, setModal] = useState(null); // null | "new" | product object
   const [activeSection, setActiveSection] = useState("all");
 
@@ -1000,8 +1108,15 @@ function AdminProductsPage() {
   const activeSectionConfig =
     GUIDED_ADMIN_SECTIONS.find((section) => section.id === activeSection) ??
     GUIDED_ADMIN_SECTIONS[0];
+  const defaultImportNames = DEFAULT_SECTION_IMPORTS[activeSection] ?? [];
   const filteredProducts = products.filter((product) =>
     productMatchesAdminSection(product, activeSection),
+  );
+  const existingNamesInSection = new Set(
+    filteredProducts.map((product) => normalizeText(product.name)),
+  );
+  const missingDefaultNames = defaultImportNames.filter(
+    (name) => !existingNamesInSection.has(normalizeText(name)),
   );
   const sectionCounts = Object.fromEntries(
     GUIDED_ADMIN_SECTIONS.map((section) => [
@@ -1011,6 +1126,35 @@ function AdminProductsPage() {
     ]),
   );
   const isNewModal = modal?.mode === "new";
+  const importDefaults = useMutation({
+    mutationFn: async () => {
+      const category = activeSectionConfig.preset?.category;
+      if (!category || !missingDefaultNames.length) return;
+
+      await Promise.all(
+        missingDefaultNames.map((name) =>
+          api.post("/admin/products", {
+            name,
+            description: "",
+            imageUrl: "",
+            category,
+            availableDays: [],
+            waiterOnly: false,
+            sizes: [{ size: "MEDIA", label: "Config", price: 0 }],
+          }),
+        ),
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast.success("Sabores padrao importados!");
+    },
+    onError: (err) => {
+      toast.error(
+        err?.response?.data?.message ?? "Nao foi possivel importar os sabores.",
+      );
+    },
+  });
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-gray-900 sm:px-6">
@@ -1074,6 +1218,18 @@ function AdminProductsPage() {
                   {activeSectionConfig.description}
                 </p>
               </div>
+              {missingDefaultNames.length > 0 && activeSection !== "all" ? (
+                <button
+                  type="button"
+                  disabled={importDefaults.isPending}
+                  onClick={() => importDefaults.mutate()}
+                  className="shrink-0 rounded-xl bg-secondary px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {importDefaults.isPending
+                    ? "Importando..."
+                    : `Importar ${missingDefaultNames.length} padrao`}
+                </button>
+              ) : null}
             </div>
 
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
