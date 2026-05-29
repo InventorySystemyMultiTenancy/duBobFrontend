@@ -135,6 +135,23 @@ export default function Navbar({ activeLink }) {
     goToPath(path);
   };
 
+  const handleNavGroupClick = (event) => {
+    const action = event.target.closest("[data-navbar-action]");
+    if (!action) return;
+
+    const actionName = action.getAttribute("data-navbar-action");
+    if (actionName === "whatsapp") {
+      event.preventDefault();
+      openWhatsApp();
+      return;
+    }
+
+    const path = action.getAttribute("data-navbar-path");
+    if (path) {
+      handleInternalNav(event, path);
+    }
+  };
+
   return (
     <>
       <header className="sticky top-0 z-[90] border-b border-secondary/30 bg-primary shadow-sm backdrop-blur-sm">
@@ -158,38 +175,34 @@ export default function Navbar({ activeLink }) {
           </Link>
 
           {/* Links */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div
+            onClickCapture={handleNavGroupClick}
+            onPointerDownCapture={handleNavGroupClick}
+            className="relative z-[100] flex items-center gap-3 sm:gap-4"
+          >
             {/* WhatsApp */}
-            <a
-              href={WHATSAPP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              onMouseDown={openWhatsApp}
-              onTouchStart={openWhatsApp}
-              onClick={(event) => {
-                event.preventDefault();
-                openWhatsApp();
-              }}
-              className="flex items-center gap-1.5 rounded-lg border border-green-300/40 bg-green-950/30 px-3 py-2 text-sm font-semibold text-green-200 transition hover:bg-green-900/50"
+            <button
+              type="button"
+              data-navbar-action="whatsapp"
+              className="flex min-h-10 cursor-pointer items-center gap-1.5 rounded-lg border border-green-300/40 bg-green-950/30 px-3 py-2 text-sm font-semibold text-green-200 transition hover:bg-green-900/50"
               title={t("NAV_WHATSAPP_TITLE", "Falar no WhatsApp")}
             >
               <WhatsAppIcon />
               <span className="hidden sm:inline">WhatsApp</span>
-            </a>
+            </button>
 
-            <a
-              href="/cardapio"
-              onMouseDown={() => goToPath("/cardapio")}
-              onTouchStart={() => goToPath("/cardapio")}
-              onClick={(event) => handleInternalNav(event, "/cardapio")}
-              className={`text-sm font-semibold transition-colors hover:text-secondary ${
+            <button
+              type="button"
+              data-navbar-action="internal"
+              data-navbar-path="/cardapio"
+              className={`min-h-10 cursor-pointer rounded-lg px-3 text-sm font-semibold transition-colors hover:text-secondary ${
                 activeLink === "cardapio"
                   ? "text-secondary underline underline-offset-4"
                   : "text-white/80"
               }`}
             >
               {t("NAV_CARDAPIO", "Cardápio")}
-            </a>
+            </button>
 
             {isAuthenticated && user?.role !== "MESA" ? (
               <>
@@ -208,15 +221,14 @@ export default function Navbar({ activeLink }) {
                 </button>
               </>
             ) : !isAuthenticated ? (
-              <a
-                href="/login"
-                className="text-sm text-white/80 transition-colors hover:text-secondary"
-                onMouseDown={() => goToPath("/login")}
-                onTouchStart={() => goToPath("/login")}
-                onClick={(event) => handleInternalNav(event, "/login")}
+              <button
+                type="button"
+                data-navbar-action="internal"
+                data-navbar-path="/login"
+                className="min-h-10 cursor-pointer rounded-lg px-3 text-sm text-white/80 transition-colors hover:text-secondary"
               >
                 {t("NAV_ENTRAR", "Entrar")}
-              </a>
+              </button>
             ) : null}
 
             {/* Pagamento pendente (só MESA) */}
