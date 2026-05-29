@@ -10,7 +10,7 @@ const WHATSAPP_NUMBER =
   import.meta.env.VITE_DUBOB_WHATSAPP ||
   import.meta.env.VITE_PIZZARIA_WHATSAPP ||
   "5543996714390";
-const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
+const WHATSAPP_URL = `https://wa.me/${String(WHATSAPP_NUMBER).replace(/\D/g, "")}`;
 
 // Ícone SVG oficial do WhatsApp
 function WhatsAppIcon() {
@@ -100,9 +100,22 @@ export default function Navbar({ activeLink }) {
     return null;
   }
 
+  const goTo = (path) => {
+    navigate(path);
+  };
+
+  const handleWhatsAppClick = (event) => {
+    event.preventDefault();
+    const opened = window.open(WHATSAPP_URL, "_blank", "noopener,noreferrer");
+
+    if (!opened) {
+      window.location.href = WHATSAPP_URL;
+    }
+  };
+
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-secondary/30 bg-primary shadow-sm backdrop-blur-sm">
+      <header className="sticky top-0 z-[90] border-b border-secondary/30 bg-primary shadow-sm backdrop-blur-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-8">
           {/* Logo — segure 3s para sair (só MESA) */}
           <Link
@@ -129,6 +142,7 @@ export default function Navbar({ activeLink }) {
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={handleWhatsAppClick}
               className="flex items-center gap-1.5 rounded-lg border border-green-300/40 bg-green-950/30 px-3 py-2 text-sm font-semibold text-green-200 transition hover:bg-green-900/50"
               title={t("NAV_WHATSAPP_TITLE", "Falar no WhatsApp")}
             >
@@ -136,8 +150,9 @@ export default function Navbar({ activeLink }) {
               <span className="hidden sm:inline">WhatsApp</span>
             </a>
 
-            <Link
-              to="/cardapio"
+            <button
+              type="button"
+              onClick={() => goTo("/cardapio")}
               className={`text-sm font-semibold transition-colors hover:text-secondary ${
                 activeLink === "cardapio"
                   ? "text-secondary underline underline-offset-4"
@@ -145,7 +160,7 @@ export default function Navbar({ activeLink }) {
               }`}
             >
               {t("NAV_CARDAPIO", "Cardápio")}
-            </Link>
+            </button>
 
             {isAuthenticated && user?.role !== "MESA" ? (
               <>
@@ -164,12 +179,13 @@ export default function Navbar({ activeLink }) {
                 </button>
               </>
             ) : !isAuthenticated ? (
-              <Link
+              <button
+                type="button"
                 className="text-sm text-white/80 transition-colors hover:text-secondary"
-                to="/login"
+                onClick={() => goTo("/login")}
               >
                 {t("NAV_ENTRAR", "Entrar")}
-              </Link>
+              </button>
             ) : null}
 
             {/* Pagamento pendente (só MESA) */}
