@@ -41,6 +41,7 @@ export default function Navbar({ activeLink }) {
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState(false);
   const longPressTimer = useRef(null);
+  const navActionRef = useRef(false);
 
   const LOGOUT_PIN = import.meta.env.VITE_MESA_LOGOUT_PIN || "2468";
   const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
@@ -100,17 +101,38 @@ export default function Navbar({ activeLink }) {
     return null;
   }
 
-  const goTo = (path) => {
-    navigate(path);
+  const runOnce = (action) => {
+    if (navActionRef.current) return;
+    navActionRef.current = true;
+    action();
+    window.setTimeout(() => {
+      navActionRef.current = false;
+    }, 800);
   };
 
-  const handleWhatsAppClick = (event) => {
-    event.preventDefault();
-    const opened = window.open(WHATSAPP_URL, "_blank", "noopener,noreferrer");
+  const openWhatsApp = () => {
+    runOnce(() => {
+      const opened = window.open(
+        WHATSAPP_URL,
+        "_blank",
+        "noopener,noreferrer",
+      );
 
-    if (!opened) {
-      window.location.href = WHATSAPP_URL;
-    }
+      if (!opened) {
+        window.location.assign(WHATSAPP_URL);
+      }
+    });
+  };
+
+  const goToPath = (path) => {
+    runOnce(() => {
+      window.location.assign(path);
+    });
+  };
+
+  const handleInternalNav = (event, path) => {
+    event.preventDefault();
+    goToPath(path);
   };
 
   return (
@@ -142,7 +164,12 @@ export default function Navbar({ activeLink }) {
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={handleWhatsAppClick}
+              onMouseDown={openWhatsApp}
+              onTouchStart={openWhatsApp}
+              onClick={(event) => {
+                event.preventDefault();
+                openWhatsApp();
+              }}
               className="flex items-center gap-1.5 rounded-lg border border-green-300/40 bg-green-950/30 px-3 py-2 text-sm font-semibold text-green-200 transition hover:bg-green-900/50"
               title={t("NAV_WHATSAPP_TITLE", "Falar no WhatsApp")}
             >
@@ -150,9 +177,11 @@ export default function Navbar({ activeLink }) {
               <span className="hidden sm:inline">WhatsApp</span>
             </a>
 
-            <button
-              type="button"
-              onClick={() => goTo("/cardapio")}
+            <a
+              href="/cardapio"
+              onMouseDown={() => goToPath("/cardapio")}
+              onTouchStart={() => goToPath("/cardapio")}
+              onClick={(event) => handleInternalNav(event, "/cardapio")}
               className={`text-sm font-semibold transition-colors hover:text-secondary ${
                 activeLink === "cardapio"
                   ? "text-secondary underline underline-offset-4"
@@ -160,7 +189,7 @@ export default function Navbar({ activeLink }) {
               }`}
             >
               {t("NAV_CARDAPIO", "Cardápio")}
-            </button>
+            </a>
 
             {isAuthenticated && user?.role !== "MESA" ? (
               <>
@@ -179,13 +208,15 @@ export default function Navbar({ activeLink }) {
                 </button>
               </>
             ) : !isAuthenticated ? (
-              <button
-                type="button"
+              <a
+                href="/login"
                 className="text-sm text-white/80 transition-colors hover:text-secondary"
-                onClick={() => goTo("/login")}
+                onMouseDown={() => goToPath("/login")}
+                onTouchStart={() => goToPath("/login")}
+                onClick={(event) => handleInternalNav(event, "/login")}
               >
                 {t("NAV_ENTRAR", "Entrar")}
-              </button>
+              </a>
             ) : null}
 
             {/* Pagamento pendente (só MESA) */}
