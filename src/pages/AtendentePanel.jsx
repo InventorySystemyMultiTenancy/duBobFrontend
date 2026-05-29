@@ -1045,7 +1045,7 @@ export default function AtendentePanel() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="font-display text-xl text-primary">
-                  Fechamento da mesa
+                  Lançar pedido
                 </h2>
                 <p className="mt-1 text-xs text-gray-500">
                   Revise os itens do pedido atual antes de lançar para a mesa.

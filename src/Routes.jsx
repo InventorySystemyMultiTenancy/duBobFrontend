@@ -61,7 +61,6 @@ function AppRoutes() {
       <Route path="/normal" element={<ExitTotemEntry />} />
       <Route path="/" element={<HomeEntry />} />
       <Route path="/totem" element={<TotemPage />} />
-      <Route path="/:totemSlug" element={<TotemPage />} />
       <Route path="/cardapio" element={<CardapioPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/checkout/retorno" element={<CheckoutReturnPage />} />
@@ -143,6 +142,7 @@ function AppRoutes() {
         <Route path="/motoboy" element={<MotoboyPage />} />
       </Route>
 
+      <Route path="/:totemSlug" element={<TotemPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
