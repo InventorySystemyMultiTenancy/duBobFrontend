@@ -3,7 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
-
+// subindo
 function AdminMesaCardapioPage() {
   const { t } = useTranslation();
 
