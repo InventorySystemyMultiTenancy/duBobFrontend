@@ -126,30 +126,18 @@ export default function Navbar({ activeLink }) {
 
   const goToPath = (path) => {
     runOnce(() => {
-      window.location.assign(path);
+      navigate(path);
+      window.setTimeout(() => {
+        if (window.location.pathname !== path) {
+          window.location.assign(path);
+        }
+      }, 100);
     });
   };
 
   const handleInternalNav = (event, path) => {
     event.preventDefault();
     goToPath(path);
-  };
-
-  const handleNavGroupClick = (event) => {
-    const action = event.target.closest("[data-navbar-action]");
-    if (!action) return;
-
-    const actionName = action.getAttribute("data-navbar-action");
-    if (actionName === "whatsapp") {
-      event.preventDefault();
-      openWhatsApp();
-      return;
-    }
-
-    const path = action.getAttribute("data-navbar-path");
-    if (path) {
-      handleInternalNav(event, path);
-    }
   };
 
   return (
@@ -175,15 +163,11 @@ export default function Navbar({ activeLink }) {
           </Link>
 
           {/* Links */}
-          <div
-            onClickCapture={handleNavGroupClick}
-            onPointerDownCapture={handleNavGroupClick}
-            className="relative z-[100] flex items-center gap-3 sm:gap-4"
-          >
+          <div className="relative z-[100] flex items-center gap-3 sm:gap-4">
             {/* WhatsApp */}
             <button
               type="button"
-              data-navbar-action="whatsapp"
+              onClick={openWhatsApp}
               className="flex min-h-10 cursor-pointer items-center gap-1.5 rounded-lg border border-green-300/40 bg-green-950/30 px-3 py-2 text-sm font-semibold text-green-200 transition hover:bg-green-900/50"
               title={t("NAV_WHATSAPP_TITLE", "Falar no WhatsApp")}
             >
@@ -193,8 +177,7 @@ export default function Navbar({ activeLink }) {
 
             <button
               type="button"
-              data-navbar-action="internal"
-              data-navbar-path="/cardapio"
+              onClick={(event) => handleInternalNav(event, "/cardapio")}
               className={`min-h-10 cursor-pointer rounded-lg px-3 text-sm font-semibold transition-colors hover:text-secondary ${
                 activeLink === "cardapio"
                   ? "text-secondary underline underline-offset-4"
@@ -223,9 +206,8 @@ export default function Navbar({ activeLink }) {
             ) : !isAuthenticated ? (
               <button
                 type="button"
-                data-navbar-action="internal"
-                data-navbar-path="/login"
                 className="min-h-10 cursor-pointer rounded-lg px-3 text-sm text-white/80 transition-colors hover:text-secondary"
+                onClick={(event) => handleInternalNav(event, "/login")}
               >
                 {t("NAV_ENTRAR", "Entrar")}
               </button>
