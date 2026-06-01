@@ -1131,19 +1131,17 @@ function AdminProductsPage() {
       const category = activeSectionConfig.preset?.category;
       if (!category || !missingDefaultNames.length) return;
 
-      await Promise.all(
-        missingDefaultNames.map((name) =>
-          api.post("/admin/products", {
-            name,
-            description: "",
-            imageUrl: "",
-            category,
-            availableDays: [],
-            waiterOnly: false,
-            sizes: [{ size: "MEDIA", label: "Config", price: 0 }],
-          }),
-        ),
-      );
+      for (const name of missingDefaultNames) {
+        await api.post("/admin/products", {
+          name,
+          description: "",
+          imageUrl: "",
+          category,
+          availableDays: [],
+          waiterOnly: false,
+          sizes: [{ size: "MEDIA", label: "Config", price: 0 }],
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
@@ -1151,7 +1149,9 @@ function AdminProductsPage() {
     },
     onError: (err) => {
       toast.error(
-        err?.response?.data?.message ?? "Nao foi possivel importar os sabores.",
+        err?.response?.data?.error?.message ??
+          err?.response?.data?.message ??
+          "Nao foi possivel importar os sabores.",
       );
     },
   });
