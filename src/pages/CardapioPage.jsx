@@ -652,12 +652,20 @@ function GuidedMenu({
           ref={acaiFlowRef}
           className="mt-5 scroll-mt-24 rounded-lg border border-border-soft bg-white p-4 shadow-card sm:p-5"
         >
-          <div className="grid gap-5 lg:grid-cols-[240px_1fr_300px]">
+          <div
+            className={`grid gap-5 ${
+              isTotemMode ? "" : "lg:grid-cols-[240px_1fr_300px]"
+            }`}
+          >
             <div>
               <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-secondary">
                 1. Tamanho do copo
               </p>
-              <div className="space-y-2">
+              <div
+                className={`grid gap-2 ${
+                  isTotemMode ? "sm:grid-cols-2 xl:grid-cols-4" : ""
+                }`}
+              >
                 {acaiOptions.sizes.map((size) => (
                   <button
                     key={size.id}
@@ -711,7 +719,11 @@ function GuidedMenu({
               <p className="mb-3 mt-5 text-xs font-black uppercase tracking-[0.22em] text-secondary">
                 3. Complementos
               </p>
-              <div className="grid max-h-[320px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
+              <div
+                className={`grid gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3 ${
+                  isTotemMode ? "max-h-[32vh]" : "max-h-[320px]"
+                }`}
+              >
                 {acaiOptions.complements.map((complement) => {
                   const selected = selectedComplements.some(
                     (item) => item.name === complement.name,
@@ -819,7 +831,11 @@ function GuidedMenu({
             ))}
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+          <div
+            className={`grid gap-5 ${
+              isTotemMode ? "" : "lg:grid-cols-[1fr_320px]"
+            }`}
+          >
             <div>
               <div className="mb-3 flex items-center justify-between gap-3">
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-secondary">
@@ -833,7 +849,11 @@ function GuidedMenu({
                   {showFlavorPhotos ? "Ocultar fotos" : "Mostrar fotos"}
                 </button>
               </div>
-              <div className="grid max-h-[420px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
+              <div
+                className={`grid gap-2 overflow-y-auto pr-1 sm:grid-cols-2 ${
+                  isTotemMode ? "max-h-[42vh] xl:grid-cols-3" : "max-h-[420px] xl:grid-cols-3"
+                }`}
+              >
                 {selectedLine.flavors.map((flavor) => (
                   <FlavorOptionButton
                     key={flavor.id}
@@ -850,7 +870,11 @@ function GuidedMenu({
               <p className="text-xs font-black uppercase tracking-[0.22em] text-secondary">
                 2. Escolha o tamanho
               </p>
-              <div className="mt-3 space-y-2">
+              <div
+                className={`mt-3 grid gap-2 ${
+                  isTotemMode ? "sm:grid-cols-2 xl:grid-cols-4" : ""
+                }`}
+              >
                 {selectedLine.sizes.map((size) => (
                   <button
                     key={size.id}
