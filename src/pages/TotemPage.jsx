@@ -27,6 +27,24 @@ const INPUT_CLS =
   "w-full rounded-2xl border border-border-soft bg-white px-5 py-5 text-xl font-semibold text-primary outline-none transition placeholder:text-text-muted/60 focus:border-secondary focus:ring-4 focus:ring-secondary/15";
 const BUTTON_CLS =
   "w-full rounded-2xl bg-secondary px-6 py-5 text-xl font-black uppercase tracking-wide text-white shadow-card transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60";
+const TOTEM_LOGIN_TILES = [
+  "/carrossel/1.png",
+  "/carrossel/2.png",
+  "/carrossel/3.png",
+  "/carrossel/4.png",
+  "/carrossel/5.png",
+  "/carrossel/6.png",
+  "/carrossel/7.png",
+  "/carrossel/8.png",
+  "/carrossel/9.png",
+  "/carrossel/10.png",
+  "/carrossel/11.png",
+  "/carrossel/12.png",
+  "/acai.png",
+  "/acai1.png",
+  "/milkshake1.png",
+  "/cardapio2.png",
+];
 
 function onlyDigits(value) {
   return String(value || "").replace(/\D/g, "");
@@ -385,8 +403,29 @@ function TotemPage() {
   }
 
   return (
-    <main className="min-h-screen bg-accent bg-texture px-8 py-10 text-primary">
-      <section className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl flex-col justify-center">
+    <main className="relative min-h-screen overflow-hidden bg-primary px-8 py-10 text-primary">
+      <div className="absolute inset-0 grid grid-cols-4 gap-2 p-2 opacity-80 sm:grid-cols-6 lg:grid-cols-8">
+        {Array.from({ length: 32 }, (_, index) => {
+          const image = TOTEM_LOGIN_TILES[index % TOTEM_LOGIN_TILES.length];
+          return (
+            <div
+              key={`${image}-${index}`}
+              className="overflow-hidden rounded-2xl bg-white/10"
+            >
+              <img
+                src={image}
+                alt=""
+                className="h-full w-full scale-105 object-cover"
+                draggable="false"
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div className="absolute inset-0 bg-white/55 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-accent/80 via-accent/65 to-accent/85" />
+
+      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl flex-col justify-center">
         <div className="mb-8 text-center">
           <p className="text-sm font-black uppercase tracking-[0.32em] text-secondary">
             {totem?.name ?? "Totem Dubob"}
@@ -400,7 +439,7 @@ function TotemPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             <form
               onSubmit={handleCpfSubmit}
-              className="rounded-2xl border border-border-soft bg-white p-6 shadow-card"
+              className="rounded-2xl border border-white/70 bg-white/90 p-6 shadow-2xl backdrop-blur-md"
             >
               <h2 className="text-3xl font-black">Entrar com CPF</h2>
               <p className="mt-2 text-lg text-text-muted">
@@ -428,7 +467,7 @@ function TotemPage() {
 
             <form
               onSubmit={handleGuestSubmit}
-              className="rounded-2xl border border-border-soft bg-white p-6 shadow-card"
+              className="rounded-2xl border border-white/70 bg-white/90 p-6 shadow-2xl backdrop-blur-md"
             >
               <h2 className="text-3xl font-black">Entrar sem cadastro</h2>
               <p className="mt-2 text-lg text-text-muted">
@@ -456,7 +495,7 @@ function TotemPage() {
         ) : (
           <form
             onSubmit={handleRegisterSubmit}
-            className="mx-auto w-full max-w-3xl rounded-2xl border border-border-soft bg-white p-6 shadow-card"
+            className="mx-auto w-full max-w-3xl rounded-2xl border border-white/70 bg-white/90 p-6 shadow-2xl backdrop-blur-md"
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <input
