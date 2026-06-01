@@ -404,26 +404,26 @@ function TotemPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-primary px-8 py-10 text-primary">
-      <div className="absolute inset-0 grid grid-cols-4 gap-2 p-2 opacity-80 sm:grid-cols-6 lg:grid-cols-8">
+      <div className="absolute inset-0 grid auto-rows-min grid-cols-4 content-center gap-3 p-3 opacity-90 sm:grid-cols-6 lg:grid-cols-8">
         {Array.from({ length: 32 }, (_, index) => {
           const image = TOTEM_LOGIN_TILES[index % TOTEM_LOGIN_TILES.length];
           return (
             <div
               key={`${image}-${index}`}
-              className="overflow-hidden rounded-2xl bg-white/10"
+              className="aspect-square overflow-hidden rounded-2xl bg-white/10"
             >
               <img
                 src={image}
                 alt=""
-                className="h-full w-full scale-105 object-cover"
+                className="h-full w-full object-cover"
                 draggable="false"
               />
             </div>
           );
         })}
       </div>
-      <div className="absolute inset-0 bg-white/55 backdrop-blur-[2px]" />
-      <div className="absolute inset-0 bg-gradient-to-b from-accent/80 via-accent/65 to-accent/85" />
+      <div className="absolute inset-0 bg-white/35 backdrop-blur-[0.5px]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-accent/55 via-accent/35 to-accent/65" />
 
       <section className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl flex-col justify-center">
         <div className="mb-8 text-center">
