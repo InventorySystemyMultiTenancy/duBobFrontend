@@ -497,6 +497,7 @@ function GuidedMenu({
   onAddMilkshake,
   onAddAcai,
 }) {
+  const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
   const [productType, setProductType] = useState(null);
   const [selectedLineId, setSelectedLineId] = useState(milkshakeLines[0].id);
   const [selectedFlavor, setSelectedFlavor] = useState("");
@@ -541,7 +542,11 @@ function GuidedMenu({
         </h2>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div
+        className={`grid gap-5 ${
+          isTotemMode && !productType ? "" : "md:grid-cols-2"
+        }`}
+      >
         <button
           type="button"
           onClick={() => {
