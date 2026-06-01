@@ -1139,7 +1139,7 @@ function AdminProductsPage() {
           category,
           availableDays: [],
           waiterOnly: false,
-          sizes: [{ size: "MEDIA", label: "Config", price: 0 }],
+          sizes: [{ size: "MEDIA", price: 0 }],
         });
       }
     },
