@@ -507,6 +507,7 @@ function GuidedMenu({
   const [showFlavorPhotos, setShowFlavorPhotos] = useState(false);
   const milkshakeFlowRef = useRef(null);
   const acaiFlowRef = useRef(null);
+  const isTotemProductIntro = isTotemMode && !productType;
 
   const selectedLine =
     milkshakeLines.find((line) => line.id === selectedLineId) ??
@@ -532,8 +533,14 @@ function GuidedMenu({
   };
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-5 sm:px-8">
-      <div className="mb-3">
+    <section
+      className={`mx-auto ${
+        isTotemProductIntro
+          ? "min-h-[calc(100vh-7.5rem)] max-w-none px-3 py-3 sm:px-4"
+          : "max-w-7xl px-4 py-5 sm:px-8"
+      }`}
+    >
+      <div className={isTotemProductIntro ? "sr-only" : "mb-3"}>
         <p className="text-xs font-black uppercase tracking-[0.28em] text-secondary">
           Monte seu pedido
         </p>
@@ -544,7 +551,9 @@ function GuidedMenu({
 
       <div
         className={`grid gap-5 ${
-          isTotemMode && !productType ? "" : "md:grid-cols-2"
+          isTotemProductIntro
+            ? "h-[calc(100vh-8.25rem)] min-h-[620px] grid-rows-2"
+            : "md:grid-cols-2"
         }`}
       >
         <button
@@ -558,6 +567,8 @@ function GuidedMenu({
             scrollToFlow(milkshakeFlowRef);
           }}
           className={`overflow-hidden rounded-lg border text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover ${
+            isTotemProductIntro ? "flex min-h-0 flex-col" : ""
+          } ${
             productType === "milkshake"
               ? "border-secondary bg-white"
               : "border-border-soft bg-white"
@@ -566,11 +577,25 @@ function GuidedMenu({
           <img
             src={MilkShake1}
             alt="Milk shake Dubob"
-            className="h-64 w-full object-cover sm:h-72 lg:h-80"
+            className={`w-full object-cover ${
+              isTotemProductIntro
+                ? "min-h-0 flex-1"
+                : "h-64 sm:h-72 lg:h-80"
+            }`}
           />
-          <div className="p-5">
-            <h3 className="text-2xl font-black text-primary">Milk shake</h3>
-            <p className="mt-1 text-base leading-relaxed text-text-muted">
+          <div className={isTotemProductIntro ? "p-6" : "p-5"}>
+            <h3
+              className={`font-black text-primary ${
+                isTotemProductIntro ? "text-4xl" : "text-2xl"
+              }`}
+            >
+              Milk shake
+            </h3>
+            <p
+              className={`mt-1 leading-relaxed text-text-muted ${
+                isTotemProductIntro ? "text-xl" : "text-base"
+              }`}
+            >
               Escolha a linha, depois o sabor, depois o tamanho.
             </p>
           </div>
@@ -587,6 +612,8 @@ function GuidedMenu({
             scrollToFlow(acaiFlowRef);
           }}
           className={`overflow-hidden rounded-lg border text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover ${
+            isTotemProductIntro ? "flex min-h-0 flex-col" : ""
+          } ${
             productType === "acai"
               ? "border-secondary bg-white"
               : "border-border-soft bg-white"
@@ -595,11 +622,25 @@ function GuidedMenu({
           <img
             src={acai1}
             alt="Acai Dubob"
-            className="h-64 w-full object-cover sm:h-72 lg:h-80"
+            className={`w-full object-cover ${
+              isTotemProductIntro
+                ? "min-h-0 flex-1"
+                : "h-64 sm:h-72 lg:h-80"
+            }`}
           />
-          <div className="p-5">
-            <h3 className="text-2xl font-black text-primary">Acai</h3>
-            <p className="mt-1 text-base leading-relaxed text-text-muted">
+          <div className={isTotemProductIntro ? "p-6" : "p-5"}>
+            <h3
+              className={`font-black text-primary ${
+                isTotemProductIntro ? "text-4xl" : "text-2xl"
+              }`}
+            >
+              Acai
+            </h3>
+            <p
+              className={`mt-1 leading-relaxed text-text-muted ${
+                isTotemProductIntro ? "text-xl" : "text-base"
+              }`}
+            >
               Escolha tamanho, sabor e ate 4 complementos inclusos.
             </p>
           </div>
