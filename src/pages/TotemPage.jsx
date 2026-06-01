@@ -404,8 +404,8 @@ function TotemPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-primary px-8 py-10 text-primary">
-      <div className="absolute inset-0 grid auto-rows-min grid-cols-4 content-center gap-3 p-3 opacity-90 sm:grid-cols-6 lg:grid-cols-8">
-        {Array.from({ length: 32 }, (_, index) => {
+      <div className="absolute inset-0 grid grid-cols-4 gap-3 p-3 opacity-90 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
+        {Array.from({ length: 56 }, (_, index) => {
           const image = TOTEM_LOGIN_TILES[index % TOTEM_LOGIN_TILES.length];
           return (
             <div
