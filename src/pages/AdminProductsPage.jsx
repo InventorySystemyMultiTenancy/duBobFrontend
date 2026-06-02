@@ -216,6 +216,27 @@ const DEFAULT_SECTION_IMPORTS = {
     "Kit Kat",
   ],
   acai_sabores: ["Tradicional", "Chocolate", "Trufa Branca", "Iogurte Grego"],
+  acai_complementos: [
+    "Morango",
+    "Banana",
+    "Kiwi",
+    "Leite Condensado",
+    "Leite em Po",
+    "Ovomaltine",
+    "Choco Wafer",
+    "Ganache Branco",
+    "Ganache Preto",
+    "Mini Confete",
+    "Granulado",
+    "Granola",
+    "Cookies Cream",
+    "Wafer Branco",
+    "Creme de Amendoim",
+    "Amendoim Triturado",
+    "Creme de Leite Ninho",
+    "Choco Wafer Branco",
+    "Chocolate com Avela",
+  ],
 };
 
 const BASE_PRODUCT_IDS = new Set([
