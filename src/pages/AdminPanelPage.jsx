@@ -297,46 +297,6 @@ function AdminPanelPage() {
         </Link>
 
         <Link
-          to="/admin/cardapio-mesa"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-pink-500/15 text-2xl">
-            📱
-          </span>
-          <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
-              {t("ADMIN_PANEL_CARD_MESA_MENU_TITLE", "Cardápio Mesa")}
-            </h2>
-            <p className="mt-0.5 text-xs text-smoke">
-              {t(
-                "ADMIN_PANEL_CARD_MESA_MENU_DESC",
-                "Gerar QR codes para o cardápio de mesa e imprimir no restaurante",
-              )}
-            </p>
-          </div>
-        </Link>
-
-        <Link
-          to="/admin/mesas"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-2xl">
-            🪑
-          </span>
-          <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
-              {t("ADMIN_PANEL_CARD_TABLES_TITLE_JUDIMAR", "Mesas")}
-            </h2>
-            <p className="mt-0.5 text-xs text-smoke">
-              {t(
-                "ADMIN_PANEL_CARD_TABLES_DESC_JUDIMAR",
-                "Cadastrar mesas, maquininhas e gerar QR codes",
-              )}
-            </p>
-          </div>
-        </Link>
-
-        <Link
           to="/admin/totens"
           className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
         >
@@ -349,23 +309,6 @@ function AdminPanelPage() {
             </h2>
             <p className="mt-0.5 text-xs text-smoke">
               Cadastrar rotas de totem e vincular maquininhas
-            </p>
-          </div>
-        </Link>
-
-        <Link
-          to="/comandas"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-2xl">
-            🎫
-          </span>
-          <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
-              Comandas
-            </h2>
-            <p className="mt-0.5 text-xs text-smoke">
-              Criar comandas, gerar QR e consultar valores em aberto
             </p>
           </div>
         </Link>
