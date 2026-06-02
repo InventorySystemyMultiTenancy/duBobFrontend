@@ -500,6 +500,7 @@ function GuidedMenu({
   const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
   const [productType, setProductType] = useState(null);
   const [selectedLineId, setSelectedLineId] = useState(milkshakeLines[0].id);
+  const [selectedMilkshakeSize, setSelectedMilkshakeSize] = useState(null);
   const [selectedFlavor, setSelectedFlavor] = useState("");
   const [selectedAcaiSize, setSelectedAcaiSize] = useState(null);
   const [selectedAcaiFlavor, setSelectedAcaiFlavor] = useState("");
@@ -559,6 +560,7 @@ function GuidedMenu({
           type="button"
           onClick={() => {
             setProductType("milkshake");
+            setSelectedMilkshakeSize(null);
             setSelectedFlavor("");
             setSelectedAcaiSize(null);
             setSelectedAcaiFlavor("");
@@ -595,7 +597,7 @@ function GuidedMenu({
                 isTotemProductIntro ? "text-xl" : "text-base"
               }`}
             >
-              Escolha a linha, depois o sabor, depois o tamanho.
+              Escolha a linha, depois o tamanho, depois o sabor.
             </p>
           </div>
         </button>
@@ -604,6 +606,7 @@ function GuidedMenu({
           type="button"
           onClick={() => {
             setProductType("acai");
+            setSelectedMilkshakeSize(null);
             setSelectedFlavor("");
             setSelectedAcaiSize(null);
             setSelectedAcaiFlavor("");
@@ -805,6 +808,7 @@ function GuidedMenu({
                 type="button"
                 onClick={() => {
                   setSelectedLineId(line.id);
+                  setSelectedMilkshakeSize(null);
                   setSelectedFlavor("");
                 }}
                 className={`rounded-lg border px-4 py-2 text-sm font-black transition ${
@@ -823,31 +827,9 @@ function GuidedMenu({
               isTotemMode ? "" : "lg:grid-cols-[1fr_320px]"
             }`}
           >
-            <div>
-              <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-secondary">
-                1. Escolha o sabor
-              </p>
-              <div
-                className={`grid gap-2 overflow-y-auto pr-1 sm:grid-cols-2 ${
-                  isTotemMode ? "max-h-[42vh] xl:grid-cols-3" : "max-h-[420px] xl:grid-cols-3"
-                }`}
-              >
-                {selectedLine.flavors.map((flavor) => (
-                  <FlavorOptionButton
-                    key={flavor.id}
-                    option={flavor}
-                    selected={selectedFlavor === flavor.name}
-                    fallbackImage={MilkShake1}
-                    large={isTotemMode}
-                    onClick={() => setSelectedFlavor(flavor.name)}
-                  />
-                ))}
-              </div>
-            </div>
-
             <aside className="rounded-lg border border-border-soft bg-accent/60 p-4">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-secondary">
-                2. Escolha o tamanho
+                1. Escolha o tamanho
               </p>
               <div
                 className={`mt-3 grid gap-2 ${
@@ -858,22 +840,23 @@ function GuidedMenu({
                   <button
                     key={size.id}
                     type="button"
-                    disabled={!selectedFlavor || !isProductReady}
-                    onClick={() =>
-                      onAddMilkshake({
-                        line: selectedLine,
-                        flavor: selectedFlavor,
-                        size,
-                      })
-                    }
-                    className="flex w-full items-center justify-between rounded-lg border border-border-soft bg-white px-3 py-3 text-left transition hover:border-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={!isProductReady}
+                    onClick={() => {
+                      setSelectedMilkshakeSize(size);
+                      setSelectedFlavor("");
+                    }}
+                    className={`flex w-full items-center justify-between rounded-lg border px-3 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                      selectedMilkshakeSize?.id === size.id
+                        ? "border-secondary bg-secondary/10"
+                        : "border-border-soft bg-white hover:border-secondary"
+                    }`}
                   >
                     <span>
                       <span className="block text-sm font-black text-primary">
                         {size.label} - {size.ml}
                       </span>
                       <span className="text-xs text-text-muted">
-                        {selectedFlavor || "Escolha um sabor antes"}
+                        Escolha antes do sabor
                       </span>
                     </span>
                     <span className="text-sm font-black text-secondary">
@@ -888,6 +871,37 @@ function GuidedMenu({
                 </p>
               )}
             </aside>
+
+            <div>
+              <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-secondary">
+                2. Escolha o sabor
+              </p>
+              <div
+                className={`grid gap-2 overflow-y-auto pr-1 sm:grid-cols-2 ${
+                  isTotemMode ? "max-h-[42vh] xl:grid-cols-3" : "max-h-[420px] xl:grid-cols-3"
+                }`}
+              >
+                {selectedLine.flavors.map((flavor) => (
+                  <FlavorOptionButton
+                    key={flavor.id}
+                    option={flavor}
+                    selected={selectedFlavor === flavor.name}
+                    disabled={!selectedMilkshakeSize || !isProductReady}
+                    fallbackImage={MilkShake1}
+                    large={isTotemMode}
+                    caption="Imagens meramente ilustrativas"
+                    onClick={() => {
+                      setSelectedFlavor(flavor.name);
+                      onAddMilkshake({
+                        line: selectedLine,
+                        flavor: flavor.name,
+                        size: selectedMilkshakeSize,
+                      });
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -901,6 +915,7 @@ function FlavorOptionButton({
   disabled = false,
   fallbackImage,
   large = false,
+  caption,
   onClick,
 }) {
   const imageUrl = option.imageUrl || fallbackImage;
@@ -938,6 +953,11 @@ function FlavorOptionButton({
       >
         {option.name}
       </span>
+      {caption ? (
+        <span className="-mt-3 block px-4 pb-4 text-[10px] font-medium leading-tight text-text-muted/55">
+          {caption}
+        </span>
+      ) : null}
     </button>
   );
 }
