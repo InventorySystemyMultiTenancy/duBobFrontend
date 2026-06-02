@@ -24,7 +24,14 @@ function AppRoutes() {
 
       <Route
         element={
-          <PrivateRoute allowedRoles={["ADMIN", "FUNCIONARIO", "COZINHA"]} />
+          <PrivateRoute
+            allowedRoles={[
+              "ADMIN",
+              "FUNCIONARIO",
+              "COZINHA",
+              "COZINHA_DELIVERY",
+            ]}
+          />
         }
       >
         <Route path="/admin" element={<AdminPanelPage />} />

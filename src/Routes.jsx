@@ -85,6 +85,7 @@ function AppRoutes() {
               "FUNCIONARIO",
               "ATENDENTE",
               "COZINHA",
+              "COZINHA_DELIVERY",
             ]}
           />
         }
@@ -99,7 +100,13 @@ function AppRoutes() {
       <Route
         element={
           <PrivateRoute
-            allowedRoles={["COZINHA", "ADMIN", "FUNCIONARIO", "ATENDENTE"]}
+            allowedRoles={[
+              "COZINHA",
+              "COZINHA_DELIVERY",
+              "ADMIN",
+              "FUNCIONARIO",
+              "ATENDENTE",
+            ]}
           />
         }
       >

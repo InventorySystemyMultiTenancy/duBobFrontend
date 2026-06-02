@@ -159,6 +159,18 @@ function hasKitchenItems(order) {
   return getKitchenItems(order).length > 0;
 }
 
+function isDeliveryOrPickupOrder(order) {
+  return !order?.mesaId && !order?.comandaId;
+}
+
+function isDeliveryOrder(order) {
+  return !order?.isPickup && !order?.mesaId && !order?.comandaId;
+}
+
+function isLocalKitchenOrder(order) {
+  return !isDeliveryOrPickupOrder(order);
+}
+
 function isTotemWaitingPayment(order) {
   return (
     order.paymentMethod === "MAQUININHA_TOTEM" &&
@@ -608,10 +620,15 @@ function KitchenPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const isKitchenUser = user?.role === "COZINHA";
-  const canLoadMotoboys = ["ADMIN", "FUNCIONARIO", "COZINHA"].includes(
-    user?.role,
-  );
+  const isNormalKitchenUser = user?.role === "COZINHA";
+  const isDeliveryKitchenUser = user?.role === "COZINHA_DELIVERY";
+  const isKitchenUser = isNormalKitchenUser || isDeliveryKitchenUser;
+  const canLoadMotoboys = [
+    "ADMIN",
+    "FUNCIONARIO",
+    "COZINHA",
+    "COZINHA_DELIVERY",
+  ].includes(user?.role);
   const [now, setNow] = useState(() => Date.now());
   const [latestAlert, setLatestAlert] = useState(null);
   const [freshOrderIds, setFreshOrderIds] = useState([]);
@@ -835,6 +852,10 @@ function KitchenPage() {
       const roleFiltered =
         user?.role === "MOTOBOY"
           ? orders.filter((o) => o.assignedMotoboyId === user.id)
+          : isDeliveryKitchenUser
+            ? orders.filter(isDeliveryOrPickupOrder)
+            : isNormalKitchenUser
+              ? orders.filter(isLocalKitchenOrder)
           : orders;
 
       return roleFiltered
@@ -845,7 +866,7 @@ function KitchenPage() {
         }))
         .filter(hasKitchenItems);
     },
-    [orders, user],
+    [isDeliveryKitchenUser, isNormalKitchenUser, orders, user],
   );
 
   const {

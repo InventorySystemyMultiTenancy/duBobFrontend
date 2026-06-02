@@ -22,7 +22,13 @@ const ROLES = [
     value: "COZINHA",
     emoji: "👨‍🍳",
     key: "ADMIN_USERS_ROLE_COZINHA",
-    fallback: "Cozinha",
+    fallback: "Cozinha normal",
+  },
+  {
+    value: "COZINHA_DELIVERY",
+    emoji: "ðŸ›µ",
+    key: "ADMIN_USERS_ROLE_COZINHA_DELIVERY",
+    fallback: "Cozinha delivery",
   },
   {
     value: "FUNCIONARIO",

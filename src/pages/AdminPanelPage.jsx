@@ -290,7 +290,7 @@ function AdminPanelPage() {
             <p className="mt-0.5 text-xs text-smoke">
               {t(
                 "ADMIN_PANEL_CARD_USERS_DESC_JUDIMAR",
-                "Cadastrar motoboy, cozinha, funcionário ou admin",
+                "Cadastrar motoboy, cozinha normal, cozinha delivery ou admin",
               )}
             </p>
           </div>

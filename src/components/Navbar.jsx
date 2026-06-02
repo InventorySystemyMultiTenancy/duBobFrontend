@@ -92,7 +92,7 @@ export default function Navbar({ activeLink }) {
         ? "/admin"
         : user?.role === "MOTOBOY"
           ? "/motoboy"
-          : user?.role === "COZINHA"
+          : user?.role === "COZINHA" || user?.role === "COZINHA_DELIVERY"
             ? "/cozinha"
           : "/dashboard";
 

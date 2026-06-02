@@ -10,7 +10,13 @@ import { useAuth } from "../hooks/useAuth.js";
 import { incrementStaffUnreadCount } from "../lib/staffAlertsStore.js";
 import { appendWaiterCall } from "../lib/waiterCallsStore.js";
 
-const STAFF_ROLES = new Set(["ADMIN", "FUNCIONARIO", "ATENDENTE", "COZINHA"]);
+const STAFF_ROLES = new Set([
+  "ADMIN",
+  "FUNCIONARIO",
+  "ATENDENTE",
+  "COZINHA",
+  "COZINHA_DELIVERY",
+]);
 
 function getSocketUrl() {
   if (import.meta.env.VITE_SOCKET_URL) {
