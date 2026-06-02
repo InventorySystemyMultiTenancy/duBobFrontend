@@ -700,6 +700,8 @@ function GuidedMenu({
                     option={flavor}
                     selected={selectedAcaiFlavor === flavor.name}
                     disabled={!selectedAcaiSize}
+                    fallbackImage={acai1}
+                    large={isTotemMode}
                     onClick={() => setSelectedAcaiFlavor(flavor.name)}
                   />
                 ))}
@@ -718,19 +720,15 @@ function GuidedMenu({
                     (item) => item.name === complement.name,
                   );
                   return (
-                    <button
+                    <FlavorOptionButton
                       key={complement.id}
-                      type="button"
+                      option={complement}
+                      selected={selected}
                       disabled={!selectedAcaiFlavor}
+                      fallbackImage={acai1}
+                      large={isTotemMode}
                       onClick={() => toggleComplement(complement)}
-                      className={`rounded-lg border px-3 py-2.5 text-left text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                        selected
-                          ? "border-secondary bg-secondary text-white"
-                          : "border-border-soft bg-accent/50 text-text-muted hover:border-secondary/40 hover:text-primary"
-                      }`}
-                    >
-                      {complement.name}
-                    </button>
+                    />
                   );
                 })}
               </div>
@@ -839,6 +837,8 @@ function GuidedMenu({
                     key={flavor.id}
                     option={flavor}
                     selected={selectedFlavor === flavor.name}
+                    fallbackImage={MilkShake1}
+                    large={isTotemMode}
                     onClick={() => setSelectedFlavor(flavor.name)}
                   />
                 ))}
@@ -899,8 +899,12 @@ function FlavorOptionButton({
   option,
   selected,
   disabled = false,
+  fallbackImage,
+  large = false,
   onClick,
 }) {
+  const imageUrl = option.imageUrl || fallbackImage;
+
   return (
     <button
       type="button"
@@ -912,17 +916,24 @@ function FlavorOptionButton({
           : "border-border-soft bg-accent/50 text-text-muted hover:border-secondary/40 hover:text-primary"
       }`}
     >
-      {option.imageUrl ? (
+      {imageUrl ? (
         <img
-          src={option.imageUrl}
+          src={imageUrl}
           alt={option.name}
-          className="h-28 w-full object-cover"
+          className={`w-full object-cover ${large ? "h-40" : "h-32"}`}
           onError={(event) => {
-            event.currentTarget.style.display = "none";
+            if (fallbackImage && event.currentTarget.src !== fallbackImage) {
+              event.currentTarget.src = fallbackImage;
+              return;
+            }
           }}
         />
-      ) : null}
-      <span className="block px-3 py-3">{option.name}</span>
+      ) : (
+        <div className={`w-full bg-accent-dark/40 ${large ? "h-40" : "h-32"}`} />
+      )}
+      <span className={`block px-3 font-black ${large ? "py-4 text-base" : "py-3 text-sm"}`}>
+        {option.name}
+      </span>
     </button>
   );
 }
