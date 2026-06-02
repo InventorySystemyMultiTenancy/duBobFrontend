@@ -504,7 +504,6 @@ function GuidedMenu({
   const [selectedAcaiSize, setSelectedAcaiSize] = useState(null);
   const [selectedAcaiFlavor, setSelectedAcaiFlavor] = useState("");
   const [selectedComplements, setSelectedComplements] = useState([]);
-  const [showFlavorPhotos, setShowFlavorPhotos] = useState(false);
   const milkshakeFlowRef = useRef(null);
   const acaiFlowRef = useRef(null);
   const isTotemProductIntro = isTotemMode && !productType;
@@ -691,18 +690,9 @@ function GuidedMenu({
             </div>
 
             <div>
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-secondary">
-                  2. Sabor do acai
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowFlavorPhotos((value) => !value)}
-                  className="rounded-lg border border-border-soft px-3 py-1.5 text-xs font-black text-primary transition hover:border-secondary hover:text-secondary"
-                >
-                  {showFlavorPhotos ? "Ocultar fotos" : "Mostrar fotos"}
-                </button>
-              </div>
+              <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-secondary">
+                2. Sabor do acai
+              </p>
               <div className="grid gap-2 sm:grid-cols-2">
                 {acaiOptions.flavors.map((flavor) => (
                   <FlavorOptionButton
@@ -710,7 +700,6 @@ function GuidedMenu({
                     option={flavor}
                     selected={selectedAcaiFlavor === flavor.name}
                     disabled={!selectedAcaiSize}
-                    showPhoto={showFlavorPhotos}
                     onClick={() => setSelectedAcaiFlavor(flavor.name)}
                   />
                 ))}
@@ -837,18 +826,9 @@ function GuidedMenu({
             }`}
           >
             <div>
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-secondary">
-                  1. Escolha o sabor
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowFlavorPhotos((value) => !value)}
-                  className="rounded-lg border border-border-soft px-3 py-1.5 text-xs font-black text-primary transition hover:border-secondary hover:text-secondary"
-                >
-                  {showFlavorPhotos ? "Ocultar fotos" : "Mostrar fotos"}
-                </button>
-              </div>
+              <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-secondary">
+                1. Escolha o sabor
+              </p>
               <div
                 className={`grid gap-2 overflow-y-auto pr-1 sm:grid-cols-2 ${
                   isTotemMode ? "max-h-[42vh] xl:grid-cols-3" : "max-h-[420px] xl:grid-cols-3"
@@ -859,7 +839,6 @@ function GuidedMenu({
                     key={flavor.id}
                     option={flavor}
                     selected={selectedFlavor === flavor.name}
-                    showPhoto={showFlavorPhotos}
                     onClick={() => setSelectedFlavor(flavor.name)}
                   />
                 ))}
@@ -920,7 +899,6 @@ function FlavorOptionButton({
   option,
   selected,
   disabled = false,
-  showPhoto,
   onClick,
 }) {
   return (
@@ -934,7 +912,7 @@ function FlavorOptionButton({
           : "border-border-soft bg-accent/50 text-text-muted hover:border-secondary/40 hover:text-primary"
       }`}
     >
-      {showPhoto && option.imageUrl ? (
+      {option.imageUrl ? (
         <img
           src={option.imageUrl}
           alt={option.name}
