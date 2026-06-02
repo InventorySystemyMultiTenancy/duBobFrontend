@@ -94,10 +94,33 @@ export default function Navbar({ activeLink }) {
           ? "/motoboy"
           : user?.role === "COZINHA"
             ? "/cozinha"
-            : "/dashboard";
+          : "/dashboard";
 
   if (isTotemMode) {
-    return null;
+    const cartItemsCount = items.reduce(
+      (total, item) => total + Number(item.quantity || 1),
+      0,
+    );
+
+    return (
+      <div className="fixed right-4 top-4 z-[85]">
+        <button
+          type="button"
+          onClick={openCart}
+          className={`relative flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-white/80 bg-secondary text-4xl text-white shadow-2xl transition hover:scale-105 hover:bg-primary ${
+            cartItemsCount > 0 ? "animate-pulse" : ""
+          }`}
+          aria-label="Abrir carrinho"
+        >
+          🛒
+          {cartItemsCount > 0 && (
+            <span className="absolute -right-2 -top-2 flex h-8 min-w-8 items-center justify-center rounded-full bg-gold px-2 text-sm font-black text-primary shadow-lg">
+              {cartItemsCount}
+            </span>
+          )}
+        </button>
+      </div>
+    );
   }
 
   return (
