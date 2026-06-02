@@ -801,7 +801,7 @@ function GuidedMenu({
           ref={milkshakeFlowRef}
           className="mt-5 scroll-mt-24 rounded-lg border border-border-soft bg-white p-4 shadow-card sm:p-5"
         >
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className={`mb-4 flex flex-wrap ${isTotemMode ? "gap-3" : "gap-2"}`}>
             {milkshakeLines.map((line) => (
               <button
                 key={line.id}
@@ -811,7 +811,9 @@ function GuidedMenu({
                   setSelectedMilkshakeSize(null);
                   setSelectedFlavor("");
                 }}
-                className={`rounded-lg border px-4 py-2 text-sm font-black transition ${
+                className={`rounded-lg border font-black transition ${
+                  isTotemMode ? "px-7 py-4 text-xl" : "px-4 py-2 text-sm"
+                } ${
                   selectedLineId === line.id
                     ? "border-secondary bg-secondary text-white"
                     : "border-border-soft bg-accent text-primary hover:border-secondary/50"
@@ -828,7 +830,11 @@ function GuidedMenu({
             }`}
           >
             <aside className="rounded-lg border border-border-soft bg-accent/60 p-4">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-secondary">
+              <p
+                className={`font-black uppercase tracking-[0.22em] text-secondary ${
+                  isTotemMode ? "text-lg" : "text-xs"
+                }`}
+              >
                 1. Escolha o tamanho
               </p>
               <div
@@ -845,21 +851,35 @@ function GuidedMenu({
                       setSelectedMilkshakeSize(size);
                       setSelectedFlavor("");
                     }}
-                    className={`flex w-full items-center justify-between rounded-lg border px-3 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                    className={`flex w-full items-center justify-between rounded-lg border text-left transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                      isTotemMode ? "min-h-28 px-6 py-5" : "px-3 py-3"
+                    } ${
                       selectedMilkshakeSize?.id === size.id
                         ? "border-secondary bg-secondary/10"
                         : "border-border-soft bg-white hover:border-secondary"
                     }`}
                   >
                     <span>
-                      <span className="block text-sm font-black text-primary">
+                      <span
+                        className={`block font-black text-primary ${
+                          isTotemMode ? "text-2xl" : "text-sm"
+                        }`}
+                      >
                         {size.label} - {size.ml}
                       </span>
-                      <span className="text-xs text-text-muted">
+                      <span
+                        className={`text-text-muted ${
+                          isTotemMode ? "text-base" : "text-xs"
+                        }`}
+                      >
                         Escolha antes do sabor
                       </span>
                     </span>
-                    <span className="text-sm font-black text-secondary">
+                    <span
+                      className={`font-black text-secondary ${
+                        isTotemMode ? "text-2xl" : "text-sm"
+                      }`}
+                    >
                       {fmt(size.price)}
                     </span>
                   </button>
