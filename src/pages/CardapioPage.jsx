@@ -920,7 +920,7 @@ function FlavorOptionButton({
         <img
           src={imageUrl}
           alt={option.name}
-          className={`w-full object-cover ${large ? "h-40" : "h-32"}`}
+          className={`w-full object-cover ${large ? "h-56" : "h-32"}`}
           onError={(event) => {
             if (fallbackImage && event.currentTarget.src !== fallbackImage) {
               event.currentTarget.src = fallbackImage;
@@ -929,9 +929,13 @@ function FlavorOptionButton({
           }}
         />
       ) : (
-        <div className={`w-full bg-accent-dark/40 ${large ? "h-40" : "h-32"}`} />
+        <div className={`w-full bg-accent-dark/40 ${large ? "h-56" : "h-32"}`} />
       )}
-      <span className={`block px-3 font-black ${large ? "py-4 text-base" : "py-3 text-sm"}`}>
+      <span
+        className={`block px-4 font-black leading-tight ${
+          large ? "py-5 text-2xl" : "py-3 text-sm"
+        }`}
+      >
         {option.name}
       </span>
     </button>
