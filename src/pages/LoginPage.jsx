@@ -35,7 +35,11 @@ function LoginPage() {
       navigate(redirectTo);
       return;
     }
-    if (role === "COZINHA" || role === "COZINHA_DELIVERY") {
+    if (role === "COZINHA_DELIVERY") {
+      navigate("/cozinha-delivery");
+      return;
+    }
+    if (role === "COZINHA") {
       navigate("/cozinha");
       return;
     }

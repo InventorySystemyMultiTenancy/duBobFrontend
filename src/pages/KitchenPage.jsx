@@ -623,6 +623,7 @@ function KitchenPage() {
   const isNormalKitchenUser = user?.role === "COZINHA";
   const isDeliveryKitchenUser = user?.role === "COZINHA_DELIVERY";
   const isKitchenUser = isNormalKitchenUser || isDeliveryKitchenUser;
+  const isPreparationOnlyKitchen = isNormalKitchenUser;
   const canLoadMotoboys = [
     "ADMIN",
     "FUNCIONARIO",
@@ -1082,8 +1083,16 @@ function KitchenPage() {
   }, [stageCounts]);
 
   const visibleColumnKeys =
-    isKitchenUser
+    isPreparationOnlyKitchen
       ? ["PREPARANDO"]
+      : isDeliveryKitchenUser
+        ? [
+            "RECEBIDO",
+            "PREPARANDO",
+            "PRONTO",
+            "RETIRADA_PRONTA",
+            "SAIU_PARA_ENTREGA",
+          ]
       : user?.role === "ATENDENTE"
         ? ["LEVAR_PARA_MESA"]
         : user?.role === "FUNCIONARIO"
@@ -1100,18 +1109,18 @@ function KitchenPage() {
   const visibleStageCounts = stageCounts.filter((stage) =>
     visibleColumns.some((column) => column.key === stage.key),
   );
-  const showStageSummary = !isKitchenUser;
+  const showStageSummary = !isPreparationOnlyKitchen;
   const showWaiterCalls = !isKitchenUser;
-  const showHeaderDetails = !isKitchenUser;
+  const showHeaderDetails = !isPreparationOnlyKitchen;
   const kitchenPreparingOrders = useMemo(() => {
-    if (!isKitchenUser) return [];
+    if (!isPreparationOnlyKitchen) return [];
 
     return getColumnOrders("PREPARANDO").sort((a, b) =>
       compareOrdersByUrgency(a, b, currentNow),
     );
-  }, [currentNow, getColumnOrders, isKitchenUser]);
+  }, [currentNow, getColumnOrders, isPreparationOnlyKitchen]);
 
-  if (isKitchenUser) {
+  if (isPreparationOnlyKitchen) {
     return (
       <main className="min-h-screen bg-ink p-4 text-gray-900 sm:p-6">
         {!isLoading && !isError && (
