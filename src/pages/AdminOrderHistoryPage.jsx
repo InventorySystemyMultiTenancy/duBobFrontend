@@ -643,11 +643,6 @@ function AdminOrderHistoryPage() {
                               <span className="ml-2 text-xs text-gray-500">
                                 × {item.quantity}
                               </span>
-                              {item.product?.waiterOnly ? (
-                                <span className="ml-2 rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-bold text-cyan-700">
-                                  Somente garçom
-                                </span>
-                              ) : null}
                             </span>
                             <span className="text-sm font-semibold text-gray-900">
                               {formatMoney(item.totalPrice, locale || "pt-BR")}

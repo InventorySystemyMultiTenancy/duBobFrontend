@@ -267,7 +267,7 @@ function SalesAnalyticsPage() {
       {summary ? (
         <>
           {/* ── Métricas principais ─────────────────────────────── */}
-          <section className="mt-6 grid gap-4 sm:grid-cols-3">
+          <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <MetricCard
               label="Receita Total"
               value={formatCurrency(summary.totalRevenue, locale)}
@@ -280,9 +280,14 @@ function SalesAnalyticsPage() {
               hint="Soma do preço de custo dos itens"
             />
             <MetricCard
+              label="Gastos"
+              value={formatCurrency(summary.totalExpenses ?? 0, locale)}
+              hint="Lancamentos do periodo filtrado"
+            />
+            <MetricCard
               label="Lucro Líquido"
               value={formatCurrency(summary.totalProfit ?? 0, locale)}
-              hint="Receita − Custo"
+              hint="Receita - custo - gastos"
             />
           </section>
 
@@ -294,9 +299,12 @@ function SalesAnalyticsPage() {
               <p className="mt-2 font-display text-2xl text-primary">
                 {formatCurrency(summary.revenueToday, locale)}
               </p>
-              <div className="mt-1 flex justify-between text-xs text-smoke">
+              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-smoke">
                 <span>
                   Custo: {formatCurrency(summary.costToday ?? 0, locale)}
+                </span>
+                <span>
+                  Gastos: {formatCurrency(summary.expensesToday ?? 0, locale)}
                 </span>
                 <span>
                   Lucro: {formatCurrency(summary.profitToday ?? 0, locale)}
@@ -310,9 +318,13 @@ function SalesAnalyticsPage() {
               <p className="mt-2 font-display text-2xl text-primary">
                 {formatCurrency(summary.revenueThisMonth, locale)}
               </p>
-              <div className="mt-1 flex justify-between text-xs text-smoke">
+              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-smoke">
                 <span>
                   Custo: {formatCurrency(summary.costThisMonth ?? 0, locale)}
+                </span>
+                <span>
+                  Gastos:{" "}
+                  {formatCurrency(summary.expensesThisMonth ?? 0, locale)}
                 </span>
                 <span>
                   Lucro: {formatCurrency(summary.profitThisMonth ?? 0, locale)}
@@ -453,6 +465,13 @@ function SalesAnalyticsPage() {
                   <span className="text-red-600">
                     Custo:{" "}
                     {formatCurrency(dailySales[hoveredBar].cost ?? 0, locale)}
+                  </span>
+                  <span className="text-rose-700">
+                    Gastos:{" "}
+                    {formatCurrency(
+                      dailySales[hoveredBar].expenses ?? 0,
+                      locale,
+                    )}
                   </span>
                   <span className="text-green-700">
                     Lucro:{" "}

@@ -314,6 +314,23 @@ function AdminPanelPage() {
         </Link>
 
         <Link
+          to="/admin/gastos"
+          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-500/15 text-xl font-black">
+            -R$
+          </span>
+          <div>
+            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+              Gastos
+            </h2>
+            <p className="mt-0.5 text-xs text-smoke">
+              Lancar despesas e acompanhar historico por data
+            </p>
+          </div>
+        </Link>
+
+        <Link
           to="/caixa"
           className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
         >

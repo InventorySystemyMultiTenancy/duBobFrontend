@@ -152,7 +152,7 @@ function getKitchenOrderSubtitle(order, t) {
 }
 
 function getKitchenItems(order) {
-  return (order.items ?? []).filter((item) => !item.product?.waiterOnly);
+  return order.items ?? [];
 }
 
 function hasKitchenItems(order) {

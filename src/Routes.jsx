@@ -7,6 +7,7 @@ import AdminOrderHistoryPage from "./pages/AdminOrderHistoryPage.jsx";
 import AdminUsersPage from "./pages/AdminUsersPage.jsx";
 import AdminMesasPage from "./pages/AdminMesasPage.jsx";
 import AdminTotensPage from "./pages/AdminTotensPage.jsx";
+import AdminExpensesPage from "./pages/AdminExpensesPage.jsx";
 import SalesAnalyticsPage from "./pages/SalesAnalyticsPage.jsx";
 import CardapioPage from "./pages/CardapioPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
@@ -140,6 +141,7 @@ function AppRoutes() {
         <Route path="/admin/produtos" element={<AdminProductsHubPage />} />
         <Route path="/admin/produtos/lista" element={<AdminProductsPage />} />
         <Route path="/admin/vendas" element={<SalesAnalyticsPage />} />
+        <Route path="/admin/gastos" element={<AdminExpensesPage />} />
         <Route path="/admin/historico" element={<AdminOrderHistoryPage />} />
         <Route path="/admin/usuarios" element={<AdminUsersPage />} />
         <Route path="/admin/mesas" element={<AdminMesasPage />} />

@@ -12,7 +12,6 @@ const emptyForm = (initialValues = {}) => ({
   imageUrl: "",
   category: "",
   availableDays: [],
-  waiterOnly: false,
   ...initialValues,
   sizes: initialValues.sizes ?? [emptySize()],
 });
@@ -363,7 +362,6 @@ function ProductModal({
       availableDays: Array.isArray(product.availableDays)
         ? product.availableDays
         : [],
-      waiterOnly: Boolean(product.waiterOnly),
       sizes:
         product.sizes?.length > 0
           ? product.sizes.map((size) => ({
@@ -487,7 +485,7 @@ function ProductModal({
       imageUrl: form.imageUrl.trim() || undefined,
       category: form.category.trim() || undefined,
       availableDays: form.availableDays,
-      waiterOnly: form.waiterOnly,
+      waiterOnly: false,
       sizes: form.sizes.map((size) => ({
         size: size.size,
         label: size.label.trim() || undefined,
@@ -603,29 +601,6 @@ function ProductModal({
               Se nao marcar nenhum dia, o produto aparece todos os dias.
             </p>
           </div>
-
-          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900">
-            <input
-              type="checkbox"
-              checked={form.waiterOnly}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  waiterOnly: e.target.checked,
-                }))
-              }
-              className="mt-1 h-4 w-4 rounded border-gray-300 text-gold focus:ring-gold/30"
-            />
-            <span>
-              <span className="block text-xs font-semibold uppercase tracking-widest text-smoke">
-                Somente garcom
-              </span>
-              <span className="mt-1 block text-xs text-smoke">
-                Marque para bebidas e itens que nao precisam aparecer na
-                cozinha.
-              </span>
-            </span>
-          </label>
 
           {/* Image URL */}
           <div>
@@ -1055,11 +1030,6 @@ function ProductCard({ product, onEdit }) {
         <span className="rounded-xl bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">
           {formatAvailableDays(product.availableDays)}
         </span>
-        {product.waiterOnly ? (
-          <span className="rounded-xl bg-cyan-100 px-2 py-0.5 text-xs font-semibold text-cyan-700">
-            Somente garcom
-          </span>
-        ) : null}
       </div>
 
       <div
