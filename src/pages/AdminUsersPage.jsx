@@ -19,6 +19,12 @@ const ROLES = [
     fallback: "Motoboy",
   },
   {
+    value: "TV",
+    emoji: "TV",
+    key: "ADMIN_USERS_ROLE_TV",
+    fallback: "TV de pedidos",
+  },
+  {
     value: "COZINHA",
     emoji: "CN",
     key: "ADMIN_USERS_ROLE_COZINHA",

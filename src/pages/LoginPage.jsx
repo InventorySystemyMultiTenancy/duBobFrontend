@@ -47,6 +47,10 @@ function LoginPage() {
       navigate("/atendente");
       return;
     }
+    if (role === "TV") {
+      navigate("/tv");
+      return;
+    }
     if (["ADMIN", "FUNCIONARIO"].includes(role)) {
       navigate("/admin");
       return;

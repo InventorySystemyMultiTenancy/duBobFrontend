@@ -16,6 +16,7 @@ import ClientDashboardPage from "./pages/ClientDashboardPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import TotemPage from "./pages/TotemPage.jsx";
 import KitchenPage from "./pages/KitchenPage.jsx";
+import TVOrdersPage from "./pages/TVOrdersPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import MotoboyPage from "./pages/MotoboyPage.jsx";
 import MesaAccessPage from "./pages/MesaAccessPage.jsx";
@@ -121,6 +122,14 @@ function AppRoutes() {
         }
       >
         <Route path="/cozinha-delivery" element={<KitchenPage />} />
+      </Route>
+
+      <Route
+        element={
+          <PrivateRoute allowedRoles={["TV", "ADMIN", "FUNCIONARIO"]} />
+        }
+      >
+        <Route path="/tv" element={<TVOrdersPage />} />
       </Route>
 
       <Route
