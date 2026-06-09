@@ -1112,12 +1112,13 @@ function KitchenPage() {
   const showStageSummary = !isPreparationOnlyKitchen;
   const showWaiterCalls = !isKitchenUser;
   const showHeaderDetails = !isPreparationOnlyKitchen;
-  const kitchenPreparingOrders = useMemo(() => {
+  const kitchenPreparationOrders = useMemo(() => {
     if (!isPreparationOnlyKitchen) return [];
 
-    return getColumnOrders("PREPARANDO").sort((a, b) =>
-      compareOrdersByUrgency(a, b, currentNow),
-    );
+    return [
+      ...getColumnOrders("RECEBIDO"),
+      ...getColumnOrders("PREPARANDO"),
+    ].sort((a, b) => compareOrdersByUrgency(a, b, currentNow));
   }, [currentNow, getColumnOrders, isPreparationOnlyKitchen]);
 
   if (isPreparationOnlyKitchen) {
@@ -1125,20 +1126,20 @@ function KitchenPage() {
       <main className="min-h-screen bg-ink p-4 text-gray-900 sm:p-6">
         {!isLoading && !isError && (
           <>
-            {kitchenPreparingOrders.length === 0 ? (
+            {kitchenPreparationOrders.length === 0 ? (
               <div className="flex min-h-[calc(100vh-2rem)] items-center justify-center text-center sm:min-h-[calc(100vh-3rem)]">
                 <div className="rounded-3xl border-2 border-dashed border-gray-300 bg-white/45 px-8 py-10 shadow-sm">
                   <p className="text-5xl font-black uppercase text-gray-900">
                     Sem pedidos no momento
                   </p>
                   <p className="mt-4 text-2xl font-bold text-gray-600">
-                    A cozinha esta aguardando novos pedidos.
+                    A cozinha está aguardando novos pedidos.
                   </p>
                 </div>
               </div>
             ) : (
               <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
-                {kitchenPreparingOrders.map((order) => (
+                {kitchenPreparationOrders.map((order) => (
                   <OrderCard
                     key={order.id}
                     order={order}
