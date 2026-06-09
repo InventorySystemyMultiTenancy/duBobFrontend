@@ -92,6 +92,11 @@ function AdminUsersPage() {
       );
     },
     onError: (err) => {
+      if (err?.response?.status === 409) {
+        toast.error("E-mail, telefone ou CPF ja cadastrado.");
+        return;
+      }
+
       const errData = err?.response?.data?.error;
       const fieldErrors = errData?.details?.fieldErrors;
       if (fieldErrors) {
