@@ -7,17 +7,17 @@ const VISIBLE_STATUSES = ["PREPARANDO", "PRONTO"];
 const STATUS_CONFIG = {
   PREPARANDO: {
     title: "Preparando",
-    subtitle: "Seu pedido esta em preparo",
-    badge: "bg-amber-300 text-amber-950",
-    panel: "border-amber-300/50 bg-amber-100/80",
-    text: "text-amber-950",
+    subtitle: "Seu pedido está em preparo",
+    badge: "bg-gold text-primary",
+    panel: "border-gold/45 bg-white",
+    text: "text-primary",
   },
   PRONTO: {
     title: "Pronto",
-    subtitle: "Pode retirar no balcao",
-    badge: "bg-emerald-300 text-emerald-950",
-    panel: "border-emerald-300/50 bg-emerald-100/80",
-    text: "text-emerald-950",
+    subtitle: "Pode retirar no balcão",
+    badge: "bg-secondary text-white",
+    panel: "border-secondary/35 bg-white",
+    text: "text-secondary",
   },
 };
 
@@ -40,11 +40,11 @@ function OrderTile({ order }) {
 
   return (
     <article
-      className={`flex min-h-36 flex-col justify-between rounded-[2rem] border p-6 shadow-2xl ${config.panel}`}
+      className={`flex min-h-36 flex-col justify-between rounded-3xl border p-6 shadow-card ${config.panel}`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-sm font-black uppercase tracking-[0.22em] text-slate-500">
+          <p className="text-sm font-black uppercase tracking-[0.22em] text-smoke">
             {getOrderDetail(order)}
           </p>
           <h2
@@ -59,7 +59,7 @@ function OrderTile({ order }) {
           {config.title}
         </span>
       </div>
-      <p className="mt-5 text-xl font-bold text-slate-700">
+      <p className="mt-5 text-xl font-bold text-smoke">
         {config.subtitle}
       </p>
     </article>
@@ -73,14 +73,14 @@ function StatusColumn({ status, orders }) {
     <section className="flex min-h-0 flex-col">
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <h2 className="font-display text-5xl font-black leading-none text-white">
+          <h2 className="font-display text-5xl font-black leading-none text-primary">
             {config.title}
           </h2>
-          <p className="mt-2 text-lg font-semibold text-white/70">
+          <p className="mt-2 text-lg font-semibold text-smoke">
             {config.subtitle}
           </p>
         </div>
-        <span className="rounded-2xl bg-white/15 px-5 py-2 font-display text-4xl font-black text-white">
+        <span className="rounded-2xl border border-border-soft bg-white px-5 py-2 font-display text-4xl font-black text-primary shadow-card">
           {orders.length}
         </span>
       </div>
@@ -91,7 +91,7 @@ function StatusColumn({ status, orders }) {
             <OrderTile key={order.id} order={order} />
           ))
         ) : (
-          <div className="flex min-h-36 items-center justify-center rounded-[2rem] border border-white/10 bg-white/5 text-xl font-semibold text-white/55">
+          <div className="flex min-h-36 items-center justify-center rounded-3xl border border-border-soft bg-white/70 text-xl font-semibold text-smoke shadow-card">
             Nenhum pedido agora
           </div>
         )}
@@ -125,33 +125,33 @@ export default function TVOrdersPage() {
   const ready = visibleOrders.filter((order) => order.status === "PRONTO");
 
   return (
-    <main className="min-h-screen overflow-hidden bg-slate-950 px-8 py-7 text-white">
+    <main className="min-h-screen overflow-hidden bg-texture px-8 py-7 text-primary">
       <header className="mb-7 flex items-center justify-between gap-6">
         <div>
-          <p className="text-lg font-black uppercase tracking-[0.32em] text-amber-200">
+          <p className="text-lg font-black uppercase tracking-[0.32em] text-secondary">
             Acompanhe seu pedido
           </p>
           <h1 className="mt-2 font-display text-6xl font-black leading-none">
             Status dos Pedidos
           </h1>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-white/10 px-6 py-4 text-right">
-          <p className="text-sm font-bold uppercase tracking-widest text-white/60">
-            Atualizacao
+        <div className="rounded-3xl border border-border-soft bg-white px-6 py-4 text-right shadow-card">
+          <p className="text-sm font-bold uppercase tracking-widest text-smoke">
+            Atualização
           </p>
-          <p className="mt-1 text-2xl font-black text-emerald-200">
-            Automatica
+          <p className="mt-1 text-2xl font-black text-secondary">
+            Automática
           </p>
         </div>
       </header>
 
       {isLoading ? (
-        <div className="rounded-[2rem] border border-white/10 bg-white/10 p-8 text-2xl font-semibold text-white/70">
+        <div className="rounded-3xl border border-border-soft bg-white p-8 text-2xl font-semibold text-smoke shadow-card">
           Carregando pedidos...
         </div>
       ) : isError ? (
-        <div className="rounded-[2rem] border border-red-400/30 bg-red-500/15 p-8 text-2xl font-semibold text-red-100">
-          Nao foi possivel carregar os pedidos.
+        <div className="rounded-3xl border border-secondary/30 bg-white p-8 text-2xl font-semibold text-secondary shadow-card">
+          Não foi possível carregar os pedidos.
         </div>
       ) : (
         <div className="grid h-[calc(100vh-190px)] min-h-0 gap-7 lg:grid-cols-2">
