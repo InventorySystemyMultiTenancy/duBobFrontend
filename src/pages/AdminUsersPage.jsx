@@ -72,7 +72,7 @@ function AdminUsersPage() {
 
   const roleLabel = (role) => {
     const match = ROLES.find((r) => r.value === role);
-    if (!match) return t("ADMIN_USERS_GENERIC_USER", "UsuÃ¡rio");
+    if (!match) return t("ADMIN_USERS_GENERIC_USER", "Usuário");
     return `${match.emoji} ${t(match.key, match.fallback)}`;
   };
 
@@ -88,7 +88,7 @@ function AdminUsersPage() {
       setCreated(user);
       setForm(EMPTY);
       toast.success(
-        t("ADMIN_USERS_CREATED_SUCCESS", "UsuÃ¡rio criado com sucesso!"),
+        t("ADMIN_USERS_CREATED_SUCCESS", "Usuário criado com sucesso!"),
       );
     },
     onError: (err) => {
@@ -117,7 +117,7 @@ function AdminUsersPage() {
         errData?.message ||
         t(
           "ADMIN_USERS_CREATE_ERROR",
-          "Erro ao criar usuÃ¡rio. Verifique os dados.",
+          "Erro ao criar usuário. Verifique os dados.",
         );
       toast.error(msg);
     },
@@ -137,7 +137,7 @@ function AdminUsersPage() {
         toast.error(
           t(
             "ADMIN_USERS_PHONE_MIN_DIGITS",
-            "Telefone deve ter pelo menos 10 dÃ­gitos.",
+            "Telefone deve ter pelo menos 10 dígitos.",
           ),
         );
         return;
@@ -148,7 +148,7 @@ function AdminUsersPage() {
       toast.error(
         t(
           "ADMIN_USERS_EMAIL_OR_PHONE_REQUIRED",
-          "Informe e-mail ou telefone para que o usuÃ¡rio possa fazer login.",
+          "Informe e-mail ou telefone para que o usuário possa fazer login.",
         ),
       );
       return;
@@ -163,10 +163,10 @@ function AdminUsersPage() {
           to="/admin"
           className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
         >
-          {t("ADMIN_USERS_BACK_PANEL", "â† Painel Admin")}
+          {t("ADMIN_USERS_BACK_PANEL", "← Painel Admin")}
         </Link>
         <h1 className="font-display text-3xl text-gold">
-          {t("ADMIN_USERS_TITLE", "Criar UsuÃ¡rio")}
+          {t("ADMIN_USERS_TITLE", "Criar Usuário")}
         </h1>
       </div>
 
@@ -207,7 +207,7 @@ function AdminUsersPage() {
               required
               minLength={2}
               maxLength={120}
-              placeholder={t("ADMIN_USERS_NAME_PLACEHOLDER", "Ex: JoÃ£o Silva")}
+              placeholder={t("ADMIN_USERS_NAME_PLACEHOLDER", "Ex: João Silva")}
               value={form.name}
               onChange={set("name")}
               className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
@@ -263,7 +263,7 @@ function AdminUsersPage() {
                 minLength={6}
                 placeholder={t(
                   "ADMIN_USERS_PASSWORD_PLACEHOLDER",
-                  "MÃ­nimo 6 caracteres",
+                  "Mínimo 6 caracteres",
                 )}
                 value={form.password}
                 onChange={set("password")}
@@ -274,7 +274,7 @@ function AdminUsersPage() {
                 onClick={() => setShowPassword((v) => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
               >
-                {showPassword ? "ðŸ™ˆ" : "ðŸ‘ï¸"}
+                {showPassword ? "Ocultar" : "Mostrar"}
               </button>
             </div>
           </div>
@@ -295,7 +295,7 @@ function AdminUsersPage() {
       {created && (
         <div className="mt-5 rounded-3xl border border-green-200 bg-green-50 p-5">
           <p className="text-sm font-bold text-green-800">
-            âœ… {t("ADMIN_USERS_CREATED_SUCCESS", "UsuÃ¡rio criado com sucesso!")}
+            OK {t("ADMIN_USERS_CREATED_SUCCESS", "Usuário criado com sucesso!")}
           </p>
           <div className="mt-3 space-y-1 text-sm text-green-700">
             <p>
@@ -332,7 +332,7 @@ function AdminUsersPage() {
             onClick={() => setCreated(null)}
             className="mt-3 text-xs text-green-600 underline"
           >
-            {t("ADMIN_USERS_CREATE_ANOTHER", "Criar outro usuÃ¡rio")}
+            {t("ADMIN_USERS_CREATE_ANOTHER", "Criar outro usuário")}
           </button>
         </div>
       )}
