@@ -322,8 +322,9 @@ function CardapioPage() {
   const handleGuidedAdd = ({ line, flavor, size }) => {
     const product =
       products.find((p) => p.id === line.productId) ||
-      products.find((p) => String(p.category ?? "").toLowerCase().includes("milk")) ||
-      products[0];
+      products.find(
+        (p) => !isConfigProduct(p) && normalizeText(p.category).includes("milk"),
+      );
 
     if (!product?.id) return;
 
@@ -356,8 +357,12 @@ function CardapioPage() {
     const product =
       products.find((p) => p.id === "db_acai_copo") ||
       products.find((p) => p.id === "db_acai_tradicional") ||
-      products.find((p) => normalizeText(p.category).includes("acai no copo")) ||
-      products.find((p) => normalizeText(p.name).includes("acai"));
+      products.find(
+        (p) => !isConfigProduct(p) && normalizeText(p.category).includes("acai no copo"),
+      ) ||
+      products.find(
+        (p) => !isConfigProduct(p) && normalizeText(p.name).includes("acai"),
+      );
     if (!product?.id) return;
 
     const extraComplements = complements.length > 4;

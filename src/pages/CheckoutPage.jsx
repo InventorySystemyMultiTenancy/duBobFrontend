@@ -196,9 +196,14 @@ function CheckoutPage() {
       };
 
       if (isTotemMode) {
+        const totemNumber = currentTotemSlug
+          ? currentTotemSlug.replace(/^totem/i, "")
+          : "";
         payload.deliveryAddress = "Totem - retirada no local";
         payload.isPickup = true;
-        payload.notes = "Pedido feito no Totem";
+        payload.notes = totemNumber
+          ? `Pedido feito no Totem ${totemNumber}`
+          : "Pedido feito no Totem";
         payload.deliveryFee = 0;
         delete payload.deliveryLat;
         delete payload.deliveryLon;

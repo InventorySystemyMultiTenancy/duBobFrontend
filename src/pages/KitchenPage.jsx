@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
-import EstimatedTimeBadge from "../components/EstimatedTimeBadge.jsx";
 import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
 import { askPaymentMethod } from "../lib/paymentMethodPrompt.js";
@@ -116,7 +115,13 @@ const formatTime = (iso) =>
   new Date(iso).toLocaleTimeString("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
   });
+
+function getTotemLabel(order) {
+  const match = String(order?.notes || "").match(/Totem\s*(\d+)/i);
+  return match ? `Totem ${match[1]}` : "Totem";
+}
 
 function getKitchenOrderTitle(order, t) {
   if (order.mesa) {
@@ -128,6 +133,10 @@ function getKitchenOrderTitle(order, t) {
       ? `Comanda ${order.comanda.number}`
       : "Comanda";
     return order.comanda.name ? `${number} - ${order.comanda.name}` : number;
+  }
+
+  if (isTotemOrder(order)) {
+    return getTotemLabel(order);
   }
 
   if (order.isPickup) {
@@ -320,34 +329,46 @@ function OrderCard({
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <span
-            className={`shrink-0 rounded-xl font-black ${
-              largeMode ? "px-3 py-2 text-base" : "px-2 py-1 text-xs"
-            } ${STAGE_BADGE[order.status] ?? "bg-gray-200 text-gray-900"}`}
-          >
-            {order.status.replace(/_/g, " ")}
-          </span>
-          <span
-            className={`rounded-xl font-black ${
-              largeMode ? "px-3 py-1.5 text-sm" : "px-2 py-1 text-xs"
-            } ${
-              order.mesa
-                ? "bg-amber-100 text-amber-700"
-                : order.comanda
-                  ? "bg-emerald-100 text-emerald-700"
-                  : order.isPickup
-                    ? "bg-purple-100 text-purple-700"
-                    : "bg-sky-100 text-sky-700"
-            }`}
-          >
-            {order.mesa
-              ? `🪑 ${t("ADMIN_PANEL_MESA_LABEL", "Mesa")} ${order.mesa.number}`
-              : order.comanda
-                ? `🎫 Comanda ${order.comanda.number}`
-                : order.isPickup
-                  ? `🏠 ${t("KITCHEN_PICKUP", "Retirada")}`
-                  : `🛵 ${t("KITCHEN_DELIVERY", "Entrega")}`}
-          </span>
+          {isTotemOrder(order) ? (
+            <span
+              className={`rounded-xl font-black ${
+                largeMode ? "px-3 py-1.5 text-sm" : "px-2 py-1 text-xs"
+              } bg-indigo-100 text-indigo-700`}
+            >
+              🖥️ {getTotemLabel(order)}
+            </span>
+          ) : (
+            <>
+              <span
+                className={`shrink-0 rounded-xl font-black ${
+                  largeMode ? "px-3 py-2 text-base" : "px-2 py-1 text-xs"
+                } ${STAGE_BADGE[order.status] ?? "bg-gray-200 text-gray-900"}`}
+              >
+                {order.status.replace(/_/g, " ")}
+              </span>
+              <span
+                className={`rounded-xl font-black ${
+                  largeMode ? "px-3 py-1.5 text-sm" : "px-2 py-1 text-xs"
+                } ${
+                  order.mesa
+                    ? "bg-amber-100 text-amber-700"
+                    : order.comanda
+                      ? "bg-emerald-100 text-emerald-700"
+                      : order.isPickup
+                        ? "bg-purple-100 text-purple-700"
+                        : "bg-sky-100 text-sky-700"
+                }`}
+              >
+                {order.mesa
+                  ? `🪑 ${t("ADMIN_PANEL_MESA_LABEL", "Mesa")} ${order.mesa.number}`
+                  : order.comanda
+                    ? `🎫 Comanda ${order.comanda.number}`
+                    : order.isPickup
+                      ? `🏠 ${t("KITCHEN_PICKUP", "Retirada")}`
+                      : `🛵 ${t("KITCHEN_DELIVERY", "Entrega")}`}
+              </span>
+            </>
+          )}
           {isPaymentPending && !onConfirmPayment && (
             <span
               className={`rounded-xl bg-amber-100 font-black text-amber-700 ${
@@ -366,9 +387,22 @@ function OrderCard({
         </div>
       ) : null}
 
-      <div className="mt-4 text-base">
-        <EstimatedTimeBadge compact now={now} order={order} />
-      </div>
+      {eta && !eta.isFinal ? (
+        <div className="mt-4 text-base">
+          <span
+            className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
+              eta.isOverdue
+                ? "border-red-300 bg-red-100 text-red-700"
+                : eta.elapsedMinutes >= 20
+                  ? "border-amber-300 bg-amber-100 text-amber-700"
+                  : "border-sky-300 bg-sky-100 text-sky-700"
+            }`}
+          >
+            {t("KITCHEN_WAITING_SINCE", "Aguardando há")} {eta.elapsedMinutes}{" "}
+            min
+          </span>
+        </div>
+      ) : null}
 
       {/* Items */}
       <ul className="mt-4 space-y-4 border-t-2 border-gray-300 pt-4">
