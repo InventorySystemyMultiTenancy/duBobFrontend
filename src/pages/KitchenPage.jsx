@@ -196,13 +196,51 @@ function isTotemWaitingPayment(order) {
   );
 }
 
-function getProductImage(item) {
+const normalizeText = (value) =>
+  String(value ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+
+function getFlavorCategoryNeedle(notes) {
+  const linhaMatch = notes.match(/Linha:\s*([^|]+)/i);
+  if (linhaMatch) {
+    const linha = normalizeText(linhaMatch[1]);
+    if (linha.includes("especial")) return "sabor milkshake especial";
+    if (linha.includes("alcool")) return "sabor milkshake alcool";
+    if (linha.includes("premium")) return "sabor milkshake premium";
+    return "sabor milkshake tradicional";
+  }
+  if (/tamanho:/i.test(notes)) return "sabor acai";
+  return null;
+}
+
+function getFlavorImage(item, products) {
+  const notes = String(item?.notes || "");
+  const flavorMatch = notes.match(/Sabor:\s*([^|]+)/i);
+  if (!flavorMatch || !products?.length) return "";
+
+  const flavorName = normalizeText(flavorMatch[1]);
+  const categoryNeedle = getFlavorCategoryNeedle(notes);
+  if (!categoryNeedle) return "";
+
+  const match = products.find(
+    (p) =>
+      normalizeText(p.category).includes(categoryNeedle) &&
+      normalizeText(p.name) === flavorName,
+  );
+
+  return match?.imageUrl || "";
+}
+
+function getProductImage(item, products = []) {
   return (
-    item?.product?.imageUrl ??
-    item?.product?.image ??
-    item?.product?.photo ??
-    item?.imageUrl ??
-    item?.image ??
+    getFlavorImage(item, products) ||
+    item?.product?.imageUrl ||
+    item?.product?.image ||
+    item?.product?.photo ||
+    item?.imageUrl ||
+    item?.image ||
     ""
   );
 }
@@ -259,6 +297,7 @@ function OrderCard({
   onConfirmDelivery,
   confirmingDelivery,
   largeMode = false,
+  products = [],
 }) {
   const { t } = useTranslation();
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -419,9 +458,9 @@ function OrderCard({
                   largeMode ? "h-28 w-28" : "h-20 w-20"
                 }`}
               >
-                {getProductImage(item) ? (
+                {getProductImage(item, products) ? (
                   <img
-                    src={getProductImage(item)}
+                    src={getProductImage(item, products)}
                     alt={item.product?.name ?? "Produto"}
                     className="h-full w-full object-cover"
                   />
@@ -671,6 +710,14 @@ function KitchenPage() {
     "COZINHA",
     "COZINHA_DELIVERY",
   ].includes(user?.role);
+  const { data: products = [] } = useQuery({
+    queryKey: ["products"],
+    queryFn: async () => {
+      const res = await api.get("/products");
+      return res.data?.data ?? [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
   const [now, setNow] = useState(() => Date.now());
   const [latestAlert, setLatestAlert] = useState(null);
   const [freshOrderIds, setFreshOrderIds] = useState([]);
@@ -1181,6 +1228,7 @@ function KitchenPage() {
                     key={order.id}
                     order={order}
                     now={currentNow}
+                    products={products}
                     isFresh={freshOrderIds.includes(order.id)}
                     dragging={false}
                     advancing={isPending && advancingVars?.orderId === order.id}
@@ -1530,6 +1578,7 @@ function KitchenPage() {
                         key={order.id}
                         order={order}
                         now={currentNow}
+                        products={products}
                         isFresh={freshOrderIds.includes(order.id)}
                         dragging={draggedOrder?.id === order.id}
                         advancing={
