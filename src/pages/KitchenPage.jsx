@@ -466,7 +466,7 @@ function OrderCard({
         ))}
       </ul>
 
-      {order.notes && (
+      {order.notes && !isTotemOrder(order) && (
         <KitchenAlertStrip label="Obs do pedido" value={order.notes} />
       )}
 
