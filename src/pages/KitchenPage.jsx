@@ -124,7 +124,9 @@ function getKitchenOrderTitle(order, t) {
   }
 
   if (order.comanda) {
-    const number = order.comanda.number ? `Comanda ${order.comanda.number}` : "Comanda";
+    const number = order.comanda.number
+      ? `Comanda ${order.comanda.number}`
+      : "Comanda";
     return order.comanda.name ? `${number} - ${order.comanda.name}` : number;
   }
 
@@ -160,7 +162,7 @@ function hasKitchenItems(order) {
 }
 
 function isDeliveryOrPickupOrder(order) {
-  return !order?.mesaId && !order?.comandaId;
+  return !order?.mesaId && !order?.comandaId && !isTotemOrder(order);
 }
 
 function isDeliveryOrder(order) {
@@ -168,7 +170,14 @@ function isDeliveryOrder(order) {
 }
 
 function isLocalKitchenOrder(order) {
-  return !isDeliveryOrPickupOrder(order);
+  return Boolean(order?.mesaId || order?.comandaId) || isTotemOrder(order);
+}
+
+function isTotemOrder(order) {
+  return (
+    order?.paymentMethod === "MAQUININHA_TOTEM" ||
+    String(order?.notes || "").includes("Pedido feito no Totem")
+  );
 }
 
 function isTotemWaitingPayment(order) {
@@ -263,15 +272,15 @@ function OrderCard({
       ? t("KITCHEN_ADVANCE_TO_TABLE", "Levar para a Mesa")
       : order.isPickup && order.status === "PREPARANDO"
         ? t("KITCHEN_READY_PICKUP", "Pronto p/ Retirada")
-      : order.mesaId && order.status === "PRONTO"
-      ? t("KITCHEN_ADVANCE_TO_TABLE", "Levar para a Mesa")
-      : order.mesaId && order.status === "SAIU_PARA_ENTREGA"
-        ? t("KITCHEN_DELIVERED_AT_TABLE", "Entregue na Mesa")
-        : order.isPickup && order.status === "PRONTO"
-          ? t("KITCHEN_READY_PICKUP", "Pronto p/ Retirada")
-          : order.isPickup && order.status === "SAIU_PARA_ENTREGA"
-            ? t("KITCHEN_MARK_PICKED_UP", "Marcar Retirado")
-            : t(`KITCHEN_NEXT_${order.status}`, NEXT_LABEL[order.status]);
+        : order.mesaId && order.status === "PRONTO"
+          ? t("KITCHEN_ADVANCE_TO_TABLE", "Levar para a Mesa")
+          : order.mesaId && order.status === "SAIU_PARA_ENTREGA"
+            ? t("KITCHEN_DELIVERED_AT_TABLE", "Entregue na Mesa")
+            : order.isPickup && order.status === "PRONTO"
+              ? t("KITCHEN_READY_PICKUP", "Pronto p/ Retirada")
+              : order.isPickup && order.status === "SAIU_PARA_ENTREGA"
+                ? t("KITCHEN_MARK_PICKED_UP", "Marcar Retirado")
+                : t(`KITCHEN_NEXT_${order.status}`, NEXT_LABEL[order.status]);
 
   return (
     <article
@@ -314,9 +323,7 @@ function OrderCard({
           <span
             className={`shrink-0 rounded-xl font-black ${
               largeMode ? "px-3 py-2 text-base" : "px-2 py-1 text-xs"
-            } ${
-              STAGE_BADGE[order.status] ?? "bg-gray-200 text-gray-900"
-            }`}
+            } ${STAGE_BADGE[order.status] ?? "bg-gray-200 text-gray-900"}`}
           >
             {order.status.replace(/_/g, " ")}
           </span>
@@ -328,18 +335,18 @@ function OrderCard({
                 ? "bg-amber-100 text-amber-700"
                 : order.comanda
                   ? "bg-emerald-100 text-emerald-700"
-                : order.isPickup
-                  ? "bg-purple-100 text-purple-700"
-                  : "bg-sky-100 text-sky-700"
+                  : order.isPickup
+                    ? "bg-purple-100 text-purple-700"
+                    : "bg-sky-100 text-sky-700"
             }`}
           >
             {order.mesa
               ? `🪑 ${t("ADMIN_PANEL_MESA_LABEL", "Mesa")} ${order.mesa.number}`
               : order.comanda
                 ? `🎫 Comanda ${order.comanda.number}`
-              : order.isPickup
-                ? `🏠 ${t("KITCHEN_PICKUP", "Retirada")}`
-                : `🛵 ${t("KITCHEN_DELIVERY", "Entrega")}`}
+                : order.isPickup
+                  ? `🏠 ${t("KITCHEN_PICKUP", "Retirada")}`
+                  : `🛵 ${t("KITCHEN_DELIVERY", "Entrega")}`}
           </span>
           {isPaymentPending && !onConfirmPayment && (
             <span
@@ -848,27 +855,24 @@ function KitchenPage() {
     enabled: canLoadMotoboys,
   });
 
-  const visibleOrders = useMemo(
-    () => {
-      const roleFiltered =
-        user?.role === "MOTOBOY"
-          ? orders.filter((o) => o.assignedMotoboyId === user.id)
-          : isDeliveryKitchenUser
-            ? orders.filter(isDeliveryOrPickupOrder)
-            : isNormalKitchenUser
-              ? orders.filter(isLocalKitchenOrder)
-          : orders;
+  const visibleOrders = useMemo(() => {
+    const roleFiltered =
+      user?.role === "MOTOBOY"
+        ? orders.filter((o) => o.assignedMotoboyId === user.id)
+        : isDeliveryKitchenUser
+          ? orders.filter(isDeliveryOrPickupOrder)
+          : isNormalKitchenUser
+            ? orders.filter(isLocalKitchenOrder)
+            : orders;
 
-      return roleFiltered
-        .filter((order) => !isTotemWaitingPayment(order))
-        .map((order) => ({
-          ...order,
-          items: getKitchenItems(order),
-        }))
-        .filter(hasKitchenItems);
-    },
-    [isDeliveryKitchenUser, isNormalKitchenUser, orders, user],
-  );
+    return roleFiltered
+      .filter((order) => !isTotemWaitingPayment(order))
+      .map((order) => ({
+        ...order,
+        items: getKitchenItems(order),
+      }))
+      .filter(hasKitchenItems);
+  }, [isDeliveryKitchenUser, isNormalKitchenUser, orders, user]);
 
   const {
     mutate: assignMotoboy,
@@ -1082,17 +1086,16 @@ function KitchenPage() {
     );
   }, [stageCounts]);
 
-  const visibleColumnKeys =
-    isPreparationOnlyKitchen
-      ? ["PREPARANDO"]
-      : isDeliveryKitchenUser
-        ? [
-            "RECEBIDO",
-            "PREPARANDO",
-            "PRONTO",
-            "RETIRADA_PRONTA",
-            "SAIU_PARA_ENTREGA",
-          ]
+  const visibleColumnKeys = isPreparationOnlyKitchen
+    ? ["PREPARANDO"]
+    : isDeliveryKitchenUser
+      ? [
+          "RECEBIDO",
+          "PREPARANDO",
+          "PRONTO",
+          "RETIRADA_PRONTA",
+          "SAIU_PARA_ENTREGA",
+        ]
       : user?.role === "ATENDENTE"
         ? ["LEVAR_PARA_MESA"]
         : user?.role === "FUNCIONARIO"
@@ -1173,34 +1176,34 @@ function KitchenPage() {
           </h1>
           {showHeaderDetails && (
             <>
-          <p className="mt-1 text-xs text-smoke">
-            {t(
-              "KITCHEN_UPDATED_AT",
-              "Atualizado em {{time}} • tempo real com fallback de 2 min",
-            ).replace("{{time}}", lastUpdate)}
-          </p>
-          <p className="mt-1 text-xs text-red-300">
-            {overdueCount
-              ? t(
-                  "KITCHEN_OVERDUE_COUNT",
-                  "{{count}} pedidos em atraso",
-                ).replace("{{count}}", String(overdueCount))
-              : t("KITCHEN_NO_OVERDUE", "Sem pedidos em atraso")}
-          </p>
-          <p className="mt-1 text-xs text-gold/90">
-            {unreadCount
-              ? t(
-                  "KITCHEN_UNREAD_ALERTS",
-                  "{{count}} novos alertas nao lidos",
-                ).replace("{{count}}", String(unreadCount))
-              : t("KITCHEN_NO_ALERTS", "Nenhum alerta pendente")}
-          </p>
-          <p className="mt-1 text-xs text-smoke">
-            {t("ADMIN_PANEL_DESKTOP_LABEL", "Desktop")}:{" "}
-            {desktopEnabled
-              ? t("ADMIN_PANEL_DESKTOP_ON", "notificacoes ativas")
-              : t("ADMIN_PANEL_DESKTOP_OFF", "notificacoes inativas")}
-          </p>
+              <p className="mt-1 text-xs text-smoke">
+                {t(
+                  "KITCHEN_UPDATED_AT",
+                  "Atualizado em {{time}} • tempo real com fallback de 2 min",
+                ).replace("{{time}}", lastUpdate)}
+              </p>
+              <p className="mt-1 text-xs text-red-300">
+                {overdueCount
+                  ? t(
+                      "KITCHEN_OVERDUE_COUNT",
+                      "{{count}} pedidos em atraso",
+                    ).replace("{{count}}", String(overdueCount))
+                  : t("KITCHEN_NO_OVERDUE", "Sem pedidos em atraso")}
+              </p>
+              <p className="mt-1 text-xs text-gold/90">
+                {unreadCount
+                  ? t(
+                      "KITCHEN_UNREAD_ALERTS",
+                      "{{count}} novos alertas nao lidos",
+                    ).replace("{{count}}", String(unreadCount))
+                  : t("KITCHEN_NO_ALERTS", "Nenhum alerta pendente")}
+              </p>
+              <p className="mt-1 text-xs text-smoke">
+                {t("ADMIN_PANEL_DESKTOP_LABEL", "Desktop")}:{" "}
+                {desktopEnabled
+                  ? t("ADMIN_PANEL_DESKTOP_ON", "notificacoes ativas")
+                  : t("ADMIN_PANEL_DESKTOP_OFF", "notificacoes inativas")}
+              </p>
             </>
           )}
         </div>
@@ -1298,72 +1301,72 @@ function KitchenPage() {
       )}
 
       {showWaiterCalls && (
-      <section className="mb-5 rounded-2xl border border-gold/20 bg-lacquer/60 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="font-display text-xl text-gold">
-              🛎 {t("KITCHEN_WAITER_CALLS_TITLE", "Chamadas de mesa")}
-            </h2>
-            <p className="mt-1 text-xs text-smoke">
-              {t(
-                "KITCHEN_WAITER_CALLS_DESC",
-                "Pedidos recentes de atendimento enviados pelas mesas.",
-              )}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleClearAlerts}
-            className="rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
-          >
-            {t("KITCHEN_CLEAR_WAITER_CALLS", "Limpar chamadas")}
-            {waiterCalls.length ? ` (${waiterCalls.length})` : ""}
-          </button>
-        </div>
-
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {waiterCalls.map((call, index) => (
-            <article
-              key={`${call.mesaId ?? "mesa"}-${call.timestamp ?? index}`}
-              className="rounded-2xl border border-gold/20 bg-ink/60 p-4"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-display text-lg text-gray-900">
-                    {call?.mesaNumber
-                      ? t("KITCHEN_TABLE_NUMBER", "Mesa {{number}}").replace(
-                          "{{number}}",
-                          String(call.mesaNumber),
-                        )
-                      : t("KITCHEN_GENERIC_TABLE", "Mesa")}
-                  </p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.2em] text-gold">
-                    {t("KITCHEN_SERVICE_REQUEST", "Atendimento solicitado")}
-                  </p>
-                </div>
-                <span className="rounded-full bg-white px-2 py-1 text-[11px] font-semibold text-smoke shadow-sm">
-                  {formatRelativeTime(call?.timestamp)}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleDismissWaiterCall(call, index)}
-                className="mt-4 w-full rounded-2xl bg-green-600 px-4 py-3 text-sm font-black uppercase text-white transition hover:bg-green-700"
-              >
-                Dar baixa
-              </button>
-            </article>
-          ))}
-          {!waiterCalls.length ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 p-4 text-sm text-smoke md:col-span-2 xl:col-span-3">
-              {t(
-                "KITCHEN_WAITER_CALLS_EMPTY",
-                "Nenhuma chamada de mesa registrada por enquanto.",
-              )}
+        <section className="mb-5 rounded-2xl border border-gold/20 bg-lacquer/60 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-display text-xl text-gold">
+                🛎 {t("KITCHEN_WAITER_CALLS_TITLE", "Chamadas de mesa")}
+              </h2>
+              <p className="mt-1 text-xs text-smoke">
+                {t(
+                  "KITCHEN_WAITER_CALLS_DESC",
+                  "Pedidos recentes de atendimento enviados pelas mesas.",
+                )}
+              </p>
             </div>
-          ) : null}
-        </div>
-      </section>
+            <button
+              type="button"
+              onClick={handleClearAlerts}
+              className="rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
+            >
+              {t("KITCHEN_CLEAR_WAITER_CALLS", "Limpar chamadas")}
+              {waiterCalls.length ? ` (${waiterCalls.length})` : ""}
+            </button>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {waiterCalls.map((call, index) => (
+              <article
+                key={`${call.mesaId ?? "mesa"}-${call.timestamp ?? index}`}
+                className="rounded-2xl border border-gold/20 bg-ink/60 p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-display text-lg text-gray-900">
+                      {call?.mesaNumber
+                        ? t("KITCHEN_TABLE_NUMBER", "Mesa {{number}}").replace(
+                            "{{number}}",
+                            String(call.mesaNumber),
+                          )
+                        : t("KITCHEN_GENERIC_TABLE", "Mesa")}
+                    </p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.2em] text-gold">
+                      {t("KITCHEN_SERVICE_REQUEST", "Atendimento solicitado")}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-white px-2 py-1 text-[11px] font-semibold text-smoke shadow-sm">
+                    {formatRelativeTime(call?.timestamp)}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDismissWaiterCall(call, index)}
+                  className="mt-4 w-full rounded-2xl bg-green-600 px-4 py-3 text-sm font-black uppercase text-white transition hover:bg-green-700"
+                >
+                  Dar baixa
+                </button>
+              </article>
+            ))}
+            {!waiterCalls.length ? (
+              <div className="rounded-2xl border border-dashed border-gray-200 p-4 text-sm text-smoke md:col-span-2 xl:col-span-3">
+                {t(
+                  "KITCHEN_WAITER_CALLS_EMPTY",
+                  "Nenhuma chamada de mesa registrada por enquanto.",
+                )}
+              </div>
+            ) : null}
+          </div>
+        </section>
       )}
 
       {latestAlert ? (
@@ -1420,7 +1423,7 @@ function KitchenPage() {
               ? "grid-cols-1 lg:grid-cols-3"
               : visibleColumns.length === 1
                 ? "grid-cols-1"
-              : "sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7"
+                : "sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7"
           }`}
         >
           {visibleColumns.map((col) => {
