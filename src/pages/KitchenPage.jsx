@@ -245,6 +245,18 @@ function getProductImage(item, products = []) {
   );
 }
 
+function getKitchenItemTitle(item, t) {
+  const notes = String(item?.notes || "");
+  const flavorMatch = notes.match(/Sabor:\s*([^|]+)/i);
+  const fallback = item.product?.name ?? t("CLIENT_DASHBOARD_ITEM", "Item");
+  if (!flavorMatch) return fallback;
+
+  const flavor = flavorMatch[1].trim();
+  const linhaMatch = notes.match(/Linha:\s*([^|]+)/i);
+  const base = linhaMatch ? linhaMatch[1].trim() : fallback;
+  return `${base} - ${flavor}`;
+}
+
 function toKitchenAlertText(value) {
   if (!value) return "";
 
@@ -476,7 +488,7 @@ function OrderCard({
                     largeMode ? "text-2xl" : "text-lg"
                   }`}
                 >
-                  {item.product?.name ?? t("CLIENT_DASHBOARD_ITEM", "Item")}
+                  {getKitchenItemTitle(item, t)}
                 </span>
                 <span
                   className={`mt-2 inline-flex rounded-xl bg-gray-900 font-black text-white ${
