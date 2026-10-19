@@ -8,10 +8,10 @@ import {
   TOTEM_MODE_KEY,
   TOTEM_SLUG_KEY,
 } from "../lib/totemMode.js";
+import { verifyExitPin } from "../lib/exitPin.js";
 const IDLE_TIME_MS = 60_000;
 const WARNING_TIME = 15;
 const EXIT_HOLD_MS = 10_000;
-const EXIT_PASSWORD = "2468";
 const BLOCKED_CTRL_KEYS = new Set(["r", "l", "n", "t", "w", "p", "s", "u"]);
 const ACTIVITY_EVENTS = [
   "click",
@@ -283,12 +283,13 @@ function TotemIdleGuard() {
     setExitPasswordError("");
   };
 
-  const handleExitPasswordSubmit = (event) => {
+  const handleExitPasswordSubmit = async (event) => {
     event.preventDefault();
     const normalizedPassword = exitPassword.replace(/\D/g, "");
+    const result = await verifyExitPin("totem", normalizedPassword);
 
-    if (normalizedPassword !== EXIT_PASSWORD) {
-      setExitPasswordError("Senha incorreta.");
+    if (!result.ok) {
+      setExitPasswordError(result.message);
       setExitPassword("");
       return;
     }

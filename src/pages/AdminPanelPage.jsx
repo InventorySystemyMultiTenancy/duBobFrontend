@@ -16,6 +16,7 @@ import {
   subscribeToStaffUnreadCount,
 } from "../lib/staffAlertsStore.js";
 import { useTranslation } from "../context/I18nContext.jsx";
+import { useAuth } from "../hooks/useAuth.js";
 import {
   clearWaiterCalls,
   getWaiterCalls,
@@ -27,6 +28,9 @@ const currency = (v) =>
 
 function AdminPanelPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  // Cadastros (produtos, usuários, totens, mesas) só o ADMIN pode alterar na API.
+  const isAdmin = user?.role === "ADMIN";
   const [now, setNow] = useState(() => Date.now());
   const [unreadCount, setUnreadCount] = useState(() => getStaffUnreadCount());
   const [waiterCalls, setWaiterCalls] = useState(() => getWaiterCalls());
@@ -107,7 +111,7 @@ function AdminPanelPage() {
 
   const formatRelativeTime = (timestamp) => {
     if (!timestamp) {
-      return t("ADMIN_PANEL_JUST_NOW_JUDIMAR", "agora");
+      return t("ADMIN_PANEL_JUST_NOW", "agora");
     }
 
     const diffMinutes = Math.max(
@@ -116,14 +120,14 @@ function AdminPanelPage() {
     );
 
     if (diffMinutes < 1) {
-      return t("ADMIN_PANEL_JUST_NOW_JUDIMAR", "agora");
+      return t("ADMIN_PANEL_JUST_NOW", "agora");
     }
 
     if (diffMinutes === 1) {
-      return t("ADMIN_PANEL_ONE_MINUTE_AGO_JUDIMAR", "há 1 min");
+      return t("ADMIN_PANEL_ONE_MINUTE_AGO", "há 1 min");
     }
 
-    return t("ADMIN_PANEL_MINUTES_AGO_JUDIMAR", "há {{count}} min").replace(
+    return t("ADMIN_PANEL_MINUTES_AGO", "há {{count}} min").replace(
       "{{count}}",
       String(diffMinutes),
     );
@@ -135,12 +139,12 @@ function AdminPanelPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-display text-3xl text-gold">
-            {t("ADMIN_PANEL_TITLE_JUDIMAR", "Painel Admin")}
+            {t("ADMIN_PANEL_TITLE", "Painel Admin")}
           </h1>
           <p className="mt-1 text-sm text-smoke">
             {t(
-              "ADMIN_PANEL_SUBTITLE_JUDIMAR",
-              "Visao operacional para equipe da Dubob.",
+              "ADMIN_PANEL_SUBTITLE",
+              "Visão operacional para equipe da Dubob.",
             )}
           </p>
         </div>
@@ -148,7 +152,7 @@ function AdminPanelPage() {
           to="/"
           className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
         >
-          {t("ADMIN_PANEL_BACK_HOME_JUDIMAR", "← Início")}
+          {t("ADMIN_PANEL_BACK_HOME", "← Início")}
         </Link>
       </div>
 
@@ -161,20 +165,20 @@ function AdminPanelPage() {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-red-400" />
             </span>
             {t(
-              "ADMIN_PANEL_OVERDUE_COUNT_JUDIMAR",
+              "ADMIN_PANEL_OVERDUE_COUNT",
               "{{count}} pedidos em atraso",
             ).replace("{{count}}", String(overdueCount))}
           </span>
         )}
         {overdueCount === 0 && (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-green-400/30 bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-400">
-            ✓ {t("ADMIN_PANEL_NO_DELAYS_JUDIMAR", "Sem atrasos")}
+            ✓ {t("ADMIN_PANEL_NO_DELAYS", "Sem atrasos")}
           </span>
         )}
         {unreadCount > 0 && (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">
             🔔{" "}
-            {t("ADMIN_PANEL_ALERTS_COUNT_JUDIMAR", "{{count}} alertas").replace(
+            {t("ADMIN_PANEL_ALERTS_COUNT", "{{count}} alertas").replace(
               "{{count}}",
               String(unreadCount),
             )}
@@ -183,35 +187,37 @@ function AdminPanelPage() {
         <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1 text-xs text-smoke">
           🖥{" "}
           {desktopEnabled
-            ? t("ADMIN_PANEL_DESKTOP_ON_JUDIMAR", "Notificações ativas")
-            : t("ADMIN_PANEL_DESKTOP_OFF_JUDIMAR", "Notificações inativas")}
+            ? t("ADMIN_PANEL_DESKTOP_ON", "Notificações ativas")
+            : t("ADMIN_PANEL_DESKTOP_OFF", "Notificações inativas")}
         </span>
       </div>
 
       {/* Quick action cards */}
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-        <Link
-          to="/admin/produtos"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 text-2xl">
-            🍔
-          </span>
-          <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
-              {t(
-                "ADMIN_PANEL_CARD_PRODUCTS_TITLE_JUDIMAR",
-                "Gerenciar Produtos",
-              )}
-            </h2>
-            <p className="mt-0.5 text-xs text-smoke">
-              {t(
-                "ADMIN_PANEL_CARD_PRODUCTS_DESC_JUDIMAR",
-                "Cadastrar, editar e desativar itens do cardápio",
-              )}
-            </p>
-          </div>
-        </Link>
+        {isAdmin && (
+          <Link
+            to="/admin/produtos"
+            className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 text-2xl">
+              🍔
+            </span>
+            <div>
+              <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+                {t(
+                  "ADMIN_PANEL_CARD_PRODUCTS_TITLE",
+                  "Gerenciar Produtos",
+                )}
+              </h2>
+              <p className="mt-0.5 text-xs text-smoke">
+                {t(
+                  "ADMIN_PANEL_CARD_PRODUCTS_DESC",
+                  "Cadastrar, editar e desativar itens do cardápio",
+                )}
+              </p>
+            </div>
+          </Link>
+        )}
 
         <Link
           to="/admin/vendas"
@@ -222,11 +228,11 @@ function AdminPanelPage() {
           </span>
           <div>
             <h2 className="font-semibold text-gray-900 group-hover:text-gold">
-              {t("ADMIN_PANEL_CARD_SALES_TITLE_JUDIMAR", "Análise de Vendas")}
+              {t("ADMIN_PANEL_CARD_SALES_TITLE", "Análise de Vendas")}
             </h2>
             <p className="mt-0.5 text-xs text-smoke">
               {t(
-                "ADMIN_PANEL_CARD_SALES_DESC_JUDIMAR",
+                "ADMIN_PANEL_CARD_SALES_DESC",
                 "Receita, ticket médio e itens mais vendidos",
               )}
             </p>
@@ -242,11 +248,11 @@ function AdminPanelPage() {
           </span>
           <div>
             <h2 className="font-semibold text-gray-900 group-hover:text-gold">
-              {t("ADMIN_PANEL_CARD_KITCHEN_TITLE_JUDIMAR", "Painel da Cozinha")}
+              {t("ADMIN_PANEL_CARD_KITCHEN_TITLE", "Painel da Cozinha")}
             </h2>
             <p className="mt-0.5 text-xs text-smoke">
               {t(
-                "ADMIN_PANEL_CARD_KITCHEN_DESC_JUDIMAR",
+                "ADMIN_PANEL_CARD_KITCHEN_DESC",
                 "Ver pedidos ativos e avançar status",
               )}
             </p>
@@ -263,55 +269,59 @@ function AdminPanelPage() {
           <div>
             <h2 className="font-semibold text-gray-900 group-hover:text-gold">
               {t(
-                "ADMIN_PANEL_CARD_HISTORY_TITLE_JUDIMAR",
+                "ADMIN_PANEL_CARD_HISTORY_TITLE",
                 "Histórico de Pedidos",
               )}
             </h2>
             <p className="mt-0.5 text-xs text-smoke">
               {t(
-                "ADMIN_PANEL_CARD_HISTORY_DESC_JUDIMAR",
+                "ADMIN_PANEL_CARD_HISTORY_DESC",
                 "Todos os pedidos, cancelamentos e estornos",
               )}
             </p>
           </div>
         </Link>
 
-        <Link
-          to="/admin/usuarios"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-2xl">
-            👤
-          </span>
-          <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
-              {t("ADMIN_PANEL_CARD_USERS_TITLE_JUDIMAR", "Criar Usuário")}
-            </h2>
-            <p className="mt-0.5 text-xs text-smoke">
-              {t(
-                "ADMIN_PANEL_CARD_USERS_DESC_JUDIMAR",
-                "Cadastrar motoboy, cozinha normal, cozinha delivery ou admin",
-              )}
-            </p>
-          </div>
-        </Link>
+        {isAdmin && (
+          <Link
+            to="/admin/usuarios"
+            className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-2xl">
+              👤
+            </span>
+            <div>
+              <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+                {t("ADMIN_PANEL_CARD_USERS_TITLE", "Criar Usuário")}
+              </h2>
+              <p className="mt-0.5 text-xs text-smoke">
+                {t(
+                  "ADMIN_PANEL_CARD_USERS_DESC",
+                  "Cadastrar motoboy, cozinha normal, cozinha delivery ou admin",
+                )}
+              </p>
+            </div>
+          </Link>
+        )}
 
-        <Link
-          to="/admin/totens"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-500/15 text-lg font-black">
-            T
-          </span>
-          <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
-              Totens
-            </h2>
-            <p className="mt-0.5 text-xs text-smoke">
-              Cadastrar rotas de totem e vincular maquininhas
-            </p>
-          </div>
-        </Link>
+        {isAdmin && (
+          <Link
+            to="/admin/totens"
+            className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-500/15 text-lg font-black">
+              T
+            </span>
+            <div>
+              <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+                Totens
+              </h2>
+              <p className="mt-0.5 text-xs text-smoke">
+                Cadastrar rotas de totem e vincular maquininhas
+              </p>
+            </div>
+          </Link>
+        )}
 
         <Link
           to="/admin/gastos"
@@ -325,7 +335,7 @@ function AdminPanelPage() {
               Gastos
             </h2>
             <p className="mt-0.5 text-xs text-smoke">
-              Lancar despesas e acompanhar historico por data
+              Lançar despesas e acompanhar histórico por data
             </p>
           </div>
         </Link>
@@ -346,17 +356,133 @@ function AdminPanelPage() {
             </p>
           </div>
         </Link>
+        <Link
+          to="/atendente"
+          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-2xl">
+            🧾
+          </span>
+          <div>
+            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+              Atendimento
+            </h2>
+            <p className="mt-0.5 text-xs text-smoke">
+              Mapa de mesas, lançar pedidos e chamados de garçom
+            </p>
+          </div>
+        </Link>
+        <Link
+          to="/comandas"
+          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-2xl">
+            🎫
+          </span>
+          <div>
+            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+              Comandas
+            </h2>
+            <p className="mt-0.5 text-xs text-smoke">
+              Abrir comandas, lançar pedidos e dar baixa
+            </p>
+          </div>
+        </Link>
+        <Link
+          to="/cozinha-delivery"
+          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 text-2xl">
+            🛵
+          </span>
+          <div>
+            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+              Cozinha Delivery
+            </h2>
+            <p className="mt-0.5 text-xs text-smoke">
+              Fila só de entregas e retiradas
+            </p>
+          </div>
+        </Link>
+        <Link
+          to="/motoboy"
+          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-lime-500/15 text-2xl">
+            🏍️
+          </span>
+          <div>
+            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+              Motoboy
+            </h2>
+            <p className="mt-0.5 text-xs text-smoke">
+              Entregas atribuídas e confirmação de pagamento
+            </p>
+          </div>
+        </Link>
+        <Link
+          to="/tv"
+          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-2xl">
+            📺
+          </span>
+          <div>
+            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+              TV / Telão
+            </h2>
+            <p className="mt-0.5 text-xs text-smoke">
+              Tela de pedidos prontos para o cliente
+            </p>
+          </div>
+        </Link>
+        {isAdmin && (
+          <>
+            <Link
+              to="/admin/mesas"
+              className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-500/15 text-2xl">
+                🪑
+              </span>
+              <div>
+                <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+                  Mesas
+                </h2>
+                <p className="mt-0.5 text-xs text-smoke">
+                  Cadastrar mesas e gerar o QR Code de pedido
+                </p>
+              </div>
+            </Link>
+            <Link
+              to="/admin/cardapio-mesa"
+              className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-fuchsia-500/15 text-2xl">
+                🔳
+              </span>
+              <div>
+                <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+                  QR do Cardápio de Mesa
+                </h2>
+                <p className="mt-0.5 text-xs text-smoke">
+                  Imprimir QR Codes do cardápio só para visualização
+                </p>
+              </div>
+            </Link>
+          </>
+        )}
       </div>
 
       {isLoading ? (
         <p className="mt-6 text-sm text-smoke">
-          {t("ADMIN_PANEL_LOADING_JUDIMAR", "Carregando dados...")}
+          {t("ADMIN_PANEL_LOADING", "Carregando dados...")}
         </p>
       ) : null}
       {isError ? (
         <p className="mt-6 text-sm text-red-300">
           {t(
-            "ADMIN_PANEL_LOAD_ERROR_JUDIMAR",
+            "ADMIN_PANEL_LOAD_ERROR",
             "Falha ao carregar dados do painel.",
           )}
         </p>
@@ -367,11 +493,11 @@ function AdminPanelPage() {
           <div>
             <h2 className="font-display text-xl text-primary">
               🔔{" "}
-              {t("ADMIN_PANEL_WAITER_CALLS_TITLE_JUDIMAR", "Chamadas de Mesa")}
+              {t("ADMIN_PANEL_WAITER_CALLS_TITLE", "Chamadas de Mesa")}
             </h2>
             <p className="mt-1 text-xs text-smoke">
               {t(
-                "ADMIN_PANEL_WAITER_CALLS_DESC_JUDIMAR",
+                "ADMIN_PANEL_WAITER_CALLS_DESC",
                 "Solicitações recentes de atendimento enviadas pelas mesas.",
               )}
             </p>
@@ -381,7 +507,7 @@ function AdminPanelPage() {
             onClick={handleClearAlerts}
             className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-smoke transition hover:border-secondary/30 hover:text-secondary"
           >
-            {t("ADMIN_PANEL_CLEAR_WAITER_CALLS_JUDIMAR", "Limpar chamadas")}
+            {t("ADMIN_PANEL_CLEAR_WAITER_CALLS", "Limpar chamadas")}
             {waiterCalls.length ? ` (${waiterCalls.length})` : ""}
           </button>
         </div>
@@ -397,14 +523,14 @@ function AdminPanelPage() {
                   <p className="font-display text-lg text-primary">
                     {call?.mesaNumber
                       ? t(
-                          "ADMIN_PANEL_TABLE_NUMBER_JUDIMAR",
+                          "ADMIN_PANEL_TABLE_NUMBER",
                           "Mesa {{number}}",
                         ).replace("{{number}}", String(call.mesaNumber))
-                      : t("ADMIN_PANEL_GENERIC_TABLE_JUDIMAR", "Mesa")}
+                      : t("ADMIN_PANEL_GENERIC_TABLE", "Mesa")}
                   </p>
                   <p className="mt-1 text-xs uppercase tracking-[0.2em] text-secondary">
                     {t(
-                      "ADMIN_PANEL_SERVICE_REQUEST_JUDIMAR",
+                      "ADMIN_PANEL_SERVICE_REQUEST",
                       "Atendimento solicitado",
                     )}
                   </p>
@@ -418,7 +544,7 @@ function AdminPanelPage() {
           {!waiterCalls.length ? (
             <li className="rounded-2xl border border-dashed border-border-soft bg-accent/40 p-4 text-sm text-smoke md:col-span-2 xl:col-span-3">
               {t(
-                "ADMIN_PANEL_WAITER_CALLS_EMPTY_JUDIMAR",
+                "ADMIN_PANEL_WAITER_CALLS_EMPTY",
                 "Nenhuma chamada de mesa registrada por enquanto.",
               )}
             </li>
@@ -433,7 +559,7 @@ function AdminPanelPage() {
             <h2 className="font-display text-xl text-gold">
               🔥{" "}
               {t(
-                "ADMIN_PANEL_PRIORITY_QUEUE_TITLE_JUDIMAR",
+                "ADMIN_PANEL_PRIORITY_QUEUE_TITLE",
                 "Fila Prioritária",
               )}
             </h2>
@@ -449,15 +575,15 @@ function AdminPanelPage() {
               >
                 🖥{" "}
                 {desktopEnabled
-                  ? t("ADMIN_PANEL_DESKTOP_BUTTON_ON_JUDIMAR", "ligado")
-                  : t("ADMIN_PANEL_DESKTOP_BUTTON_OFF_JUDIMAR", "desligado")}
+                  ? t("ADMIN_PANEL_DESKTOP_BUTTON_ON", "ligado")
+                  : t("ADMIN_PANEL_DESKTOP_BUTTON_OFF", "desligado")}
               </button>
               <button
                 type="button"
                 onClick={handleClearAlerts}
                 className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
               >
-                {t("ADMIN_PANEL_MARK_ALERTS_READ_JUDIMAR", "Limpar alertas")}
+                {t("ADMIN_PANEL_MARK_ALERTS_READ", "Limpar alertas")}
                 {unreadCount ? ` (${unreadCount})` : ""}
               </button>
             </div>
@@ -486,7 +612,7 @@ function AdminPanelPage() {
             {!prioritizedOrders.length && !isLoading ? (
               <li className="text-sm text-smoke">
                 {t(
-                  "ADMIN_PANEL_NO_ORDERS_JUDIMAR",
+                  "ADMIN_PANEL_NO_ORDERS",
                   "Sem pedidos ativos no momento.",
                 )}
               </li>
@@ -500,7 +626,7 @@ function AdminPanelPage() {
             <h2 className="font-display text-xl text-amber-500">
               💳{" "}
               {t(
-                "ADMIN_PANEL_PENDING_PAYMENTS_TITLE_JUDIMAR",
+                "ADMIN_PANEL_PENDING_PAYMENTS_TITLE",
                 "Pagamentos Pendentes",
               )}
             </h2>
@@ -520,7 +646,7 @@ function AdminPanelPage() {
                   <p className="font-semibold text-amber-800">
                     {order.mesa
                       ? (order.mesa.name ??
-                        t("ADMIN_PANEL_MESA_LABEL_JUDIMAR", "Mesa"))
+                        t("ADMIN_PANEL_MESA_LABEL", "Mesa"))
                       : order.comanda
                         ? `Comanda ${order.comanda.number}`
                         : "Comanda"}
@@ -541,7 +667,7 @@ function AdminPanelPage() {
             {!pendingPaymentOrders.length && !isLoading ? (
               <li className="text-sm text-smoke">
                 {t(
-                  "ADMIN_PANEL_NO_PENDING_PAYMENTS_JUDIMAR",
+                  "ADMIN_PANEL_NO_PENDING_PAYMENTS",
                   "Nenhuma mesa ou comanda com pagamento pendente.",
                 )}
               </li>

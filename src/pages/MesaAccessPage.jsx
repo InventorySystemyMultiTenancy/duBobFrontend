@@ -3,8 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { useTranslation } from "../context/I18nContext.jsx";
+import {
+  getRoleHome,
+  MESA_MODE_PEDIDO,
+  MESA_MODE_VISUAL,
+} from "../lib/roleHome.js";
 
-function MesaAccessPage() {
+function MesaAccessPage({ visualOnly = false }) {
   const { token } = useParams();
   const { login } = useAuth();
   const { t } = useTranslation();
@@ -21,19 +26,18 @@ function MesaAccessPage() {
       .get(`/mesas/acesso/${token}`)
       .then((res) => {
         const { accessToken, mesa } = res.data.data;
-        login({
-          accessToken,
-          user: {
-            id: mesa.id,
-            name: mesa.name,
-            role: "MESA",
-            mesaNumber: mesa.number,
-          },
-        });
-        navigate("/cardapio-mesa", { replace: true });
+        const user = {
+          id: mesa.id,
+          name: mesa.name,
+          role: "MESA",
+          mesaNumber: mesa.number,
+          mesaMode: visualOnly ? MESA_MODE_VISUAL : MESA_MODE_PEDIDO,
+        };
+        login({ accessToken, user });
+        navigate(getRoleHome(user), { replace: true });
       })
       .catch(() => setStatus("error"));
-  }, [login, navigate, token]);
+  }, [login, navigate, token, visualOnly]);
 
   if (status === "loading") {
     return (

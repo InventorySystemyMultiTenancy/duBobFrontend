@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import AdminPanelPage from "./pages/AdminPanelPage.jsx";
 import AdminProductsPage from "./pages/AdminProductsPage.jsx";
 import AdminProductsHubPage from "./pages/AdminProductsHubPage.jsx";
@@ -26,8 +26,11 @@ import AdminMesaCardapioPage from "./pages/AdminMesaCardapioPage.jsx";
 import ComandasPage from "./pages/ComandasPage.jsx";
 import ComandaSummaryPage from "./pages/ComandaSummaryPage.jsx";
 import CaixaPage from "./pages/CaixaPage.jsx";
-import PrivateRoute from "./routes/PrivateRoute.js";
+import NotFoundPage from "./pages/NotFoundPage.jsx";
+import PrivateRoute from "./routes/PrivateRoute.jsx";
 import { clearTotemMode, TOTEM_SLUG_KEY } from "./lib/totemMode.js";
+import { useAuth } from "./hooks/useAuth.js";
+import { MESA_MODE_VISUAL } from "./lib/roleHome.js";
 
 function HomeEntry() {
   const params = new URLSearchParams(window.location.search);
@@ -56,6 +59,24 @@ function ExitTotemEntry() {
   return <Navigate to="/" replace />;
 }
 
+// Só /totem1, /totem2... abrem o totem; qualquer outro endereço é 404.
+function TotemSlugEntry() {
+  const { totemSlug } = useParams();
+  if (!/^totem\d+$/i.test(totemSlug ?? "")) {
+    return <NotFoundPage />;
+  }
+  return <TotemPage />;
+}
+
+// Mesa que entrou pelo QR "só cardápio" não tem acesso ao cardápio de pedidos.
+function CardapioEntry() {
+  const { user } = useAuth();
+  if (user?.role === "MESA" && user.mesaMode === MESA_MODE_VISUAL) {
+    return <Navigate to="/cardapio-mesa" replace />;
+  }
+  return <CardapioPage />;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -63,16 +84,21 @@ function AppRoutes() {
       <Route path="/normal" element={<ExitTotemEntry />} />
       <Route path="/" element={<HomeEntry />} />
       <Route path="/totem" element={<TotemPage />} />
-      <Route path="/cardapio" element={<CardapioPage />} />
+      <Route path="/cardapio" element={<CardapioEntry />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/checkout/retorno" element={<CheckoutReturnPage />} />
 
-      {/* Acesso de mesa via QR code (público) */}
+      {/* Acesso de mesa via QR code (público):
+          /mesa/:token          → mesa pode fazer pedido (/cardapio)
+          /cardapio-mesa/:token → só cardápio visual + chamar garçom */}
       <Route path="/mesa/:token" element={<MesaAccessPage />} />
-      <Route path="/cardapio-mesa/:token" element={<MesaAccessPage />} />
+      <Route
+        path="/cardapio-mesa/:token"
+        element={<MesaAccessPage visualOnly />}
+      />
       <Route path="/comandas/:token" element={<ComandaSummaryPage />} />
 
-      {/* Página somente leitura do cardápio para mesas — rota separada da sessão de pedidos /mesa */}
+      {/* Cardápio somente leitura da mesa e pagamento da conta da mesa */}
       <Route element={<PrivateRoute allowedRoles={["MESA"]} />}>
         <Route path="/cardapio-mesa" element={<MesaCardapioPage />} />
         <Route path="/mesa/checkout" element={<MesaCheckoutPage />} />
@@ -80,16 +106,8 @@ function AppRoutes() {
 
       <Route
         element={
-          <PrivateRoute
-            allowedRoles={[
-              "CLIENTE",
-              "ADMIN",
-              "FUNCIONARIO",
-              "ATENDENTE",
-              "COZINHA",
-              "COZINHA_DELIVERY",
-            ]}
-          />
+          // Mesmos perfis que a API aceita em POST /api/orders
+          <PrivateRoute allowedRoles={["CLIENTE", "ADMIN"]} />
         }
       >
         <Route path="/checkout" element={<CheckoutPage />} />
@@ -141,17 +159,25 @@ function AppRoutes() {
         <Route path="/caixa" element={<CaixaPage />} />
       </Route>
 
-      <Route element={<PrivateRoute allowedRoles={["ATENDENTE"]} />}>
+      <Route
+        element={
+          <PrivateRoute allowedRoles={["ATENDENTE", "ADMIN", "FUNCIONARIO"]} />
+        }
+      >
         <Route path="/atendente" element={<AtendentePanel />} />
       </Route>
 
       <Route element={<PrivateRoute allowedRoles={["ADMIN", "FUNCIONARIO"]} />}>
         <Route path="/admin" element={<AdminPanelPage />} />
-        <Route path="/admin/produtos" element={<AdminProductsHubPage />} />
-        <Route path="/admin/produtos/lista" element={<AdminProductsPage />} />
         <Route path="/admin/vendas" element={<SalesAnalyticsPage />} />
         <Route path="/admin/gastos" element={<AdminExpensesPage />} />
         <Route path="/admin/historico" element={<AdminOrderHistoryPage />} />
+      </Route>
+
+      {/* Cadastros: a API só aceita ADMIN */}
+      <Route element={<PrivateRoute allowedRoles={["ADMIN"]} />}>
+        <Route path="/admin/produtos" element={<AdminProductsHubPage />} />
+        <Route path="/admin/produtos/lista" element={<AdminProductsPage />} />
         <Route path="/admin/usuarios" element={<AdminUsersPage />} />
         <Route path="/admin/mesas" element={<AdminMesasPage />} />
         <Route path="/admin/totens" element={<AdminTotensPage />} />
@@ -169,8 +195,8 @@ function AppRoutes() {
         <Route path="/motoboy" element={<MotoboyPage />} />
       </Route>
 
-      <Route path="/:totemSlug" element={<TotemPage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/:totemSlug" element={<TotemSlugEntry />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

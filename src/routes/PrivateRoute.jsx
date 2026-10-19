@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import { TOTEM_SLUG_KEY } from "../lib/totemMode.js";
+import ForbiddenPage from "../pages/ForbiddenPage.jsx";
 
 function PrivateRoute({ allowedRoles = [] }) {
   const { isAuthenticated, user } = useAuth();
@@ -21,7 +22,7 @@ function PrivateRoute({ allowedRoles = [] }) {
   }
 
   if (allowedRoles.length && !allowedRoles.includes(user?.role)) {
-    return <Navigate to="/" replace />;
+    return <ForbiddenPage />;
   }
 
   return <Outlet />;

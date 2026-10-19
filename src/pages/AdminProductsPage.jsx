@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
@@ -1077,7 +1077,13 @@ function AdminProductsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [modal, setModal] = useState(null); // null | "new" | product object
-  const [activeSection, setActiveSection] = useState("all");
+  const [searchParams] = useSearchParams();
+  const [activeSection, setActiveSection] = useState(() => {
+    const secao = searchParams.get("secao");
+    return GUIDED_ADMIN_SECTIONS.some((section) => section.id === secao)
+      ? secao
+      : "all";
+  });
 
   const {
     data: products = [],

@@ -5,6 +5,8 @@ import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
+import { verifyExitPin } from "../lib/exitPin.js";
+import { getRoleHome } from "../lib/roleHome.js";
 
 const WHATSAPP_NUMBER =
   import.meta.env.VITE_DUBOB_WHATSAPP ||
@@ -42,7 +44,6 @@ export default function Navbar({ activeLink }) {
   const [pinError, setPinError] = useState(false);
   const longPressTimer = useRef(null);
 
-  const LOGOUT_PIN = import.meta.env.VITE_MESA_LOGOUT_PIN || "2468";
   const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
 
   const handleLogoMouseDown = () => {
@@ -58,13 +59,14 @@ export default function Navbar({ activeLink }) {
     clearTimeout(longPressTimer.current);
   };
 
-  const handlePinSubmit = () => {
-    if (pin === LOGOUT_PIN) {
+  const handlePinSubmit = async () => {
+    const result = await verifyExitPin("mesa", pin);
+    if (result.ok) {
       setShowPinModal(false);
       logout();
       navigate("/");
     } else {
-      setPinError(true);
+      setPinError(result.message);
       setPin("");
     }
   };
@@ -86,17 +88,7 @@ export default function Navbar({ activeLink }) {
     );
 
   const painelTo =
-    user?.role === "ATENDENTE"
-      ? "/atendente"
-      : user?.role === "ADMIN" || user?.role === "FUNCIONARIO"
-        ? "/admin"
-        : user?.role === "MOTOBOY"
-          ? "/motoboy"
-          : user?.role === "COZINHA_DELIVERY"
-            ? "/cozinha-delivery"
-          : user?.role === "COZINHA"
-            ? "/cozinha"
-          : "/dashboard";
+    user?.role === "CLIENTE" ? "/dashboard" : getRoleHome(user);
 
   if (isTotemMode) {
     const cartItemsCount = items.reduce(
@@ -256,7 +248,7 @@ export default function Navbar({ activeLink }) {
             />
             {pinError && (
               <p className="text-xs text-red-500 mb-2">
-                {t("MODAL_PIN_WRONG", "PIN incorreto. Tente novamente.")}
+                {pinError}
               </p>
             )}
             <button

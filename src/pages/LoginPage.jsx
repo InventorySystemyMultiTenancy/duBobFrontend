@@ -5,6 +5,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
+import { getRoleHome } from "../lib/roleHome.js";
 
 const INPUT_CLS =
   "w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm outline-none transition focus:border-rosso focus:ring-2 focus:ring-rosso/10";
@@ -30,36 +31,11 @@ function LoginPage() {
   const handlePostAuth = (data) => {
     login(data);
     toast.success(tab === "login" ? "Login realizado!" : "Conta criada!");
-    const role = data.user?.role;
     if (redirectTo) {
       navigate(redirectTo);
       return;
     }
-    if (role === "COZINHA_DELIVERY") {
-      navigate("/cozinha-delivery");
-      return;
-    }
-    if (role === "COZINHA") {
-      navigate("/cozinha");
-      return;
-    }
-    if (role === "ATENDENTE") {
-      navigate("/atendente");
-      return;
-    }
-    if (role === "TV") {
-      navigate("/tv");
-      return;
-    }
-    if (["ADMIN", "FUNCIONARIO"].includes(role)) {
-      navigate("/admin");
-      return;
-    }
-    if (["CLIENTE", "MESA"].includes(role)) {
-      navigate("/cardapio");
-      return;
-    }
-    navigate("/");
+    navigate(getRoleHome(data.user));
   };
 
   const loginMutation = useMutation({

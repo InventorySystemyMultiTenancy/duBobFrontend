@@ -23,7 +23,7 @@ export default function AdminProductsHubPage() {
         <div className="mt-8 grid gap-5 sm:grid-cols-2">
           <button
             type="button"
-            onClick={() => navigate("/admin/produtos/lista")}
+            onClick={() => navigate("/admin/produtos/lista?secao=bases")}
             className="group flex flex-col items-start gap-3 rounded-3xl border border-gold/20 bg-lacquer/70 p-6 text-left shadow-sm transition hover:border-gold/50 hover:shadow-md"
           >
             <div>
@@ -38,7 +38,7 @@ export default function AdminProductsHubPage() {
 
           <button
             type="button"
-            onClick={() => navigate("/admin/produtos/lista")}
+            onClick={() => navigate("/admin/produtos/lista?secao=all")}
             className="group flex flex-col items-start gap-3 rounded-3xl border border-gold/20 bg-lacquer/70 p-6 text-left shadow-sm transition hover:border-gold/50 hover:shadow-md"
           >
             <div>
