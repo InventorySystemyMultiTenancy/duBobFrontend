@@ -21,9 +21,9 @@ export default {
         rosso: "#C2185B",
       },
       fontFamily: {
-        display: ["Montserrat", "Inter", "sans-serif"],
-        body: ["Montserrat", "Inter", "sans-serif"],
-        script: ["Montserrat", "Inter", "sans-serif"],
+        display: ["Fredoka", "Nunito", "sans-serif"],
+        body: ["Nunito", "sans-serif"],
+        script: ["Fredoka", "Nunito", "sans-serif"],
       },
       boxShadow: {
         card: "0 1px 4px rgba(91,6,56,0.08), 0 8px 22px rgba(0,167,216,0.10)",

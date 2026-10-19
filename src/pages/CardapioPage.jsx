@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import CartDrawer from "../components/CartDrawer.jsx";
 import ChamarGarcomButton from "../components/ChamarGarcomButton.jsx";
 import Navbar from "../components/Navbar.jsx";
@@ -503,7 +503,12 @@ function GuidedMenu({
   onAddAcai,
 }) {
   const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
-  const [productType, setProductType] = useState(null);
+  // ?tipo=acai | ?tipo=milkshake (links da home) já abre o fluxo escolhido
+  const [searchParams] = useSearchParams();
+  const initialType = ["acai", "milkshake"].includes(searchParams.get("tipo"))
+    ? searchParams.get("tipo")
+    : null;
+  const [productType, setProductType] = useState(initialType);
   const [selectedLineId, setSelectedLineId] = useState(milkshakeLines[0].id);
   const [selectedMilkshakeSize, setSelectedMilkshakeSize] = useState(null);
   const [selectedFlavor, setSelectedFlavor] = useState("");
@@ -527,6 +532,15 @@ function GuidedMenu({
       return [...prev, complement];
     });
   };
+
+  useEffect(() => {
+    if (!initialType) return undefined;
+    const ref = initialType === "acai" ? acaiFlowRef : milkshakeFlowRef;
+    const timer = window.setTimeout(() => {
+      ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [initialType]);
 
   const scrollToFlow = (ref) => {
     window.setTimeout(() => {
