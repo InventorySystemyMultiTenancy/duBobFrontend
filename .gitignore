@@ -27,6 +27,8 @@ dist-ssr
 .env
 .env.*
 !.env.example
+# Só variáveis VITE_ públicas usadas no build de produção
+!.env.production
 
 # Backups de arquivos
 *.bak
