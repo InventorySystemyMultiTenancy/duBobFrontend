@@ -1190,6 +1190,8 @@ function KitchenPage() {
     visibleColumns.some((column) => column.key === stage.key),
   );
   const showStageSummary = !isPreparationOnlyKitchen;
+  // Poucas colunas (ex.: cozinha delivery): cards grandes ocupando a tela toda
+  const largeBoard = visibleColumns.length <= 4;
   const showWaiterCalls = !isKitchenUser;
   const showHeaderDetails = !isPreparationOnlyKitchen;
   const kitchenPreparationOrders = useMemo(() => {
@@ -1537,8 +1539,8 @@ function KitchenPage() {
                   handleDragEnd();
                 }}
                 id={`kitchen-col-${col.key}`}
-                className={`flex w-[88vw] max-w-[28rem] shrink-0 snap-start flex-col rounded-3xl bg-white/60 p-3 ring-1 transition-all duration-200 sm:w-[26rem] ${
-                  visibleColumns.length <= 3 ? "lg:max-w-none lg:flex-1" : ""
+                className={`flex w-[88vw] max-w-[28rem] shrink-0 snap-start flex-col rounded-3xl bg-white/60 p-3 ring-1 transition-all duration-200 sm:w-auto sm:max-w-none sm:flex-1 ${
+                  largeBoard ? "sm:min-w-[24rem]" : "sm:min-w-[22rem]"
                 } ${
                   isDropActive
                     ? "bg-gold/20 ring-2 ring-gold"
@@ -1634,6 +1636,7 @@ function KitchenPage() {
                           isConfirmingDelivery &&
                           deliveryConfirmVars?.orderId === order.id
                         }
+                        largeMode={largeBoard}
                       />
                     ))
                   )}

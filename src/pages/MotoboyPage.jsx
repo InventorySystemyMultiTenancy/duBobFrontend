@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
 import { useAuth } from "../hooks/useAuth.js";
@@ -7,10 +7,40 @@ import { askPaymentMethod } from "../lib/paymentMethodPrompt.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 
 import PageHeader from "../components/PageHeader.jsx";
+import DeliveryMap from "../components/DeliveryMap.jsx";
+
+const SHARE_LOCATION_KEY = "motoboy-share-location";
+
+const readShareLocation = () => {
+  try {
+    return localStorage.getItem(SHARE_LOCATION_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+
 const currency = (v) =>
   Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const itemLabel = (item) => item.product?.name ?? "—";
+
+const formatMinutes = (minutes) => {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m ? `${h}h ${String(m).padStart(2, "0")}min` : `${h}h`;
+};
+
+const getWaitingMinutes = (createdAt, now) =>
+  Math.max(0, Math.floor((now - new Date(createdAt).getTime()) / 60000));
+
+// Mesmo limite de atraso usado em lib/orderEta.js (55 min)
+const waitingTone = (minutes) =>
+  minutes > 55
+    ? "border-red-200 bg-red-50 text-red-700"
+    : minutes > 40
+      ? "border-amber-200 bg-amber-50 text-amber-700"
+      : "border-gray-100 bg-gray-50 text-gray-800";
 
 const getGoogleMapsUrl = (order) => {
   const hasAddress = Boolean(order.deliveryAddress);
@@ -46,12 +76,65 @@ function MotoboyPage() {
   const [deliveryCodes, setDeliveryCodes] = useState({});
   const [confirmingByOrderId, setConfirmingByOrderId] = useState({});
   const [markingPaidByOrderId, setMarkingPaidByOrderId] = useState({});
+  const [now, setNow] = useState(() => Date.now());
+  const [shareLocation, setShareLocation] = useState(readShareLocation);
+  const [position, setPosition] = useState(null);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(SHARE_LOCATION_KEY, shareLocation ? "1" : "0");
+    } catch {
+      // armazenamento indisponível: só não lembra a escolha
+    }
+
+    if (!shareLocation) {
+      setPosition(null);
+      return undefined;
+    }
+
+    if (!("geolocation" in navigator)) {
+      toast.error("Seu navegador não suporta localização.");
+      setShareLocation(false);
+      return undefined;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) =>
+        setPosition({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          toast.error(
+            "Permissão de localização negada. Libere nas configurações do navegador.",
+          );
+          setShareLocation(false);
+        } else {
+          toast.error("Não foi possível obter sua localização.");
+        }
+      },
+      { enableHighAccuracy: true, maximumAge: 10_000, timeout: 20_000 },
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [shareLocation]);
+
+  // Arredonda (~100 m) para só recalcular as rotas quando o motoboy se mover
+  const origin = position
+    ? { lat: position.lat.toFixed(3), lon: position.lon.toFixed(3) }
+    : null;
+
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["motoboy-orders"],
+    queryKey: ["motoboy-orders", origin?.lat, origin?.lon],
     queryFn: async () => {
-      const res = await api.get("/motoboy/orders");
-      return res.data?.data ?? [];
+      const res = await api.get("/motoboy/orders", {
+        params: origin ?? undefined,
+      });
+      return { orders: res.data?.data ?? [], store: res.data?.store ?? null };
     },
+    placeholderData: keepPreviousData,
     refetchInterval: 20_000,
   });
 
@@ -119,7 +202,8 @@ function MotoboyPage() {
     }
   };
 
-  const orders = data ?? [];
+  const orders = data?.orders ?? [];
+  const store = data?.store ?? null;
 
   return (
     <main className="min-h-screen">
@@ -183,8 +267,51 @@ function MotoboyPage() {
         </div>
       )}
 
+      {/* Localização + mapa */}
+      <section className="mb-4 space-y-3">
+        <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 shadow-card ring-1 ring-primary/5">
+          <div>
+            <p className="text-sm font-semibold text-gray-900">
+              {t("MOTOBOY_SHARE_LOCATION", "Compartilhar minha localização")}
+            </p>
+            <p className="text-xs text-gray-500">
+              {shareLocation
+                ? position
+                  ? t(
+                      "MOTOBOY_LOCATION_ON",
+                      "Tempos calculados a partir de onde você está.",
+                    )
+                  : t("MOTOBOY_LOCATION_WAITING", "Obtendo sua localização...")
+                : t(
+                    "MOTOBOY_LOCATION_OFF",
+                    "Desligado: tempos calculados a partir da loja.",
+                  )}
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={shareLocation}
+            onClick={() => setShareLocation((prev) => !prev)}
+            className={`relative h-7 w-12 shrink-0 rounded-full transition ${shareLocation ? "bg-emerald-600" : "bg-gray-300"}`}
+          >
+            <span
+              className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${shareLocation ? "left-6" : "left-1"}`}
+            />
+          </button>
+        </div>
+
+        {orders.length > 0 && (
+          <DeliveryMap
+            store={store}
+            motoboyPosition={position}
+            orders={orders}
+          />
+        )}
+      </section>
+
       <div className="space-y-4">
-        {orders.map((order) => (
+        {orders.map((order, index) => (
           <article
             key={order.id}
             className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5"
@@ -192,7 +319,12 @@ function MotoboyPage() {
             {/* Header */}
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="font-bold text-gray-900">{order.user?.name}</p>
+                <p className="flex items-center gap-2 font-bold text-gray-900">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
+                    {index + 1}
+                  </span>
+                  {order.user?.name}
+                </p>
                 <p className="mt-0.5 text-xs text-gray-500">
                   {t("MOTOBOY_ORDER_PREFIX", "Pedido")} #
                   {order.id.slice(-8).toUpperCase()}
@@ -218,6 +350,46 @@ function MotoboyPage() {
                 </li>
               ))}
             </ul>
+
+            {/* Waiting time + travel estimate */}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div
+                className={`rounded-2xl border px-4 py-3 ${waitingTone(getWaitingMinutes(order.createdAt, now))}`}
+              >
+                <p className="text-xs font-semibold opacity-75">
+                  {t("MOTOBOY_CUSTOMER_WAITING", "Cliente esperando")}
+                </p>
+                <p className="mt-1 text-lg font-bold">
+                  {formatMinutes(getWaitingMinutes(order.createdAt, now))}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-gray-800">
+                <p className="text-xs font-semibold text-gray-500">
+                  {order.travelFromMotoboy
+                    ? t("MOTOBOY_TRAVEL_FROM_YOU", "De você até o endereço")
+                    : t("MOTOBOY_TRAVEL_TIME", "Da loja até o endereço")}
+                </p>
+                {(order.travelFromMotoboy ?? order.travel) ? (
+                  <p className="mt-1 text-lg font-bold">
+                    ~
+                    {formatMinutes(
+                      (order.travelFromMotoboy ?? order.travel).tempoEstimado,
+                    )}
+                    <span className="ml-1 text-xs font-medium text-gray-500">
+                      (
+                      {(
+                        order.travelFromMotoboy ?? order.travel
+                      ).distanciaKm.toLocaleString("pt-BR")}{" "}
+                      km)
+                    </span>
+                  </p>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-400">
+                    {t("MOTOBOY_TRAVEL_UNAVAILABLE", "Indisponível")}
+                  </p>
+                )}
+              </div>
+            </div>
 
             {/* Address */}
             <div className="mt-4 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
