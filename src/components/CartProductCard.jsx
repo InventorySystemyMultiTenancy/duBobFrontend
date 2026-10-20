@@ -1,3 +1,5 @@
+import { parseItemNotes, rawObservation, withObservation } from "../lib/itemNotes.js";
+
 const currency = (value) =>
   Number(value || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -14,7 +16,9 @@ function CartProductCard({
   onObservationChange,
 }) {
   const nome = item.nome || item.title || "Produto";
-  const observation = item.observation ?? item.notes ?? "";
+  const notes = item.observation ?? item.notes ?? "";
+  const { fields, complements } = parseItemNotes(notes);
+  const observation = rawObservation(notes);
   const unit = Number(item.price || 0) + addonTotal(item.addons || []);
 
   return (
@@ -31,6 +35,24 @@ function CartProductCard({
         </div>
       ) : null}
 
+      {fields.length > 0 && (
+        <p className="mt-1 text-sm text-text-muted">
+          {fields.map((field) => field.value).join(" · ")}
+        </p>
+      )}
+      {complements.length > 0 && (
+        <ul className="mt-2 flex flex-wrap gap-1.5">
+          {complements.map((name) => (
+            <li
+              key={name}
+              className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-primary"
+            >
+              {name}
+            </li>
+          ))}
+        </ul>
+      )}
+
       {item.removals?.length ? (
         <p className="mt-1 text-xs text-text-muted">
           Remoções: {item.removals.join(", ")}
@@ -45,7 +67,9 @@ function CartProductCard({
           rows={2}
           placeholder="Ex.: pouco leite condensado"
           value={observation}
-          onChange={(event) => onObservationChange(event.target.value)}
+          onChange={(event) =>
+            onObservationChange(withObservation(notes, event.target.value))
+          }
           className="w-full resize-none rounded-2xl border-2 border-primary/10 bg-accent/40 px-3 py-2 text-sm text-text-main outline-none placeholder:text-text-muted/60 focus:border-secondary focus:bg-white"
         />
       </div>

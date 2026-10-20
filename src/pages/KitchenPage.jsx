@@ -25,6 +25,7 @@ import {
   subscribeToWaiterCalls,
 } from "../lib/waiterCallsStore.js";
 import { useTranslation } from "../context/I18nContext.jsx";
+import { parseItemNotes } from "../lib/itemNotes.js";
 
 import PageHeader from "../components/PageHeader.jsx";
 const SOUND_STORAGE_KEY = "pc_kitchen_sound_enabled";
@@ -75,15 +76,23 @@ const COLUMNS = [
   },
 ];
 
+const COLUMN_DOT = {
+  AGUARDANDO_PAGAMENTO: "bg-amber-500",
+  RECEBIDO: "bg-blue-500",
+  PREPARANDO: "bg-yellow-400",
+  PRONTO: "bg-secondary",
+  SAIU_PARA_ENTREGA: "bg-emerald-500",
+  RETIRADA_PRONTA: "bg-purple-500",
+  LEVAR_PARA_MESA: "bg-orange-500",
+};
+
+const scrollToColumn = (key) =>
+  document
+    .getElementById(`kitchen-col-${key}`)
+    ?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+
 // Real order statuses (for drag/advance logic)
 const STAGES = COLUMNS.filter((c) => !c.virtual);
-
-const STAGE_BADGE = {
-  RECEBIDO: "bg-blue-100 text-blue-700",
-  PREPARANDO: "bg-yellow-100 text-yellow-700",
-  PRONTO: "bg-orange-100 text-orange-700",
-  SAIU_PARA_ENTREGA: "bg-green-100 text-green-700",
-};
 
 const NEXT_LABEL = {
   RECEBIDO: "Iniciar Preparo",
@@ -173,10 +182,6 @@ function hasKitchenItems(order) {
 
 function isDeliveryOrPickupOrder(order) {
   return !order?.mesaId && !order?.comandaId && !isTotemOrder(order);
-}
-
-function isDeliveryOrder(order) {
-  return !order?.isPickup && !order?.mesaId && !order?.comandaId;
 }
 
 function isLocalKitchenOrder(order) {
@@ -279,17 +284,6 @@ function toKitchenAlertText(value) {
   return String(value);
 }
 
-function KitchenAlertStrip({ label, value }) {
-  const text = toKitchenAlertText(value);
-  if (!text) return null;
-
-  return (
-    <div className="mt-2 rounded-xl border-2 border-red-700 bg-red-600 px-3 py-2 text-base font-black uppercase leading-snug text-white shadow-sm">
-      {label}: {text.toLocaleUpperCase("pt-BR")}
-    </div>
-  );
-}
-
 function OrderCard({
   order,
   onAdvance,
@@ -315,7 +309,6 @@ function OrderCard({
   const { t } = useTranslation();
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [deliveryCodeInput, setDeliveryCodeInput] = useState("");
-  const stage = STAGES.find((s) => s.key === order.status);
   const needsCodeConfirm =
     order.status === "SAIU_PARA_ENTREGA" &&
     !order.isPickup &&
@@ -343,201 +336,216 @@ function OrderCard({
                 ? t("KITCHEN_MARK_PICKED_UP", "Marcar Retirado")
                 : t(`KITCHEN_NEXT_${order.status}`, NEXT_LABEL[order.status]);
 
+  const orderCode = `#${order.id.slice(-6).toUpperCase()}`;
+  const title = getKitchenOrderTitle(order, t);
+  const subtitle = getKitchenOrderSubtitle(order, t);
+  const typeChip = isTotemOrder(order)
+    ? { label: `🖥️ ${getTotemLabel(order)}`, cls: "bg-indigo-100 text-indigo-800" }
+    : order.mesa
+      ? { label: `🪑 Mesa ${order.mesa.number}`, cls: "bg-amber-100 text-amber-800" }
+      : order.comanda
+        ? { label: `🎫 Comanda ${order.comanda.number}`, cls: "bg-emerald-100 text-emerald-800" }
+        : order.isPickup
+          ? { label: `🛍️ ${t("KITCHEN_PICKUP", "Retirada")}`, cls: "bg-purple-100 text-purple-800" }
+          : { label: `🛵 ${t("KITCHEN_DELIVERY", "Entrega")}`, cls: "bg-sky-100 text-sky-800" };
+  const chip = largeMode
+    ? "rounded-full px-3 py-1.5 text-sm font-extrabold"
+    : "rounded-full px-2.5 py-1 text-xs font-extrabold";
+
   return (
     <article
       draggable={hasNext && !advancing}
       onDragStart={() => onDragStart(order)}
       onDragEnd={onDragEnd}
-      className={`rounded-2xl border-2 p-4 shadow-sm transition-all duration-200 ${
+      className={`rounded-3xl bg-white shadow-card transition-all duration-200 ${
+        largeMode ? "p-5" : "p-4"
+      } ${
         isFresh
-          ? "animate-pulse border-secondary/50 bg-gold/10 shadow-[0_0_18px_rgba(212,169,77,0.2)]"
+          ? "ring-4 ring-gold"
           : eta?.isOverdue
-            ? "border-red-500/50 bg-red-500/10 shadow-[0_0_0_1px_rgba(239,68,68,0.2)]"
-            : (stage?.color ?? "border-amber-500/40 bg-amber-500/10")
+            ? "ring-2 ring-red-400"
+            : "ring-1 ring-primary/5"
       } ${dragging ? "cursor-grabbing opacity-60" : hasNext ? "cursor-grab" : "cursor-default"}`}
     >
+      {/* Cabeçalho: quem é e quando chegou */}
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p
-            className={`font-black uppercase tracking-wide text-gray-900 ${
-              largeMode ? "text-2xl" : "text-lg"
+        <div className="min-w-0">
+          <h3
+            className={`break-words font-display font-semibold leading-tight text-primary ${
+              largeMode ? "text-3xl" : "text-xl"
             }`}
           >
-            {getKitchenOrderTitle(order, t)}
-          </p>
+            {title}
+          </h3>
+          {subtitle && subtitle !== title && (
+            <p
+              className={`mt-0.5 break-words font-semibold text-text-muted ${
+                largeMode ? "text-lg" : "text-sm"
+              }`}
+            >
+              {subtitle}
+            </p>
+          )}
+        </div>
+        <div className="shrink-0 text-right">
           <p
-            className={`mt-1 font-black text-gray-950 ${
-              largeMode ? "text-lg" : "text-base"
-            }`}
-          >
-            {getKitchenOrderSubtitle(order, t)}
-          </p>
-          <p
-            className={`font-bold text-gray-700 ${
-              largeMode ? "text-xl" : "text-sm"
+            className={`font-display font-bold leading-none text-primary ${
+              largeMode ? "text-3xl" : "text-lg"
             }`}
           >
             {formatTime(order.createdAt)}
           </p>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          {isTotemOrder(order) ? (
-            <span
-              className={`rounded-xl font-black ${
-                largeMode ? "px-3 py-1.5 text-sm" : "px-2 py-1 text-xs"
-              } bg-indigo-100 text-indigo-700`}
-            >
-              🖥️ {getTotemLabel(order)}
-            </span>
-          ) : (
-            <>
-              <span
-                className={`shrink-0 rounded-xl font-black ${
-                  largeMode ? "px-3 py-2 text-base" : "px-2 py-1 text-xs"
-                } ${STAGE_BADGE[order.status] ?? "bg-gray-200 text-gray-900"}`}
-              >
-                {order.status.replace(/_/g, " ")}
-              </span>
-              <span
-                className={`rounded-xl font-black ${
-                  largeMode ? "px-3 py-1.5 text-sm" : "px-2 py-1 text-xs"
-                } ${
-                  order.mesa
-                    ? "bg-amber-100 text-amber-700"
-                    : order.comanda
-                      ? "bg-emerald-100 text-emerald-700"
-                      : order.isPickup
-                        ? "bg-purple-100 text-purple-700"
-                        : "bg-sky-100 text-sky-700"
-                }`}
-              >
-                {order.mesa
-                  ? `🪑 ${t("ADMIN_PANEL_MESA_LABEL", "Mesa")} ${order.mesa.number}`
-                  : order.comanda
-                    ? `🎫 Comanda ${order.comanda.number}`
-                    : order.isPickup
-                      ? `🏠 ${t("KITCHEN_PICKUP", "Retirada")}`
-                      : `🛵 ${t("KITCHEN_DELIVERY", "Entrega")}`}
-              </span>
-            </>
-          )}
-          {isPaymentPending && !onConfirmPayment && (
-            <span
-              className={`rounded-xl bg-amber-100 font-black text-amber-700 ${
-                largeMode ? "px-3 py-1.5 text-sm" : "px-2 py-1 text-xs"
-              }`}
-            >
-              💰 {t("KITCHEN_PAYMENT_PENDING", "Pag. pendente")}
-            </span>
-          )}
+          <p className="mt-1 text-[11px] font-bold tracking-wide text-text-muted">
+            {orderCode}
+          </p>
         </div>
       </div>
 
-      {isFresh ? (
-        <div className="mt-4 inline-flex rounded-full border border-secondary/50 bg-gold/10 px-4 py-2 text-sm font-black uppercase tracking-[0.18em] text-primary">
-          {t("KITCHEN_NEW_ORDER", "Novo pedido")}
-        </div>
-      ) : null}
-
-      {eta && !eta.isFinal ? (
-        <div className="mt-4 text-base">
-          <span
-            className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
-              eta.isOverdue
-                ? "border-red-300 bg-red-100 text-red-700"
-                : eta.elapsedMinutes >= 20
-                  ? "border-amber-300 bg-amber-100 text-amber-700"
-                  : "border-sky-300 bg-sky-100 text-sky-700"
-            }`}
-          >
-            {t("KITCHEN_WAITING_SINCE", "Aguardando há")} {eta.elapsedMinutes}{" "}
-            min
+      {/* Etiquetas */}
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {isFresh && (
+          <span className={`${chip} animate-pulse bg-gold text-primary`}>
+            ✨ {t("KITCHEN_NEW_ORDER", "Novo pedido")}
           </span>
-        </div>
-      ) : null}
-
-      {/* Items */}
-      <ul className="mt-4 space-y-4 border-t-2 border-gray-300 pt-4">
-        {kitchenItems.map((item) => (
-          <li
-            key={item.id}
-            className={`rounded-2xl border border-gray-200 bg-white/80 ${
-              largeMode ? "p-3" : "p-2"
+        )}
+        <span className={`${chip} ${typeChip.cls}`}>{typeChip.label}</span>
+        {eta && !eta.isFinal && (
+          <span
+            className={`${chip} ${
+              eta.isOverdue
+                ? "bg-red-600 text-white"
+                : eta.elapsedMinutes >= 20
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-accent text-primary"
             }`}
           >
-            <div className={largeMode ? "flex gap-4" : "flex gap-3"}>
-              <div
-                className={`shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100 ${
-                  largeMode ? "h-28 w-28" : "h-20 w-20"
-                }`}
-              >
-                {getProductImage(item, products) ? (
-                  <img
-                    src={getProductImage(item, products)}
-                    alt={item.product?.name ?? "Produto"}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center px-2 text-center text-sm font-bold uppercase text-gray-500">
-                    Sem foto
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
+            ⏱ {eta.elapsedMinutes} min
+          </span>
+        )}
+        {isPaymentPending && !onConfirmPayment && (
+          <span className={`${chip} bg-amber-100 text-amber-800`}>
+            💰 {t("KITCHEN_PAYMENT_PENDING", "Pag. pendente")}
+          </span>
+        )}
+      </div>
+
+      {/* Itens */}
+      <ul className={`mt-4 ${largeMode ? "space-y-4" : "space-y-3"}`}>
+        {kitchenItems.map((item) => {
+          const { fields, complements, observation } = parseItemNotes(item.notes);
+          const image = largeMode ? getProductImage(item, products) : "";
+          const addons = toKitchenAlertText(item.addons);
+          const removals = toKitchenAlertText(item.removedIngredients);
+          return (
+            <li
+              key={item.id}
+              className={`rounded-2xl bg-accent/60 ${largeMode ? "p-4" : "p-3"}`}
+            >
+              <div className="flex items-start gap-3">
                 <span
-                  className={`block font-black leading-tight text-gray-950 ${
-                    largeMode ? "text-2xl" : "text-lg"
+                  className={`flex shrink-0 items-center justify-center rounded-full bg-secondary font-display font-bold text-white ${
+                    largeMode ? "h-12 min-w-12 px-2 text-2xl" : "h-8 min-w-8 px-1.5 text-base"
+                  }`}
+                >
+                  {item.quantity}×
+                </span>
+                <p
+                  className={`min-w-0 flex-1 break-words font-extrabold leading-snug text-primary ${
+                    largeMode ? "text-2xl" : "text-base"
                   }`}
                 >
                   {getKitchenItemTitle(item, t)}
-                </span>
-                <span
-                  className={`mt-2 inline-flex rounded-xl bg-gray-900 font-black text-white ${
-                    largeMode ? "px-3 py-1 text-2xl" : "px-2 py-0.5 text-lg"
+                </p>
+                {image && (
+                  <img
+                    src={image}
+                    alt=""
+                    className="h-16 w-16 shrink-0 rounded-xl object-cover"
+                  />
+                )}
+              </div>
+
+              {fields.length > 0 && (
+                <dl
+                  className={`mt-2.5 grid gap-x-3 gap-y-1 ${
+                    largeMode ? "text-lg" : "text-sm"
                   }`}
                 >
-                  QTD {item.quantity}
-                </span>
-              </div>
-            </div>
-            {item.notes && (
-              <p
-                className={`mt-2 rounded-xl border-2 border-red-700 bg-red-600 font-black uppercase leading-snug text-white shadow-sm ${
-                  largeMode ? "px-3 py-2 text-base" : "px-2 py-1.5 text-sm"
-                }`}
-              >
-                ⚠ {item.notes}
-              </p>
-            )}
-            <KitchenAlertStrip label="Adicionais" value={item.addons} />
-            <KitchenAlertStrip
-              label="Remover"
-              value={item.removedIngredients}
-            />
-          </li>
-        ))}
+                  {fields.map((field) => (
+                    <div key={field.label} className="flex gap-1.5">
+                      <dt className="text-text-muted">{field.label}:</dt>
+                      <dd className="font-bold text-primary">{field.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+
+              {complements.length > 0 && (
+                <div className="mt-2.5">
+                  <p
+                    className={`mb-1 font-bold uppercase tracking-wide text-text-muted ${
+                      largeMode ? "text-sm" : "text-[11px]"
+                    }`}
+                  >
+                    Complementos
+                  </p>
+                  <ul className="flex flex-wrap gap-1.5">
+                    {complements.map((name) => (
+                      <li
+                        key={name}
+                        className={`rounded-full bg-white font-bold text-primary ring-1 ring-primary/10 ${
+                          largeMode ? "px-3 py-1 text-base" : "px-2.5 py-0.5 text-xs"
+                        }`}
+                      >
+                        {name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {addons && (
+                <p className={`mt-2 font-bold text-secondary ${largeMode ? "text-lg" : "text-sm"}`}>
+                  + {addons}
+                </p>
+              )}
+              {removals && (
+                <p className={`mt-1 font-bold text-red-600 ${largeMode ? "text-lg" : "text-sm"}`}>
+                  Sem: {removals}
+                </p>
+              )}
+              {observation && (
+                <p
+                  className={`mt-2.5 rounded-xl border-2 border-amber-300 bg-amber-100 font-extrabold text-amber-900 ${
+                    largeMode ? "px-3 py-2 text-lg" : "px-2.5 py-1.5 text-sm"
+                  }`}
+                >
+                  ⚠ {observation}
+                </p>
+              )}
+            </li>
+          );
+        })}
       </ul>
 
       {order.notes && !isTotemOrder(order) && (
-        <KitchenAlertStrip label="Obs do pedido" value={order.notes} />
-      )}
-
-      {/* Payment pending column actions */}
-      {onConfirmPayment && (
-        <div
-          className={`mt-5 grid gap-3 ${
-            largeMode ? "sm:grid-cols-2" : "grid-cols-2"
+        <p
+          className={`mt-3 rounded-xl border-2 border-amber-300 bg-amber-100 font-extrabold text-amber-900 ${
+            largeMode ? "px-3 py-2 text-lg" : "px-2.5 py-1.5 text-sm"
           }`}
         >
+          ⚠ Obs. do pedido: {toKitchenAlertText(order.notes)}
+        </p>
+      )}
+
+      {/* Pagamento pendente (totem) */}
+      {onConfirmPayment && (
+        <div className="mt-4 grid grid-cols-2 gap-2">
           <button
             type="button"
             disabled={confirmingPayment}
             onClick={() => onConfirmPayment(order.id)}
-            className={`rounded-2xl bg-green-600 font-black text-white transition hover:bg-green-700 disabled:opacity-50 ${
-              largeMode
-                ? "min-h-16 px-4 py-4 text-lg"
-                : "min-h-12 px-3 py-3 text-sm"
-            }`}
+            className={`ui-btn ui-btn-success ${largeMode ? "ui-btn-lg" : ""}`}
           >
             {confirmingPayment
               ? "..."
@@ -547,10 +555,8 @@ function OrderCard({
             type="button"
             disabled={confirmingPayment}
             onClick={() => onPayLater(order.id)}
-            className={`rounded-2xl border-2 border-amber-500 bg-amber-50 font-black text-amber-900 transition hover:bg-amber-100 disabled:opacity-50 ${
-              largeMode
-                ? "min-h-16 px-4 py-4 text-lg"
-                : "min-h-12 px-3 py-3 text-sm"
+            className={`ui-btn border-2 border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100 ${
+              largeMode ? "ui-btn-lg" : ""
             }`}
           >
             {confirmingPayment
@@ -560,26 +566,25 @@ function OrderCard({
         </div>
       )}
 
-      {/* Normal advance button */}
+      {/* Próxima etapa */}
       {hasNext && (
         <button
           type="button"
           disabled={advancing}
           onClick={() => onAdvance(order.id, nextStatus)}
-          className={`mt-5 w-full rounded-2xl bg-green-600 font-black uppercase text-white transition hover:bg-green-700 disabled:opacity-50 ${
-            largeMode
-              ? "min-h-20 px-4 py-5 text-2xl"
-              : "min-h-14 px-3 py-3 text-base"
+          className={`mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 font-extrabold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 disabled:opacity-50 ${
+            largeMode ? "min-h-16 px-5 py-4 text-2xl" : "min-h-12 px-4 py-3 text-base"
           }`}
         >
           {advanceLabel}
+          {!advancing && <span aria-hidden="true">→</span>}
         </button>
       )}
 
-      {/* Delivery confirmation code input */}
+      {/* Código de entrega */}
       {needsCodeConfirm && (
         <div className="mt-4">
-          <p className="mb-1.5 text-[10px] uppercase tracking-widest text-smoke">
+          <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-text-muted">
             {t("KITCHEN_DELIVERY_CODE_SECTION", "📍 Código do cliente")}
           </p>
           <div className="flex gap-2">
@@ -594,7 +599,7 @@ function OrderCard({
                 )
               }
               placeholder="0000"
-              className="w-24 rounded-2xl border border-gray-300 bg-white px-3 py-2 text-center text-lg font-bold tracking-widest focus:border-green-400 focus:outline-none"
+              className="ui-input w-24 text-center text-lg font-bold tracking-widest"
             />
             <button
               type="button"
@@ -603,7 +608,7 @@ function OrderCard({
                 onConfirmDelivery(order.id, deliveryCodeInput);
                 setDeliveryCodeInput("");
               }}
-              className="flex-1 rounded-full bg-gradient-to-r from-green-500 to-green-600 py-2 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-40"
+              className="ui-btn ui-btn-success flex-1"
             >
               {confirmingDelivery
                 ? t("KITCHEN_CONFIRMING_DELIVERY", "Confirmando...")
@@ -613,61 +618,44 @@ function OrderCard({
         </div>
       )}
 
-      {/* Motoboy assignment — delivery orders only (not mesa) */}
+      {/* Motoboy — só entregas */}
       {!order.isPickup &&
         !order.mesaId &&
         onAssignMotoboy &&
         motoboys.length > 0 && (
-          <div className="mt-3 border-t border-gray-200 pt-3">
-            <p className="mb-1.5 text-[10px] uppercase tracking-widest text-smoke">
+          <div className="mt-4">
+            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-text-muted">
               🛵 Motoboy
             </p>
-            {order.assignedMotoboyId ? (
-              <div className="flex items-center gap-2">
-                <span className="flex-1 truncate rounded-xl bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
-                  {motoboys.find((m) => m.id === order.assignedMotoboyId)
-                    ?.name ?? "Motoboy"}
-                </span>
-                <select
-                  value={order.assignedMotoboyId}
-                  onChange={(e) => onAssignMotoboy(order.id, e.target.value)}
-                  disabled={assigningMotoboy}
-                  className="rounded-2xl border border-gray-200 bg-white px-2 py-1 text-xs"
-                >
-                  {motoboys.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <select
-                value=""
-                onChange={(e) =>
-                  e.target.value && onAssignMotoboy(order.id, e.target.value)
-                }
-                disabled={assigningMotoboy}
-                className="w-full rounded-2xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs"
-              >
+            <select
+              value={order.assignedMotoboyId ?? ""}
+              onChange={(e) =>
+                e.target.value && onAssignMotoboy(order.id, e.target.value)
+              }
+              disabled={assigningMotoboy}
+              className={`ui-input py-2 ${
+                order.assignedMotoboyId ? "" : "border-amber-300 bg-amber-50"
+              }`}
+            >
+              {!order.assignedMotoboyId && (
                 <option value="">
                   {t("KITCHEN_SELECT_MOTOBOY", "Selecionar motoboy...")}
                 </option>
-                {motoboys.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            )}
+              )}
+              {motoboys.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
-      {/* Cancel button — shown in all columns including payment pending */}
+      {/* Cancelar */}
       {onCancel &&
         (confirmCancel ? (
-          <div className="mt-2 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-2">
-            <span className="flex-1 text-xs text-red-600">
+          <div className="mt-3 flex items-center gap-2 rounded-2xl bg-red-50 px-3 py-2">
+            <span className="flex-1 text-xs font-semibold text-red-700">
               {t(
                 "KITCHEN_CANCEL_CONFIRM_TEXT",
                 "Cancelar pedido #{{id}}?",
@@ -680,14 +668,14 @@ function OrderCard({
                 setConfirmCancel(false);
                 onCancel(order.id);
               }}
-              className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
+              className="ui-btn ui-btn-sm ui-btn-danger"
             >
               {cancelling ? "..." : t("YES", "Sim")}
             </button>
             <button
               type="button"
               onClick={() => setConfirmCancel(false)}
-              className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold hover:bg-gray-100"
+              className="ui-btn ui-btn-sm ui-btn-outline"
             >
               {t("NO", "Não")}
             </button>
@@ -697,11 +685,11 @@ function OrderCard({
             type="button"
             disabled={cancelling || advancing || confirmingPayment}
             onClick={() => setConfirmCancel(true)}
-            className="mt-2 w-full rounded-full border border-red-400/50 bg-red-500/10 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-500/20 disabled:opacity-40"
+            className="mt-2 w-full py-1.5 text-xs font-bold text-red-500 transition hover:text-red-700 disabled:opacity-40"
           >
             {cancelling
               ? t("KITCHEN_CANCELLING", "Cancelando...")
-              : t("KITCHEN_CANCEL_ORDER_BTN", "Cancelar Pedido")}
+              : t("KITCHEN_CANCEL_ORDER_BTN", "Cancelar pedido")}
           </button>
         ))}
     </article>
@@ -1402,75 +1390,65 @@ function KitchenPage() {
       <div className="ui-page-wide">
 
       {showStageSummary && (
-        <section
-          className={`mb-5 grid gap-3 ${
-            visibleColumns.length === 3
-              ? "grid-cols-1 md:grid-cols-3"
-              : visibleColumns.length === 1
-                ? "grid-cols-1"
-                : "sm:grid-cols-3 xl:grid-cols-6"
-          }`}
+        <nav
+          className="mb-5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="Etapas"
         >
           {visibleStageCounts.map((stage) => {
             const changed = changedStageKeys.includes(stage.key);
-
             return (
-              <article
+              <button
                 key={stage.key}
-                className={`rounded-2xl border p-4 transition-all duration-300 ${
+                type="button"
+                onClick={() => scrollToColumn(stage.key)}
+                className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-bold shadow-card ring-1 transition ${
                   changed
-                    ? "scale-[1.02] border-secondary/50 bg-gold/10 shadow-glow"
-                    : "border-gray-200 bg-white"
+                    ? "scale-105 bg-gold text-primary ring-gold"
+                    : "bg-white text-primary ring-primary/5 hover:ring-secondary/40"
                 }`}
               >
-                <p className="text-xs uppercase tracking-[0.2em] text-smoke">
-                  {t(`KITCHEN_COLUMN_${stage.key}`, stage.label)}
-                </p>
-                <p className="mt-2 font-display text-3xl text-gray-900">
+                <span
+                  className={`h-2.5 w-2.5 rounded-full ${COLUMN_DOT[stage.key] ?? "bg-gray-400"}`}
+                  aria-hidden="true"
+                />
+                {t(`KITCHEN_COLUMN_${stage.key}`, stage.label)}
+                <span className="rounded-full bg-accent px-2 py-0.5 font-display text-sm">
                   {stage.count}
-                </p>
-                <p className="mt-1 text-xs text-smoke">
-                  {t("KITCHEN_ORDERS_IN_STAGE", "Pedidos nesta etapa")}
-                </p>
-              </article>
+                </span>
+              </button>
             );
           })}
-        </section>
+        </nav>
       )}
 
-      {showWaiterCalls && (
-        <section className="mb-5 rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="font-display text-xl text-primary">
-                🛎 {t("KITCHEN_WAITER_CALLS_TITLE", "Chamadas de mesa")}
+      {showWaiterCalls &&
+        (waiterCalls.length === 0 ? (
+          <p className="mb-5 flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-sm font-semibold text-text-muted ring-1 ring-primary/5">
+            🛎 {t("KITCHEN_WAITER_CALLS_EMPTY", "Nenhum chamado de mesa agora.")}
+          </p>
+        ) : (
+          <section className="mb-5 rounded-3xl bg-gold/20 p-4 ring-2 ring-gold">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-display text-xl font-semibold text-primary">
+                🛎 {t("KITCHEN_WAITER_CALLS_TITLE", "Chamadas de mesa")} (
+                {waiterCalls.length})
               </h2>
-              <p className="mt-1 text-xs text-smoke">
-                {t(
-                  "KITCHEN_WAITER_CALLS_DESC",
-                  "Pedidos recentes de atendimento enviados pelas mesas.",
-                )}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleClearAlerts}
-              className="rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-secondary/40 hover:text-secondary"
-            >
-              {t("KITCHEN_CLEAR_WAITER_CALLS", "Limpar chamadas")}
-              {waiterCalls.length ? ` (${waiterCalls.length})` : ""}
-            </button>
-          </div>
-
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {waiterCalls.map((call, index) => (
-              <article
-                key={`${call.mesaId ?? "mesa"}-${call.timestamp ?? index}`}
-                className="rounded-2xl border border-primary/10 bg-ink/60 p-4"
+              <button
+                type="button"
+                onClick={handleClearAlerts}
+                className="ui-btn ui-btn-sm ui-btn-outline"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-display text-lg text-gray-900">
+                {t("KITCHEN_CLEAR_WAITER_CALLS", "Limpar chamadas")}
+              </button>
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {waiterCalls.map((call, index) => (
+                <article
+                  key={`${call.mesaId ?? "mesa"}-${call.timestamp ?? index}`}
+                  className="flex items-center justify-between gap-3 rounded-2xl bg-white p-3 shadow-card"
+                >
+                  <div className="min-w-0">
+                    <p className="font-display text-lg font-semibold text-primary">
                       {call?.mesaNumber
                         ? t("KITCHEN_TABLE_NUMBER", "Mesa {{number}}").replace(
                             "{{number}}",
@@ -1478,37 +1456,25 @@ function KitchenPage() {
                           )
                         : t("KITCHEN_GENERIC_TABLE", "Mesa")}
                     </p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.2em] text-primary">
-                      {t("KITCHEN_SERVICE_REQUEST", "Atendimento solicitado")}
+                    <p className="text-xs font-semibold text-text-muted">
+                      {formatRelativeTime(call?.timestamp)}
                     </p>
                   </div>
-                  <span className="rounded-full bg-white px-2 py-1 text-[11px] font-semibold text-smoke shadow-sm">
-                    {formatRelativeTime(call?.timestamp)}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleDismissWaiterCall(call, index)}
-                  className="mt-4 w-full rounded-full bg-green-600 px-4 py-3 text-sm font-black uppercase text-white transition hover:bg-green-700"
-                >
-                  Dar baixa
-                </button>
-              </article>
-            ))}
-            {!waiterCalls.length ? (
-              <div className="rounded-2xl border border-dashed border-gray-200 p-4 text-sm text-smoke md:col-span-2 xl:col-span-3">
-                {t(
-                  "KITCHEN_WAITER_CALLS_EMPTY",
-                  "Nenhuma chamada de mesa registrada por enquanto.",
-                )}
-              </div>
-            ) : null}
-          </div>
-        </section>
-      )}
+                  <button
+                    type="button"
+                    onClick={() => handleDismissWaiterCall(call, index)}
+                    className="ui-btn ui-btn-sm ui-btn-success"
+                  >
+                    Atendido
+                  </button>
+                </article>
+              ))}
+            </div>
+          </section>
+        ))}
 
       {latestAlert ? (
-        <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-primary/10 bg-gold/10 px-4 py-3 text-sm text-primary">
+        <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl bg-gold px-4 py-3 text-sm text-primary shadow-card">
           <div>
             <p className="font-semibold">
               {t(
@@ -1542,7 +1508,7 @@ function KitchenPage() {
       {isLoading && (
         <div className="grid animate-pulse gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-48 rounded-2xl bg-gray-50" />
+            <div key={i} className="h-48 rounded-3xl bg-white/70" />
           ))}
         </div>
       )}
@@ -1555,15 +1521,7 @@ function KitchenPage() {
 
       {/* Kanban columns */}
       {!isLoading && !isError && (
-        <div
-          className={`grid gap-6 ${
-            visibleColumns.length === 3
-              ? "grid-cols-1 lg:grid-cols-3"
-              : visibleColumns.length === 1
-                ? "grid-cols-1"
-                : "sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7"
-          }`}
-        >
+        <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:scroll-px-6 sm:px-6">
           {visibleColumns.map((col) => {
             const isVirtual = col.virtual;
             const stageOrders = getColumnOrders(col.key).sort((a, b) =>
@@ -1594,19 +1552,26 @@ function KitchenPage() {
                   });
                   handleDragEnd();
                 }}
-                className={`rounded-3xl transition-all duration-200 ${
+                id={`kitchen-col-${col.key}`}
+                className={`flex w-[85vw] max-w-[24rem] shrink-0 snap-start flex-col rounded-3xl bg-white/60 p-3 ring-1 transition-all duration-200 sm:w-[21rem] ${
+                  visibleColumns.length <= 3 ? "lg:max-w-none lg:flex-1" : ""
+                } ${
                   isDropActive
-                    ? "bg-gold/10 ring-2 ring-gold/40"
+                    ? "bg-gold/20 ring-2 ring-gold"
                     : canDropHere
-                      ? "ring-1 ring-dashed ring-gold/20"
-                      : ""
+                      ? "ring-2 ring-dashed ring-gold/50"
+                      : "ring-primary/5"
                 }`}
               >
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="font-semibold text-gray-900">
+                <div className="mb-3 flex items-center justify-between px-1">
+                  <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-primary">
+                    <span
+                      className={`h-3 w-3 rounded-full ${COLUMN_DOT[col.key] ?? "bg-gray-400"}`}
+                      aria-hidden="true"
+                    />
                     {t(`KITCHEN_COLUMN_${col.key}`, col.label)}
                   </h2>
-                  <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-smoke">
+                  <span className="rounded-full bg-primary px-2.5 py-0.5 font-display text-sm font-bold text-white">
                     {stageOrders.length}
                   </span>
                 </div>
@@ -1625,7 +1590,7 @@ function KitchenPage() {
 
                 <div className="space-y-3">
                   {stageOrders.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-white/15 p-4 text-center text-xs text-smoke">
+                    <div className="rounded-2xl border-2 border-dashed border-primary/10 p-6 text-center text-sm font-semibold text-text-muted">
                       {t("KITCHEN_NO_ORDER", "Nenhum pedido")}
                     </div>
                   ) : (
