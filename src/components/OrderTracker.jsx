@@ -1,13 +1,11 @@
-const statusSteps = [
-  { key: "RECEBIDO", label: "Recebido" },
-  { key: "PREPARANDO", label: "Preparando" },
-  { key: "PRONTO", label: "Pronto" },
-  { key: "SAIU_PARA_ENTREGA", label: "Saiu para Entrega" },
-  { key: "ENTREGUE", label: "Entregue" },
-];
+import { getOrderTrackerSteps } from "../lib/orderStatus.js";
 
-function OrderTracker({ status = "RECEBIDO" }) {
-  const activeIndex = statusSteps.findIndex((step) => step.key === status);
+function OrderTracker({ order }) {
+  const status = order?.status ?? "RECEBIDO";
+  const statusSteps = getOrderTrackerSteps(order);
+  const activeIndex = statusSteps.findIndex((step) =>
+    step.keys.includes(status),
+  );
   const isCancelled = status === "CANCELADO";
 
   return (
@@ -29,7 +27,7 @@ function OrderTracker({ status = "RECEBIDO" }) {
 
             return (
               <li
-                key={step.key}
+                key={step.label}
                 className="relative pl-10 transition-all duration-300"
                 style={{ animationDelay: `${index * 80}ms` }}
               >

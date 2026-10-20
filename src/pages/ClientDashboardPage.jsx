@@ -7,6 +7,7 @@ import CartDrawer from "../components/CartDrawer.jsx";
 import { useNavigate } from "react-router-dom";
 import EstimatedTimeBadge from "../components/EstimatedTimeBadge.jsx";
 import OrderTracker from "../components/OrderTracker.jsx";
+import { getOrderStatusLabel } from "../lib/orderStatus.js";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
@@ -249,10 +250,7 @@ function ClientDashboardPage() {
                         : "bg-gold/10 text-primary"
                     }`}
                   >
-                    {t(
-                      `ORDER_STATUS_${order.status}`,
-                      order.status.replace(/_/g, " "),
-                    )}
+                    {getOrderStatusLabel(order, t)}
                   </span>
                   <span className="text-sm font-bold text-primary">
                     {Number(order.total).toLocaleString(locale || "pt-BR", {
@@ -287,7 +285,7 @@ function ClientDashboardPage() {
                 <div className="border-t border-gray-200 px-5 pb-5 pt-4">
                   <EstimatedTimeBadge now={new Date(now)} order={order} />
 
-                  <OrderTracker status={order.status} />
+                  <OrderTracker order={order} />
 
                   {/* Delivery code — shown while order is out for delivery */}
                   {order.deliveryCode &&

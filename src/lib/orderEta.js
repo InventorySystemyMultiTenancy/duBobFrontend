@@ -58,6 +58,23 @@ export function getOrderEta(order, now = new Date()) {
     };
   }
 
+  // Retirada pronta: não há mais tempo a estimar, só esperar o cliente
+  if (
+    order.isPickup &&
+    (order.status === "PRONTO" || order.status === "SAIU_PARA_ENTREGA")
+  ) {
+    return {
+      label: "Pronto para retirada",
+      shortLabel: "Pronto",
+      tone: "success",
+      minutesRemaining: 0,
+      elapsedMinutes: getElapsedMinutes(order.createdAt, now),
+      expectedAt: null,
+      isFinal: true,
+      isOverdue: false,
+    };
+  }
+
   const elapsedMinutes = getElapsedMinutes(order.createdAt, now);
   const base = STATUS_BASE_MINUTES[order.status] ?? 20;
   const floor = STATUS_MIN_FLOOR[order.status] ?? 5;

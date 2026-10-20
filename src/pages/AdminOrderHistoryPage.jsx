@@ -7,6 +7,7 @@ import { useTranslation } from "../context/I18nContext.jsx";
 import { askPaymentMethod } from "../lib/paymentMethodPrompt.js";
 
 import PageHeader from "../components/PageHeader.jsx";
+import { getOrderStatusLabel } from "../lib/orderStatus.js";
 const STATUS_CLASS = {
   RECEBIDO: "bg-blue-100 text-blue-700",
   PREPARANDO: "bg-yellow-100 text-yellow-700",
@@ -438,7 +439,7 @@ function AdminOrderHistoryPage() {
                     <span
                       className={`rounded-xl px-2 py-1 text-xs font-bold ${STATUS_CLASS[order.status] ?? "bg-gray-100 text-gray-700"}`}
                     >
-                      {t(`ORDER_STATUS_${order.status}`, order.status)}
+                      {getOrderStatusLabel(order, t)}
                     </span>
                     <span
                       className={`rounded-xl px-2 py-1 text-xs font-bold ${PAYMENT_CLASS[order.paymentStatus] ?? "bg-gray-100 text-gray-700"}`}

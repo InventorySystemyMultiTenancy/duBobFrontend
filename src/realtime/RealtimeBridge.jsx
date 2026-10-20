@@ -9,6 +9,7 @@ import {
 import { useAuth } from "../hooks/useAuth.js";
 import { incrementStaffUnreadCount } from "../lib/staffAlertsStore.js";
 import { appendWaiterCall } from "../lib/waiterCallsStore.js";
+import { getOrderStatusLabel } from "../lib/orderStatus.js";
 
 const STAFF_ROLES = new Set([
   "ADMIN",
@@ -149,7 +150,7 @@ export default function RealtimeBridge() {
           toast.error(msg);
         } else {
           toast.success(
-            `Seu pedido agora está em ${payload.status.replace(/_/g, " ")}`,
+            `Seu pedido agora está: ${getOrderStatusLabel(payload)}`,
           );
         }
         return;

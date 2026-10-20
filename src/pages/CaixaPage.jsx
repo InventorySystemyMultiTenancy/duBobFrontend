@@ -8,21 +8,12 @@ import { getRoleHome } from "../lib/roleHome.js";
 import { askPaymentMethod } from "../lib/paymentMethodPrompt.js";
 
 import PageHeader from "../components/PageHeader.jsx";
+import { getOrderStatusLabel } from "../lib/orderStatus.js";
 const currency = (value) =>
   Number(value || 0).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
-
-const STATUS_LABEL = {
-  AGUARDANDO_PAGAMENTO: "Aguardando pagamento",
-  RECEBIDO: "Recebido",
-  PREPARANDO: "Preparando",
-  PRONTO: "Pronto",
-  SAIU_PARA_ENTREGA: "Saiu p/ entrega",
-  ENTREGUE: "Entregue",
-  CANCELADO: "Cancelado",
-};
 
 function getOrigin(order) {
   if (order.comanda) {
@@ -109,7 +100,7 @@ function PendingOrderCard({ order, onPay, disabled }) {
             {currency(order.total)}
           </p>
           <p className="mt-1 text-xs font-semibold text-gray-500">
-            {STATUS_LABEL[order.status] ?? order.status}
+            {getOrderStatusLabel(order)}
           </p>
         </div>
       </div>
