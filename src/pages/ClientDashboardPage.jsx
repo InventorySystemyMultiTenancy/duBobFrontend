@@ -7,6 +7,7 @@ import CartDrawer from "../components/CartDrawer.jsx";
 import { useNavigate } from "react-router-dom";
 import EstimatedTimeBadge from "../components/EstimatedTimeBadge.jsx";
 import OrderTracker from "../components/OrderTracker.jsx";
+import MotoboyTracker from "../components/MotoboyTracker.jsx";
 import { getOrderStatusLabel } from "../lib/orderStatus.js";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
@@ -279,13 +280,17 @@ function ClientDashboardPage() {
               {/* Expanded details */}
               <div
                 className={`overflow-hidden transition-all duration-300 ${
-                  isExpanded ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+                  isExpanded ? "max-h-[1400px] opacity-100" : "max-h-0 opacity-0"
                 }`}
               >
                 <div className="border-t border-gray-200 px-5 pb-5 pt-4">
                   <EstimatedTimeBadge now={new Date(now)} order={order} />
 
                   <OrderTracker order={order} />
+
+                  {isExpanded &&
+                    order.status === "SAIU_PARA_ENTREGA" &&
+                    !order.isPickup && <MotoboyTracker order={order} />}
 
                   {/* Delivery code — shown while order is out for delivery */}
                   {order.deliveryCode &&

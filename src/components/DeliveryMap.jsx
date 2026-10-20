@@ -27,7 +27,13 @@ const pinIcon = (content, background) =>
  * Mapa com a loja, a posição do motoboy (se compartilhada) e os pedidos
  * numerados na mesma ordem dos cards.
  */
-function DeliveryMap({ store, motoboyPosition, orders }) {
+function DeliveryMap({
+  store,
+  motoboyPosition,
+  orders,
+  numbered = true,
+  motoboyLabel = "Você está aqui",
+}) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const layerRef = useRef(null);
@@ -49,7 +55,11 @@ function DeliveryMap({ store, motoboyPosition, orders }) {
     mapRef.current = map;
     layerRef.current = L.layerGroup().addTo(map);
 
+    // O mapa pode nascer dentro de um painel ainda animando a abertura
+    const resizeTimer = setTimeout(() => map.invalidateSize(), 350);
+
     return () => {
+      clearTimeout(resizeTimer);
       map.remove();
       mapRef.current = null;
       layerRef.current = null;
@@ -78,16 +88,16 @@ function DeliveryMap({ store, motoboyPosition, orders }) {
       if (order.deliveryLat == null || order.deliveryLon == null) return;
       const eta = order.travelFromMotoboy ?? order.travel;
       L.marker([order.deliveryLat, order.deliveryLon], {
-        icon: pinIcon(`${index + 1}`, "#dc2626"),
+        icon: pinIcon(numbered ? `${index + 1}` : "🏠", "#dc2626"),
       })
         .bindPopup(
-          `<strong>${index + 1}. ${escapeHtml(order.user?.name)}</strong><br/>` +
+          `<strong>${numbered ? `${index + 1}. ` : ""}${escapeHtml(order.user?.name ?? "Endereço de entrega")}</strong><br/>` +
             `${escapeHtml(order.deliveryAddress)}` +
             (eta ? `<br/><em>~${eta.tempoEstimado} min · ${eta.distanciaKm} km</em>` : ""),
         )
         .addTo(layer);
     });
-  }, [store, orders]);
+  }, [store, orders, numbered]);
 
   // Posição do motoboy (atualiza sem recriar as outras camadas)
   useEffect(() => {
@@ -108,10 +118,10 @@ function DeliveryMap({ store, motoboyPosition, orders }) {
         zIndexOffset: 1000,
         icon: pinIcon("🛵", "#2563eb"),
       })
-        .bindPopup("<strong>Você está aqui</strong>")
+        .bindPopup(`<strong>${escapeHtml(motoboyLabel)}</strong>`)
         .addTo(map);
     }
-  }, [motoboyPosition]);
+  }, [motoboyPosition, motoboyLabel]);
 
   // Enquadra todos os pontos só quando o conjunto muda (não a cada movimento)
   useEffect(() => {

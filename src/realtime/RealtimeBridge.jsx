@@ -180,6 +180,10 @@ export default function RealtimeBridge() {
       }
     };
 
+    const onMotoboyLocation = (payload) => {
+      dispatchRealtimeEvent("pc:motoboy-location", payload);
+    };
+
     const onChamarGarcom = (payload) => {
       if (!STAFF_ROLES.has(user.role)) {
         return;
@@ -237,6 +241,7 @@ export default function RealtimeBridge() {
     socket.on("order:status-updated", onOrderStatusUpdated);
     socket.on("order:payment-updated", onPaymentUpdated);
     socket.on("mesa:chamar-garcom", onChamarGarcom);
+    socket.on("order:motoboy-location", onMotoboyLocation);
 
     return () => {
       socket.off("connect", onConnect);
@@ -246,6 +251,7 @@ export default function RealtimeBridge() {
       socket.off("order:status-updated", onOrderStatusUpdated);
       socket.off("order:payment-updated", onPaymentUpdated);
       socket.off("mesa:chamar-garcom", onChamarGarcom);
+      socket.off("order:motoboy-location", onMotoboyLocation);
       socket.disconnect();
     };
   }, [isAuthenticated, queryClient, token, user]);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
@@ -120,6 +120,26 @@ function MotoboyPage() {
 
     return () => navigator.geolocation.clearWatch(watchId);
   }, [shareLocation]);
+
+  // Envia a posição ao servidor (repassada ao cliente) a cada 15 s,
+  // mesmo parado, para o cliente não perder o motoboy de vista
+  const positionRef = useRef(null);
+  positionRef.current = position;
+  const hasPosition = Boolean(position);
+  useEffect(() => {
+    if (!hasPosition || user?.role !== "MOTOBOY") return undefined;
+
+    const send = () => {
+      if (!positionRef.current) return;
+      api.post("/motoboy/location", positionRef.current).catch(() => {
+        // falha pontual: o próximo envio tenta de novo
+      });
+    };
+
+    send();
+    const id = setInterval(send, 15_000);
+    return () => clearInterval(id);
+  }, [hasPosition, user?.role]);
 
   // Arredonda (~100 m) para só recalcular as rotas quando o motoboy se mover
   const origin = position
@@ -279,7 +299,7 @@ function MotoboyPage() {
                 ? position
                   ? t(
                       "MOTOBOY_LOCATION_ON",
-                      "Tempos calculados a partir de onde você está.",
+                      "Ligado: o cliente do pedido em entrega vê onde você está.",
                     )
                   : t("MOTOBOY_LOCATION_WAITING", "Obtendo sua localização...")
                 : t(
