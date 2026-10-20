@@ -1171,13 +1171,8 @@ function KitchenPage() {
   const visibleColumnKeys = isPreparationOnlyKitchen
     ? ["PREPARANDO"]
     : isDeliveryKitchenUser
-      ? [
-          "RECEBIDO",
-          "PREPARANDO",
-          "PRONTO",
-          "RETIRADA_PRONTA",
-          "SAIU_PARA_ENTREGA",
-        ]
+      ? // Pedido que saiu para entrega fica só com o motoboy e o admin
+        ["RECEBIDO", "PREPARANDO", "PRONTO", "RETIRADA_PRONTA"]
       : user?.role === "ATENDENTE"
         ? ["LEVAR_PARA_MESA"]
         : user?.role === "FUNCIONARIO"
