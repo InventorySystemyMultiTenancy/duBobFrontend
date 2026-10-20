@@ -149,7 +149,7 @@ function ProductCustomizer({ product, addonsOptions = DEFAULT_ADDONS, removalOpt
             rows={3}
             value={observation}
             onChange={(e) => setObservation(e.target.value)}
-            placeholder="Ex: sem cebola, molho separado..."
+            placeholder="Ex.: sem granola, cobertura separada..."
             className="w-full resize-none rounded-2xl border border-border-soft bg-accent/30 px-3 py-2 text-sm text-text-main outline-none placeholder:text-text-muted/50 focus:border-secondary/50"
           />
         </div>

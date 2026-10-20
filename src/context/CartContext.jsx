@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import toast from "react-hot-toast";
 import { AuthContext } from "./AuthContext.jsx";
 
@@ -66,6 +73,21 @@ const normalizeItem = (item) => {
   };
 };
 
+// Junta o carrinho de visitante com o da conta (mesmo item soma a quantidade).
+function mergeCartItems(baseItems, extraItems) {
+  const merged = baseItems.map(normalizeItem);
+  for (const raw of extraItems) {
+    const item = normalizeItem(raw);
+    const existing = merged.find((entry) => entry.key === item.key);
+    if (existing) {
+      existing.quantity += item.quantity;
+    } else {
+      merged.push(item);
+    }
+  }
+  return merged;
+}
+
 const itemUnitPrice = (item) =>
   Number(item?.price || 0) + sumAddons(item?.addons || []);
 
@@ -76,16 +98,35 @@ export function CartProvider({ children }) {
   const [cartScope, setCartScope] = useState("default");
   const [items, setItems] = useState(() => loadCartFromStorage(userId));
   const [isCartOpen, setIsCartOpen] = useState(false);
+  // De qual chave do localStorage vieram os itens em memória. Evita gravar o
+  // carrinho de um usuário na chave de outro durante a troca (ex.: no login).
+  const loadedKeyRef = useRef(scopedStorageKey(userId, "default"));
+  const previousUserIdRef = useRef(userId);
 
   useEffect(() => {
-    setItems(loadCartFromStorage(userId, cartScope).map(normalizeItem));
+    const key = scopedStorageKey(userId, cartScope);
+    let nextItems = loadCartFromStorage(userId, cartScope).map(normalizeItem);
+
+    // Visitante que acabou de entrar: o que ele colocou no carrinho vem junto.
+    const justLoggedIn = previousUserIdRef.current === null && userId !== null;
+    if (justLoggedIn) {
+      const guestItems = loadCartFromStorage(null, cartScope);
+      if (guestItems.length) {
+        nextItems = mergeCartItems(nextItems, guestItems);
+        localStorage.setItem(key, JSON.stringify(nextItems));
+        localStorage.removeItem(scopedStorageKey(null, cartScope));
+      }
+    }
+    previousUserIdRef.current = userId;
+
+    loadedKeyRef.current = key;
+    setItems(nextItems);
   }, [userId, cartScope]);
 
   useEffect(() => {
-    localStorage.setItem(
-      scopedStorageKey(userId, cartScope),
-      JSON.stringify(items),
-    );
+    const key = scopedStorageKey(userId, cartScope);
+    if (loadedKeyRef.current !== key) return;
+    localStorage.setItem(key, JSON.stringify(items));
   }, [items, userId, cartScope]);
 
   const addItems = (itemsToAdd, { silent = false } = {}) => {

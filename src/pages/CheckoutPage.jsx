@@ -704,7 +704,7 @@ function CheckoutPage() {
                       </label>
                       <textarea
                         rows={2}
-                        placeholder="Ex: sem cebola, borda recheada..."
+                        placeholder="Ex.: sem granola, caprichar no leite condensado..."
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         className="w-full resize-none rounded-2xl border border-gray-200 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
@@ -829,11 +829,9 @@ function CheckoutPage() {
 
               {paymentMode === "online" ? (
                 <div className="mt-3 rounded-2xl border border-primary/10 bg-gray-50 p-4">
-                  <img
-                    src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-navigation/6.6.71/mercadopago/logo__large@2x.png"
-                    alt="Mercado Pago"
-                    className="h-5 w-auto"
-                  />
+                  <span className="inline-flex items-center rounded-full bg-[#009EE3] px-3 py-1 text-xs font-extrabold text-white">
+                    Mercado Pago
+                  </span>
                   <ul className="mt-3 space-y-1 text-xs text-smoke">
                     <li>✅ Pix, crédito, débito aceitos</li>
                     <li>✅ Preparo inicia automaticamente após confirmação</li>

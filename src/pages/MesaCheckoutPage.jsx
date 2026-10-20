@@ -413,7 +413,7 @@ function MesaCheckoutPage() {
           maxLength={500}
           placeholder={t(
             "MESA_CHECKOUT_NOTES_PLACEHOLDER",
-            "Ex: sem cebola, massa fina...",
+            "Ex.: sem granola, mais leite condensado...",
           )}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
