@@ -27,7 +27,6 @@ import {
 import { useTranslation } from "../context/I18nContext.jsx";
 import { parseItemNotes } from "../lib/itemNotes.js";
 
-import PageHeader from "../components/PageHeader.jsx";
 const SOUND_STORAGE_KEY = "pc_kitchen_sound_enabled";
 const NEW_ORDER_HIGHLIGHT_MS = 20000;
 
@@ -350,7 +349,7 @@ function OrderCard({
           : { label: `🛵 ${t("KITCHEN_DELIVERY", "Entrega")}`, cls: "bg-sky-100 text-sky-800" };
   const chip = largeMode
     ? "rounded-full px-3 py-1.5 text-sm font-extrabold"
-    : "rounded-full px-2.5 py-1 text-xs font-extrabold";
+    : "rounded-full px-3 py-1 text-sm font-extrabold";
 
   return (
     <article
@@ -358,7 +357,7 @@ function OrderCard({
       onDragStart={() => onDragStart(order)}
       onDragEnd={onDragEnd}
       className={`rounded-3xl bg-white shadow-card transition-all duration-200 ${
-        largeMode ? "p-5" : "p-4"
+        largeMode ? "p-5" : "p-5"
       } ${
         isFresh
           ? "ring-4 ring-gold"
@@ -372,7 +371,7 @@ function OrderCard({
         <div className="min-w-0">
           <h3
             className={`break-words font-display font-semibold leading-tight text-primary ${
-              largeMode ? "text-3xl" : "text-xl"
+              largeMode ? "text-3xl" : "text-2xl"
             }`}
           >
             {title}
@@ -380,7 +379,7 @@ function OrderCard({
           {subtitle && subtitle !== title && (
             <p
               className={`mt-0.5 break-words font-semibold text-text-muted ${
-                largeMode ? "text-lg" : "text-sm"
+                largeMode ? "text-lg" : "text-base"
               }`}
             >
               {subtitle}
@@ -390,12 +389,12 @@ function OrderCard({
         <div className="shrink-0 text-right">
           <p
             className={`font-display font-bold leading-none text-primary ${
-              largeMode ? "text-3xl" : "text-lg"
+              largeMode ? "text-3xl" : "text-2xl"
             }`}
           >
             {formatTime(order.createdAt)}
           </p>
-          <p className="mt-1 text-[11px] font-bold tracking-wide text-text-muted">
+          <p className="mt-1 text-xs font-bold tracking-wide text-text-muted">
             {orderCode}
           </p>
         </div>
@@ -444,14 +443,14 @@ function OrderCard({
               <div className="flex items-start gap-3">
                 <span
                   className={`flex shrink-0 items-center justify-center rounded-full bg-secondary font-display font-bold text-white ${
-                    largeMode ? "h-12 min-w-12 px-2 text-2xl" : "h-8 min-w-8 px-1.5 text-base"
+                    largeMode ? "h-12 min-w-12 px-2 text-2xl" : "h-10 min-w-10 px-2 text-lg"
                   }`}
                 >
                   {item.quantity}×
                 </span>
                 <p
                   className={`min-w-0 flex-1 break-words font-extrabold leading-snug text-primary ${
-                    largeMode ? "text-2xl" : "text-base"
+                    largeMode ? "text-2xl" : "text-xl"
                   }`}
                 >
                   {getKitchenItemTitle(item, t)}
@@ -468,7 +467,7 @@ function OrderCard({
               {fields.length > 0 && (
                 <dl
                   className={`mt-2.5 grid gap-x-3 gap-y-1 ${
-                    largeMode ? "text-lg" : "text-sm"
+                    largeMode ? "text-lg" : "text-lg"
                   }`}
                 >
                   {fields.map((field) => (
@@ -484,7 +483,7 @@ function OrderCard({
                 <div className="mt-2.5">
                   <p
                     className={`mb-1 font-bold uppercase tracking-wide text-text-muted ${
-                      largeMode ? "text-sm" : "text-[11px]"
+                      largeMode ? "text-sm" : "text-xs"
                     }`}
                   >
                     Complementos
@@ -494,7 +493,7 @@ function OrderCard({
                       <li
                         key={name}
                         className={`rounded-full bg-white font-bold text-primary ring-1 ring-primary/10 ${
-                          largeMode ? "px-3 py-1 text-base" : "px-2.5 py-0.5 text-xs"
+                          largeMode ? "px-3 py-1 text-base" : "px-3 py-1 text-sm"
                         }`}
                       >
                         {name}
@@ -505,19 +504,19 @@ function OrderCard({
               )}
 
               {addons && (
-                <p className={`mt-2 font-bold text-secondary ${largeMode ? "text-lg" : "text-sm"}`}>
+                <p className={`mt-2 font-bold text-secondary ${largeMode ? "text-lg" : "text-base"}`}>
                   + {addons}
                 </p>
               )}
               {removals && (
-                <p className={`mt-1 font-bold text-red-600 ${largeMode ? "text-lg" : "text-sm"}`}>
+                <p className={`mt-1 font-bold text-red-600 ${largeMode ? "text-lg" : "text-base"}`}>
                   Sem: {removals}
                 </p>
               )}
               {observation && (
                 <p
                   className={`mt-2.5 rounded-xl border-2 border-amber-300 bg-amber-100 font-extrabold text-amber-900 ${
-                    largeMode ? "px-3 py-2 text-lg" : "px-2.5 py-1.5 text-sm"
+                    largeMode ? "px-3 py-2 text-lg" : "px-3 py-2 text-base"
                   }`}
                 >
                   ⚠ {observation}
@@ -531,7 +530,7 @@ function OrderCard({
       {order.notes && !isTotemOrder(order) && (
         <p
           className={`mt-3 rounded-xl border-2 border-amber-300 bg-amber-100 font-extrabold text-amber-900 ${
-            largeMode ? "px-3 py-2 text-lg" : "px-2.5 py-1.5 text-sm"
+            largeMode ? "px-3 py-2 text-lg" : "px-3 py-2 text-base"
           }`}
         >
           ⚠ Obs. do pedido: {toKitchenAlertText(order.notes)}
@@ -573,7 +572,7 @@ function OrderCard({
           disabled={advancing}
           onClick={() => onAdvance(order.id, nextStatus)}
           className={`mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 font-extrabold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 disabled:opacity-50 ${
-            largeMode ? "min-h-16 px-5 py-4 text-2xl" : "min-h-12 px-4 py-3 text-base"
+            largeMode ? "min-h-16 px-5 py-4 text-2xl" : "min-h-14 px-4 py-3 text-lg"
           }`}
         >
           {advanceLabel}
@@ -1292,30 +1291,49 @@ function KitchenPage() {
 
   return (
     <main className="min-h-screen text-gray-900">
-      <PageHeader
-        wide
-        title={
-          isDeliveryKitchenUser || location.pathname === "/cozinha-delivery"
-            ? "Cozinha Delivery"
-            : t("KITCHEN_TITLE", "Cozinha")
-        }
-        subtitle={
-          showHeaderDetails
-            ? t(
-                "KITCHEN_UPDATED_AT",
-                "Atualizado em {{time}} • tempo real com fallback de 2 min",
-              ).replace("{{time}}", lastUpdate)
-            : undefined
-        }
-        actions={
-          <>
-            <span className="mr-1 flex items-center gap-2 text-xs font-bold text-white/80">
-              <span className="relative flex h-3 w-3">
+      <header className="sticky top-0 z-30 bg-primary text-white shadow-lg">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2.5 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <img
+              src="/LogoDuBob.png"
+              alt="Dubob"
+              className="h-9 w-9 shrink-0 rounded-xl object-contain"
+            />
+            <h1 className="font-display text-xl font-bold leading-tight sm:text-2xl">
+              {isDeliveryKitchenUser || location.pathname === "/cozinha-delivery"
+                ? "Cozinha Delivery"
+                : t("KITCHEN_TITLE", "Cozinha")}
+            </h1>
+            <span className="flex items-center gap-1.5 text-xs font-bold text-white/80">
+              <span className="relative flex h-2.5 w-2.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
               </span>
               {t("KITCHEN_LIVE", "Ao vivo")}
             </span>
+            {showHeaderDetails && (
+              <span className="hidden text-xs text-white/60 lg:inline">
+                atualizado às {lastUpdate}
+              </span>
+            )}
+            {showHeaderDetails && overdueCount > 0 && (
+              <span className="rounded-full bg-red-500 px-2.5 py-0.5 text-xs font-bold text-white">
+                {t(
+                  "KITCHEN_OVERDUE_COUNT",
+                  "{{count}} pedidos em atraso",
+                ).replace("{{count}}", String(overdueCount))}
+              </span>
+            )}
+            {showHeaderDetails && unreadCount > 0 && (
+              <span className="rounded-full bg-gold px-2.5 py-0.5 text-xs font-bold text-primary">
+                {t(
+                  "KITCHEN_UNREAD_ALERTS",
+                  "{{count}} novos alertas não lidos",
+                ).replace("{{count}}", String(unreadCount))}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={handleGoBack}
@@ -1328,66 +1346,37 @@ function KitchenPage() {
               onClick={handleClearAlerts}
               className="ui-btn ui-btn-sm ui-btn-on-dark"
             >
-              {t("KITCHEN_CLEAR_ALERTS", "Limpar alertas")}{" "}
-              {unreadCount ? `(${unreadCount})` : ""}
+              {t("KITCHEN_CLEAR_ALERTS", "Limpar alertas")}
+              {unreadCount ? ` (${unreadCount})` : ""}
             </button>
             <button
               type="button"
               onClick={handleDesktopToggle}
+              title="Notificações na área de trabalho"
               className={`ui-btn ui-btn-sm border-2 ${
-                desktopEnabled ? "border-gold bg-gold text-primary" : "border-white/25 text-white hover:border-white"
+                desktopEnabled
+                  ? "border-gold bg-gold text-primary"
+                  : "border-white/25 text-white hover:border-white"
               }`}
             >
-              {t("ADMIN_PANEL_DESKTOP_LABEL", "Desktop")}{" "}
-              {desktopEnabled
-                ? t("ADMIN_PANEL_DESKTOP_BUTTON_ON", "ligado")
-                : t("ADMIN_PANEL_DESKTOP_BUTTON_OFF", "desligado")}
+              {desktopEnabled ? "Desktop ligado" : "Desktop desligado"}
             </button>
             <button
               type="button"
               onClick={() => setSoundEnabled((current) => !current)}
+              title="Som de novo pedido"
               className={`ui-btn ui-btn-sm border-2 ${
-                soundEnabled ? "border-gold bg-gold text-primary" : "border-white/25 text-white hover:border-white"
+                soundEnabled
+                  ? "border-gold bg-gold text-primary"
+                  : "border-white/25 text-white hover:border-white"
               }`}
             >
-              {t("KITCHEN_SOUND", "Som")}{" "}
-              {soundEnabled
-                ? t("KITCHEN_ON", "ligado")
-                : t("KITCHEN_OFF", "desligado")}
+              {soundEnabled ? "🔔 Som ligado" : "🔕 Som desligado"}
             </button>
-          </>
-        }
-      >
-        {showHeaderDetails && (
-          <div className="flex flex-wrap gap-2 text-xs font-bold">
-            <span
-              className={`rounded-full px-3 py-1 ${
-                overdueCount ? "bg-red-500 text-white" : "bg-white/10 text-white/80"
-              }`}
-            >
-              {overdueCount
-                ? t(
-                    "KITCHEN_OVERDUE_COUNT",
-                    "{{count}} pedidos em atraso",
-                  ).replace("{{count}}", String(overdueCount))
-                : t("KITCHEN_NO_OVERDUE", "Sem pedidos em atraso")}
-            </span>
-            <span
-              className={`rounded-full px-3 py-1 ${
-                unreadCount ? "bg-gold text-primary" : "bg-white/10 text-white/80"
-              }`}
-            >
-              {unreadCount
-                ? t(
-                    "KITCHEN_UNREAD_ALERTS",
-                    "{{count}} novos alertas não lidos",
-                  ).replace("{{count}}", String(unreadCount))
-                : t("KITCHEN_NO_ALERTS", "Nenhum alerta pendente")}
-            </span>
           </div>
-        )}
-      </PageHeader>
-      <div className="ui-page-wide">
+        </div>
+      </header>
+      <div className="w-full px-4 py-5 sm:px-6">
 
       {showStageSummary && (
         <nav
@@ -1553,7 +1542,7 @@ function KitchenPage() {
                   handleDragEnd();
                 }}
                 id={`kitchen-col-${col.key}`}
-                className={`flex w-[85vw] max-w-[24rem] shrink-0 snap-start flex-col rounded-3xl bg-white/60 p-3 ring-1 transition-all duration-200 sm:w-[21rem] ${
+                className={`flex w-[88vw] max-w-[28rem] shrink-0 snap-start flex-col rounded-3xl bg-white/60 p-3 ring-1 transition-all duration-200 sm:w-[26rem] ${
                   visibleColumns.length <= 3 ? "lg:max-w-none lg:flex-1" : ""
                 } ${
                   isDropActive
