@@ -146,7 +146,7 @@ export default function Navbar({ activeLink }) {
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex min-h-10 items-center gap-1.5 rounded-lg border border-green-300/40 bg-green-950/30 px-3 py-2 text-sm font-semibold text-green-200 transition hover:bg-green-900/50"
+              className="flex min-h-10 items-center gap-1.5 rounded-full border border-green-300/40 bg-green-950/30 px-3 py-2 text-sm font-semibold text-green-200 transition hover:bg-green-900/50"
               title={t("NAV_WHATSAPP_TITLE", "Falar no WhatsApp")}
             >
               <WhatsAppIcon />
@@ -155,7 +155,7 @@ export default function Navbar({ activeLink }) {
 
             <Link
               to="/cardapio"
-              className={`flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold transition-colors hover:text-secondary ${
+              className={`flex min-h-10 items-center rounded-full px-3 text-sm font-semibold transition-colors hover:text-gold ${
                 activeLink === "cardapio"
                   ? "text-secondary underline underline-offset-4"
                   : "text-white/80"
@@ -182,7 +182,7 @@ export default function Navbar({ activeLink }) {
               </>
             ) : !isAuthenticated ? (
               <Link
-                className="flex min-h-10 items-center rounded-lg px-3 text-sm text-white/80 transition-colors hover:text-secondary"
+                className="flex min-h-10 items-center rounded-full px-3 text-sm text-white/80 transition-colors hover:text-gold"
                 to="/login"
               >
                 {t("NAV_ENTRAR", "Entrar")}
@@ -193,7 +193,7 @@ export default function Navbar({ activeLink }) {
             {hasPendingPayment && (
               <Link
                 to="/mesa/checkout"
-                className="flex items-center gap-1.5 rounded-lg border border-secondary/60 bg-secondary/20 px-3 py-2 text-sm font-semibold text-secondary transition hover:bg-secondary/30 animate-pulse"
+                className="flex items-center gap-1.5 rounded-full border border-secondary/60 bg-secondary/20 px-3 py-2 text-sm font-semibold text-white transition hover:bg-secondary/40 animate-pulse"
               >
                 💳 {t("NAV_PAGAR", "Pagar")}
               </Link>
@@ -203,7 +203,7 @@ export default function Navbar({ activeLink }) {
             <button
               type="button"
               onClick={openCart}
-              className="relative flex items-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-gold hover:text-primary"
+              className="relative flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-gold hover:text-primary"
             >
               <span>🛒</span>
               <span className="hidden sm:inline">
@@ -241,7 +241,7 @@ export default function Navbar({ activeLink }) {
               }}
               onKeyDown={(e) => e.key === "Enter" && handlePinSubmit()}
               autoFocus
-              className={`w-full rounded-xl border px-4 py-3 text-center text-lg tracking-widest outline-none mb-3 ${
+              className={`w-full rounded-2xl border px-4 py-3 text-center text-lg tracking-widest outline-none mb-3 ${
                 pinError ? "border-red-400 bg-red-50" : "border-gray-200"
               }`}
               placeholder="••••"
@@ -253,13 +253,13 @@ export default function Navbar({ activeLink }) {
             )}
             <button
               onClick={handlePinSubmit}
-              className="w-full rounded-xl bg-secondary py-3 text-sm font-semibold text-white hover:opacity-90 mb-2"
+              className="w-full rounded-full bg-secondary py-3 text-sm font-semibold text-white hover:opacity-90 mb-2"
             >
               {t("BTN_CONFIRM", "Confirmar")}
             </button>
             <button
               onClick={() => setShowPinModal(false)}
-              className="w-full rounded-xl border border-gray-200 py-2.5 text-sm text-gray-500 hover:border-gray-400"
+              className="w-full rounded-full border border-gray-200 py-2.5 text-sm text-gray-500 hover:border-gray-400"
             >
               {t("BTN_CANCEL", "Cancelar")}
             </button>

@@ -18,8 +18,8 @@ function CartProductCard({
   const unit = Number(item.price || 0) + addonTotal(item.addons || []);
 
   return (
-    <article className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-3 text-text-main transition-all hover:border-secondary/40 hover:shadow-card-hover">
-      <h4 className="font-display text-base font-black text-primary">{nome}</h4>
+    <article className="rounded-3xl bg-white p-4 text-text-main shadow-card ring-1 ring-primary/5">
+      <h4 className="font-display text-lg font-semibold leading-tight text-primary">{nome}</h4>
 
       {item.addons?.length ? (
         <div className="mt-1.5 space-y-1">
@@ -33,20 +33,20 @@ function CartProductCard({
 
       {item.removals?.length ? (
         <p className="mt-1 text-xs text-text-muted">
-          Remocoes: {item.removals.join(", ")}
+          Remoções: {item.removals.join(", ")}
         </p>
       ) : null}
 
       <div className="mt-3">
         <label className="mb-1 block text-[11px] font-black uppercase tracking-wide text-secondary">
-          Observacao
+          Observação
         </label>
         <textarea
           rows={2}
-          placeholder="Ex: sem molho"
+          placeholder="Ex.: pouco leite condensado"
           value={observation}
           onChange={(event) => onObservationChange(event.target.value)}
-          className="w-full resize-none rounded-2xl border border-border-soft bg-accent/60 px-3 py-2 text-sm text-text-main outline-none placeholder:text-text-muted/60 focus:border-secondary/60 focus:bg-white"
+          className="w-full resize-none rounded-2xl border-2 border-primary/10 bg-accent/40 px-3 py-2 text-sm text-text-main outline-none placeholder:text-text-muted/60 focus:border-secondary focus:bg-white"
         />
       </div>
 
@@ -54,25 +54,27 @@ function CartProductCard({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border-soft bg-accent text-lg font-bold text-primary transition hover:border-secondary hover:text-secondary"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-lg font-bold text-primary transition hover:bg-secondary hover:text-white"
             onClick={() => onQuantityChange(item.quantity - 1)}
+            aria-label="Diminuir quantidade"
           >
-            -
+            −
           </button>
           <span className="w-7 text-center text-sm font-semibold text-primary">
             {item.quantity}
           </span>
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border-soft bg-accent text-lg font-bold text-primary transition hover:border-secondary hover:text-secondary"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-lg font-bold text-primary transition hover:bg-secondary hover:text-white"
             onClick={() => onQuantityChange(item.quantity + 1)}
+            aria-label="Aumentar quantidade"
           >
             +
           </button>
         </div>
 
         <div className="text-right">
-          <p className="text-sm font-black text-secondary">
+          <p className="font-display text-lg font-bold text-secondary">
             {currency(unit * item.quantity)}
           </p>
           <button
@@ -80,7 +82,7 @@ function CartProductCard({
             onClick={onRemove}
             className="text-xs font-semibold text-text-muted transition hover:text-red-500"
           >
-            remover
+            Remover
           </button>
         </div>
       </div>
