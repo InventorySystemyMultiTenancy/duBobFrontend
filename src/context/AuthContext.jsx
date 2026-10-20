@@ -1,4 +1,4 @@
-import { createContext, useMemo, useState } from "react";
+import { createContext, useCallback, useMemo, useState } from "react";
 
 const AuthContext = createContext(null);
 
@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(getInitialUser);
   const [token, setToken] = useState(localStorage.getItem("pc_token"));
 
-  const login = (payload) => {
+  const login = useCallback((payload) => {
     setToken(payload.accessToken);
     setUser(payload.user);
 
@@ -29,9 +29,9 @@ export function AuthProvider({ children }) {
     window.dispatchEvent(
       new CustomEvent("pc_auth_change", { detail: { user: payload.user } }),
     );
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setToken(null);
     setUser(null);
     localStorage.removeItem("pc_token");
@@ -39,7 +39,7 @@ export function AuthProvider({ children }) {
     window.dispatchEvent(
       new CustomEvent("pc_auth_change", { detail: { user: null } }),
     );
-  };
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -49,7 +49,7 @@ export function AuthProvider({ children }) {
       login,
       logout,
     }),
-    [user, token],
+    [user, token, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

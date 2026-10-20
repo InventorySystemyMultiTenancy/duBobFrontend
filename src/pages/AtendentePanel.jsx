@@ -209,7 +209,7 @@ function TerminalChargeModal({ order, onClose }) {
 
         {terminalMutation.isPending ? (
           <div className="py-6">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-gold border-t-transparent" />
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-secondary border-t-transparent" />
             <p className="mt-3 text-xs text-gray-400">
               Enviando para a maquininha...
             </p>
@@ -232,7 +232,7 @@ function TerminalChargeModal({ order, onClose }) {
         <button
           type="button"
           onClick={onClose}
-          className="w-full rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:border-gray-400"
+          className="w-full rounded-full border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:border-gray-400"
         >
           Fechar
         </button>
@@ -550,10 +550,10 @@ export default function AtendentePanel() {
   }, [createMesaOrderMutation, items.length, selectedMesaId]);
 
   return (
-    <div className="min-h-screen bg-accent/30 font-body">
+    <div className="min-h-screen font-body">
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-primary/20 bg-primary shadow-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-8">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3 sm:px-8">
           <div className="flex items-center gap-3">
             <img
               src="/LogoDuBob.png"
@@ -561,44 +561,55 @@ export default function AtendentePanel() {
               className="h-9 w-auto object-contain"
             />
             <div>
-              <h1 className="font-display text-lg leading-tight text-accent">
+              <h1 className="font-display text-xl font-bold leading-tight text-white">
                 Painel do Atendente
               </h1>
               {user?.name && (
-                <p className="text-xs text-secondary">{user.name}</p>
+                <p className="text-xs font-bold text-primary">{user.name}</p>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {user?.role !== "ATENDENTE" && (
+              <button
+                type="button"
+                onClick={() => navigate("/admin")}
+                className="ui-btn ui-btn-sm ui-btn-on-dark"
+              >
+                ← Painel
+              </button>
+            )}
             <button
               type="button"
               onClick={() => navigate("/comandas")}
-              className="rounded-lg border border-accent/30 px-3 py-2 text-xs font-semibold text-accent transition hover:bg-accent/10"
+              className="ui-btn ui-btn-sm ui-btn-accent"
             >
               Comandas
             </button>
             <button
               type="button"
               onClick={() => navigate("/caixa")}
-              className="rounded-lg border border-accent/30 px-3 py-2 text-xs font-semibold text-accent transition hover:bg-accent/10"
+              className="ui-btn ui-btn-sm ui-btn-accent"
             >
               Caixa
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                logout();
-                navigate("/login");
-              }}
-              className="rounded-lg border border-red-400/30 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-900/30"
-            >
-              Sair
-            </button>
+            {user?.role === "ATENDENTE" && (
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  navigate("/login");
+                }}
+                className="ui-btn ui-btn-sm ui-btn-on-dark"
+              >
+                Sair
+              </button>
+            )}
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-8 px-4 py-6 sm:px-8">
+      <main className="mx-auto max-w-6xl space-y-8 px-5 py-8 sm:px-8">
         {/* Chamadas de mesa */}
         <section>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -646,7 +657,7 @@ export default function AtendentePanel() {
                   <button
                     type="button"
                     onClick={() => handleDismissCall(call, index)}
-                    className="mt-4 w-full rounded-2xl bg-green-600 px-4 py-3 text-sm font-black uppercase text-white transition hover:bg-green-700"
+                    className="mt-4 w-full rounded-full bg-green-600 px-4 py-3 text-sm font-black uppercase text-white transition hover:bg-green-700"
                   >
                     Dar baixa
                   </button>
@@ -665,7 +676,7 @@ export default function AtendentePanel() {
                 dia.
               </p>
             </div>
-            <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600 shadow-sm">
+            <div className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white px-4 py-3 text-sm text-gray-600">
               Pedidos ativos: <strong>{mesaOrders.length}</strong>
             </div>
           </div>
@@ -717,21 +728,21 @@ export default function AtendentePanel() {
               <button
                 type="button"
                 onClick={() => scrollToPanelSection("mesa-fechamento")}
-                className="rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-secondary"
+                className="rounded-full bg-primary px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-secondary"
               >
                 Fechamento da mesa
               </button>
               <button
                 type="button"
                 onClick={() => { setShowProducts(true); scrollToPanelSection("mesa-cardapio"); }}
-                className="rounded-2xl border border-secondary/40 bg-white px-4 py-3 text-sm font-bold text-secondary shadow-sm transition hover:bg-secondary/10"
+                className="rounded-full border border-secondary/40 bg-white px-4 py-3 text-sm font-bold text-secondary shadow-sm transition hover:bg-secondary/10"
               >
                 Cardápio
               </button>
               <button
                 type="button"
                 onClick={() => scrollToPanelSection("mesa-historico")}
-                className="rounded-2xl border border-primary/20 bg-white px-4 py-3 text-sm font-bold text-primary shadow-sm transition hover:bg-primary/5"
+                className="rounded-full border border-primary/20 bg-white px-4 py-3 text-sm font-bold text-primary shadow-sm transition hover:bg-primary/5"
               >
                 Histórico da mesa
               </button>
@@ -743,7 +754,7 @@ export default function AtendentePanel() {
           <div className="space-y-6">
             <section
               id="mesa-cardapio"
-              className="scroll-mt-6 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm"
+              className="scroll-mt-6 rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -846,7 +857,7 @@ export default function AtendentePanel() {
                 <button
                   type="button"
                   onClick={() => setShowProducts(true)}
-                  className="mt-5 w-full rounded-2xl border border-dashed border-secondary/40 bg-secondary/5 px-5 py-5 text-sm font-bold text-secondary transition hover:bg-secondary/10"
+                  className="mt-5 w-full rounded-full border border-dashed border-secondary/40 bg-secondary/5 px-5 py-5 text-sm font-bold text-secondary transition hover:bg-secondary/10"
                 >
                   Mostrar produtos para montar o pedido
                 </button>
@@ -912,7 +923,7 @@ export default function AtendentePanel() {
                           type="button"
                           onClick={() => handleMarkDelivered(order.id)}
                           disabled={advanceMutation.isPending}
-                          className="rounded-xl bg-green-600 px-4 py-2 text-xs font-black uppercase text-white transition hover:bg-green-700 disabled:opacity-50"
+                          className="rounded-full bg-green-600 px-4 py-2 text-xs font-black uppercase text-white transition hover:bg-green-700 disabled:opacity-50"
                         >
                           Entregue a mesa
                         </button>
@@ -925,7 +936,7 @@ export default function AtendentePanel() {
 
             <section
               id="mesa-historico"
-              className="scroll-mt-6 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm"
+              className="scroll-mt-6 rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -1014,7 +1025,7 @@ export default function AtendentePanel() {
                             <button
                               type="button"
                               onClick={() => setChargingOrder(order)}
-                              className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10"
+                              className="rounded-full border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10"
                             >
                               Cobrar maquininha
                             </button>
@@ -1024,7 +1035,7 @@ export default function AtendentePanel() {
                               type="button"
                               onClick={() => handleMarkPaid(order.id)}
                               disabled={markPaidMutation.isPending}
-                              className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50"
+                              className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50"
                             >
                               Dar baixa / pago
                             </button>
@@ -1040,7 +1051,7 @@ export default function AtendentePanel() {
 
           <section
             id="mesa-fechamento"
-            className="scroll-mt-6 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm"
+            className="scroll-mt-6 rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -1168,7 +1179,7 @@ export default function AtendentePanel() {
               <button
                 type="button"
                 onClick={clearCart}
-                className="flex-1 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600 transition hover:border-gray-300"
+                className="flex-1 rounded-full border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600 transition hover:border-gray-300"
               >
                 Limpar
               </button>
@@ -1180,7 +1191,7 @@ export default function AtendentePanel() {
                   !items.length ||
                   createMesaOrderMutation.isPending
                 }
-                className="flex-[1.4] rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-secondary disabled:opacity-50"
+                className="flex-[1.4] rounded-full bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-secondary disabled:opacity-50"
               >
                 {createMesaOrderMutation.isPending
                   ? "Lancando..."

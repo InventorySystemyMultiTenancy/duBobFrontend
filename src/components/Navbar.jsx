@@ -253,7 +253,7 @@ export default function Navbar({ activeLink }) {
             )}
             <button
               onClick={handlePinSubmit}
-              className="w-full rounded-xl bg-rosso py-3 text-sm font-semibold text-white hover:opacity-90 mb-2"
+              className="w-full rounded-xl bg-secondary py-3 text-sm font-semibold text-white hover:opacity-90 mb-2"
             >
               {t("BTN_CONFIRM", "Confirmar")}
             </button>

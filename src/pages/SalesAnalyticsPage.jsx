@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 
+import PageHeader from "../components/PageHeader.jsx";
 const formatCurrency = (value, locale) =>
   Number(value || 0).toLocaleString(locale || "pt-BR", {
     style: "currency",
@@ -65,7 +66,7 @@ function MetricCard({ label, value, hint, accent = false }) {
 
 function InsightCard({ icon, label, value, sub, color = "bg-accent" }) {
   return (
-    <article className="flex items-start gap-4 rounded-2xl border border-border-soft bg-white p-4 shadow-card">
+    <article className="flex items-start gap-4 rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-4">
       <span
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl ${color}`}
       >
@@ -207,51 +208,44 @@ function SalesAnalyticsPage() {
   }, [summary, dailySales, rawStatusCounts]);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-6 font-body text-primary sm:px-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl text-primary">
-            Análise de Vendas
-          </h1>
-          <p className="mt-1 text-sm text-smoke">
-            Receita, volume de pedidos e sabores mais vendidos.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <select
-            value={filterYear}
-            onChange={(e) => setFilterYear(Number(e.target.value))}
-            className="rounded-xl border border-border-soft bg-white px-3 py-2 text-sm transition hover:border-secondary/40 focus:outline-none"
-          >
-            {yearOptions.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filterMonth}
-            onChange={(e) => setFilterMonth(Number(e.target.value))}
-            className="rounded-xl border border-border-soft bg-white px-3 py-2 text-sm transition hover:border-secondary/40 focus:outline-none"
-          >
-            <option value={0}>Ano todo</option>
-            {monthLabel.map((m, i) => (
-              <option key={i + 1} value={i + 1}>
-                {m}
-              </option>
-            ))}
-          </select>
-          <Link
-            to="/admin"
-            className="rounded-xl border border-border-soft bg-white px-3 py-2 text-sm transition hover:border-secondary/40"
-          >
-            ← Painel
-          </Link>
-        </div>
-      </header>
+    <main className="min-h-screen font-body text-primary">
+      <PageHeader
+        backTo="/admin"
+        backLabel="Painel Admin"
+        title="Análise de Vendas"
+        subtitle="Receita, volume de pedidos e sabores mais vendidos."
+        actions={
+          <>
+              <select
+                value={filterYear}
+                onChange={(e) => setFilterYear(Number(e.target.value))}
+                className="rounded-full border-2 border-white/25 bg-white/10 px-4 py-2 text-sm font-bold text-white outline-none transition hover:border-white [&>option]:text-primary"
+              >
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(Number(e.target.value))}
+                className="rounded-full border-2 border-white/25 bg-white/10 px-4 py-2 text-sm font-bold text-white outline-none transition hover:border-white [&>option]:text-primary"
+              >
+                <option value={0}>Ano todo</option>
+                {monthLabel.map((m, i) => (
+                  <option key={i + 1} value={i + 1}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+          </>
+        }
+      />
+      <div className="ui-page">
 
       {isLoading ? (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="h-32 animate-pulse rounded-3xl bg-accent" />
           ))}
@@ -292,7 +286,7 @@ function SalesAnalyticsPage() {
           </section>
 
           <section className="mt-4 grid gap-4 sm:grid-cols-3">
-            <article className="rounded-3xl border border-border-soft bg-white p-5 shadow-card">
+            <article className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
               <p className="text-xs uppercase tracking-[0.24em] text-smoke">
                 Hoje
               </p>
@@ -311,7 +305,7 @@ function SalesAnalyticsPage() {
                 </span>
               </div>
             </article>
-            <article className="rounded-3xl border border-border-soft bg-white p-5 shadow-card">
+            <article className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
               <p className="text-xs uppercase tracking-[0.24em] text-smoke">
                 Mês atual
               </p>
@@ -339,7 +333,7 @@ function SalesAnalyticsPage() {
           </section>
 
           <section className="mt-4 grid gap-4 lg:grid-cols-2">
-            <article className="rounded-3xl border border-border-soft bg-white p-5 shadow-card">
+            <article className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="font-display text-xl text-primary">
@@ -388,7 +382,7 @@ function SalesAnalyticsPage() {
               ) : null}
             </article>
 
-            <article className="rounded-3xl border border-border-soft bg-white p-5 shadow-card">
+            <article className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
               <h2 className="font-display text-xl text-primary">
                 Tipo de Pedido
               </h2>
@@ -425,7 +419,7 @@ function SalesAnalyticsPage() {
 
           {/* ── Gráfico + Status ─────────────────────────────────── */}
           <section className="mt-6 grid gap-6 lg:grid-cols-[1.6fr,1fr]">
-            <article className="rounded-3xl border border-border-soft bg-white p-5 shadow-card">
+            <article className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="font-display text-xl text-primary">
                   {filterMonth === 0
@@ -547,7 +541,7 @@ function SalesAnalyticsPage() {
               </div>
             </article>
 
-            <article className="rounded-3xl border border-border-soft bg-white p-5 shadow-card">
+            <article className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
               <h2 className="font-display text-xl text-primary">
                 Status dos Pedidos
               </h2>
@@ -687,7 +681,7 @@ function SalesAnalyticsPage() {
           ) : null}
 
           {/* ── Top Produtos ─────────────────────────────────────── */}
-          <section className="mt-6 rounded-3xl border border-border-soft bg-white p-5 shadow-card">
+          <section className="mt-6 rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-xl text-primary">
                 Top Produtos
@@ -732,6 +726,7 @@ function SalesAnalyticsPage() {
           </section>
         </>
       ) : null}
+      </div>
     </main>
   );
 }

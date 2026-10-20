@@ -110,7 +110,7 @@ function InstallPrompt() {
   if (!deferredPrompt && !showIosInstructions) return null;
 
   return (
-    <aside className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-3xl border border-gold/30 bg-white/95 p-4 shadow-2xl backdrop-blur">
+    <aside className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-3xl border border-primary/10 bg-white/95 p-4 shadow-2xl backdrop-blur">
       <p className="text-sm font-bold text-gray-900">
         Instale o app da Dubob
       </p>
@@ -130,7 +130,7 @@ function InstallPrompt() {
           <button
             type="button"
             onClick={handleInstall}
-            className="flex-1 rounded-2xl bg-rosso px-4 py-3 text-sm font-bold text-white transition hover:bg-ember"
+            className="flex-1 rounded-2xl bg-secondary px-4 py-3 text-sm font-bold text-white transition hover:bg-ember"
           >
             Instalar
           </button>

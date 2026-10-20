@@ -3,6 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
+import PageHeader from "../components/PageHeader.jsx";
 // subindo
 function AdminMesaCardapioPage() {
   const { t } = useTranslation();
@@ -53,28 +54,18 @@ function AdminMesaCardapioPage() {
   };
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-6 sm:px-6">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Link
-          to="/admin"
-          className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
-        >
-          ↩️ Voltar ao Painel
-        </Link>
-        <div>
-          <h1 className="font-display text-3xl font-bold text-gray-900">
-            {t("ADMIN_MESAS_CARDAPIO_TITLE", "Cardápio da Mesa")}
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {t(
-              "ADMIN_MESAS_CARDAPIO_DESC",
-              "Imprima o QR code para a mesa e permita que os clientes acessem o cardápio visual e chamem o atendente.",
-            )}
-          </p>
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+    <main className="min-h-screen">
+      <PageHeader
+        backTo="/admin"
+        backLabel="Painel Admin"
+        title={t("ADMIN_MESAS_CARDAPIO_TITLE", "QR do Cardápio de Mesa")}
+        subtitle={t(
+          "ADMIN_MESAS_CARDAPIO_DESC",
+          "Imprima o QR code para a mesa e permita que os clientes acessem o cardápio visual e chamem o atendente.",
+        )}
+      />
+      <div className="ui-page">
+      <div className="ui-card p-5">
         <div className="mb-6 rounded-3xl border border-dashed border-gray-200 bg-slate-50 p-4 text-sm text-slate-700">
           {t(
             "ADMIN_MESAS_CARDAPIO_HINT",
@@ -133,6 +124,7 @@ function AdminMesaCardapioPage() {
             })}
           </div>
         )}
+      </div>
       </div>
     </main>
   );

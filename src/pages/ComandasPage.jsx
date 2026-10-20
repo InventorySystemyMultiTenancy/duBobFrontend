@@ -5,8 +5,10 @@ import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { useAuth } from "../hooks/useAuth.js";
+import { getRoleHome } from "../lib/roleHome.js";
 import { askPaymentMethod } from "../lib/paymentMethodPrompt.js";
 
+import PageHeader from "../components/PageHeader.jsx";
 const currency = (value) =>
   Number(value || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -63,14 +65,14 @@ function ComandaQr({ comanda, onClose }) {
           <button
             type="button"
             onClick={handlePrint}
-            className="rounded-xl bg-primary py-2.5 text-sm font-bold text-white"
+            className="rounded-full bg-primary py-2.5 text-sm font-bold text-white"
           >
             Imprimir
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-gray-200 py-2.5 text-sm font-bold text-gray-600"
+            className="rounded-full border border-gray-200 py-2.5 text-sm font-bold text-gray-600"
           >
             Fechar
           </button>
@@ -82,7 +84,7 @@ function ComandaQr({ comanda, onClose }) {
 
 export default function ComandasPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const canCreate = ["ADMIN", "FUNCIONARIO", "ATENDENTE"].includes(user?.role);
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState("");
   const [form, setForm] = useState({ name: "", number: "" });
@@ -201,23 +203,20 @@ export default function ComandasPage() {
   };
 
   return (
-    <main className="mx-auto min-h-screen max-w-7xl px-4 py-6 text-gray-900 sm:px-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl text-gold">Comandas</h1>
-          <p className="mt-1 text-sm text-smoke">
-            Crie comandas, lance pedidos e consulte o valor em aberto pelo QR.
-          </p>
-        </div>
-        <Link
-          to="/admin"
-          className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600"
-        >
-          Voltar
-        </Link>
-      </div>
+    <main className="min-h-screen text-gray-900">
+      <PageHeader
+        backTo={getRoleHome(user)}
+        title="Comandas"
+        subtitle="Crie comandas, lance pedidos e consulte o valor em aberto pelo QR."
+        actions={
+          <Link to="/caixa" className="ui-btn ui-btn-on-dark">
+            Caixa
+          </Link>
+        }
+      />
+      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
 
-      {isAdmin ? (
+      {canCreate ? (
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -227,7 +226,7 @@ export default function ComandasPage() {
             }
             createComanda.mutate();
           }}
-          className="mb-6 grid gap-3 rounded-3xl border border-gold/20 bg-white p-4 shadow-sm sm:grid-cols-[1fr_160px_160px]"
+          className="mb-6 grid gap-3 rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-4 sm:grid-cols-[1fr_160px_160px]"
         >
           <input
             value={form.name}
@@ -235,7 +234,7 @@ export default function ComandasPage() {
               setForm((current) => ({ ...current, name: event.target.value }))
             }
             placeholder="Nome da comanda"
-            className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-gold"
+            className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-secondary"
           />
           <input
             type="number"
@@ -245,9 +244,9 @@ export default function ComandasPage() {
               setForm((current) => ({ ...current, number: event.target.value }))
             }
             placeholder="Número"
-            className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-gold"
+            className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-secondary"
           />
-          <button className="rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-white">
+          <button className="rounded-full bg-primary px-4 py-3 text-sm font-bold text-white">
             Criar
           </button>
         </form>
@@ -263,7 +262,7 @@ export default function ComandasPage() {
               <article
                 key={comanda.id}
                 className={`rounded-3xl border bg-white p-4 shadow-sm ${
-                  selected ? "border-gold" : "border-gray-200"
+                  selected ? "border-secondary ring-2 ring-secondary/20" : "border-gray-200"
                 }`}
               >
                 <button
@@ -293,7 +292,7 @@ export default function ComandasPage() {
                   <button
                     type="button"
                     onClick={() => setQrComanda(comanda)}
-                    className="w-full rounded-xl border border-gold/30 px-3 py-2 text-xs font-bold text-gold"
+                    className="w-full rounded-full border border-primary/10 px-3 py-2 text-xs font-bold text-primary"
                   >
                     QR Code
                   </button>
@@ -304,7 +303,7 @@ export default function ComandasPage() {
         </aside>
 
         <section className="grid gap-6 xl:grid-cols-[1fr_420px]">
-          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
             <h2 className="font-display text-2xl text-primary">Cardápio</h2>
             <p className="mt-1 text-sm text-gray-500">
               Selecione a comanda e toque nos itens para lançar pedido.
@@ -316,7 +315,7 @@ export default function ComandasPage() {
                   type="button"
                   disabled={!selectedId}
                   onClick={() => addProduct(product)}
-                  className="flex items-center gap-3 rounded-2xl border border-gray-200 p-3 text-left transition hover:border-gold disabled:opacity-50"
+                  className="flex items-center gap-3 rounded-2xl border border-gray-200 p-3 text-left transition hover:border-secondary/40 disabled:opacity-50"
                 >
                   {product.imageUrl ? (
                     <img
@@ -339,7 +338,7 @@ export default function ComandasPage() {
           </div>
 
           <div className="space-y-6">
-            <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+            <section className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
               <h2 className="font-display text-xl text-primary">
                 Fechamento da comanda
               </h2>
@@ -417,7 +416,7 @@ export default function ComandasPage() {
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 placeholder="Observações do pedido"
-                className="mt-4 w-full resize-none rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-gold"
+                className="mt-4 w-full resize-none rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-secondary"
                 rows={3}
               />
               <div className="mt-4 rounded-2xl bg-accent p-4">
@@ -430,13 +429,13 @@ export default function ComandasPage() {
                 type="button"
                 disabled={!selectedId || !cart.length || createOrder.isPending}
                 onClick={() => createOrder.mutate()}
-                className="mt-4 w-full rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+                className="mt-4 w-full rounded-full bg-primary px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
               >
                 Lançar pedido na comanda
               </button>
             </section>
 
-            <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+            <section className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
               <h2 className="font-display text-xl text-primary">
                 Histórico detalhado
               </h2>
@@ -492,7 +491,7 @@ export default function ComandasPage() {
                           type="button"
                           onClick={() => handleMarkPaid(order.id)}
                           disabled={markPaid.isPending}
-                          className="mt-3 w-full rounded-xl bg-green-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
+                          className="mt-3 w-full rounded-full bg-green-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
                         >
                           Dar baixa / pago
                         </button>
@@ -509,6 +508,7 @@ export default function ComandasPage() {
       {qrComanda ? (
         <ComandaQr comanda={qrComanda} onClose={() => setQrComanda(null)} />
       ) : null}
+      </div>
     </main>
   );
 }

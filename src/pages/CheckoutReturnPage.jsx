@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import StatusLayout from "../components/StatusLayout.jsx";
 import { Link, useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { api } from "../lib/api.js";
@@ -40,12 +41,12 @@ function CheckoutReturnPage() {
   }, [isApproved, clearCart, orderId, paymentId, t]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-ink px-4 text-gray-900">
-      <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-xl">
+    <StatusLayout>
+      <div>
         {isApproved ? (
           <>
             <div className="text-6xl">🎉</div>
-            <h1 className="mt-4 font-display text-3xl text-gold">
+            <h1 className="mt-4 font-display text-3xl text-primary">
               {t("CHECKOUT_RETURN_SUCCESS_TITLE", "Pagamento confirmado!")}
             </h1>
             <p className="mt-2 text-sm text-smoke">
@@ -62,7 +63,7 @@ function CheckoutReturnPage() {
             )}
             <Link
               to={isTotemMode ? totemPath : "/dashboard"}
-              className="mt-6 block rounded-2xl bg-rosso py-4 font-bold text-white transition hover:bg-ember"
+              className="mt-6 block rounded-full bg-secondary py-4 font-bold text-white transition hover:bg-ember"
             >
               {isTotemMode
                 ? "Novo atendimento"
@@ -72,7 +73,7 @@ function CheckoutReturnPage() {
         ) : isPending ? (
           <>
             <div className="text-6xl">⏳</div>
-            <h1 className="mt-4 font-display text-3xl text-gold">
+            <h1 className="mt-4 font-display text-3xl text-primary">
               {t("CHECKOUT_RETURN_PENDING_TITLE", "Pagamento em análise")}
             </h1>
             <p className="mt-2 text-sm text-smoke">
@@ -83,7 +84,7 @@ function CheckoutReturnPage() {
             </p>
             <Link
               to={isTotemMode ? totemPath : "/dashboard"}
-              className="mt-6 block rounded-2xl bg-rosso py-4 font-bold text-white transition hover:bg-ember"
+              className="mt-6 block rounded-full bg-secondary py-4 font-bold text-white transition hover:bg-ember"
             >
               {isTotemMode
                 ? "Voltar ao inicio"
@@ -93,7 +94,7 @@ function CheckoutReturnPage() {
         ) : (
           <>
             <div className="text-6xl">❌</div>
-            <h1 className="mt-4 font-display text-3xl text-rosso">
+            <h1 className="mt-4 font-display text-3xl text-secondary">
               {t("CHECKOUT_RETURN_FAILURE_TITLE", "Pagamento não concluído")}
             </h1>
             <p className="mt-2 text-sm text-smoke">
@@ -104,26 +105,20 @@ function CheckoutReturnPage() {
             </p>
             <Link
               to="/checkout"
-              className="mt-6 block rounded-2xl bg-rosso py-4 font-bold text-white transition hover:bg-ember"
+              className="mt-6 block rounded-full bg-secondary py-4 font-bold text-white transition hover:bg-ember"
             >
               {t("CHECKOUT_RETURN_FAILURE_BUTTON", "Tentar novamente")}
             </Link>
             <Link
               to="/cardapio"
-              className="mt-3 block text-sm text-gray-400 hover:text-rosso"
+              className="mt-3 block text-sm text-gray-400 hover:text-secondary"
             >
               {t("CHECKOUT_RETURN_BACK_MENU", "Voltar ao cardápio")}
             </Link>
           </>
         )}
       </div>
-
-      <img
-        src="/LogoDuBob.png"
-        alt="Dubob Acai e Milkshake"
-        className="mt-8 h-12 w-auto opacity-60"
-      />
-    </main>
+    </StatusLayout>
   );
 }
 

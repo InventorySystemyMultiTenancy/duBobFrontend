@@ -54,3 +54,70 @@ body.install-prompt-open {
     animation: none;
   }
 }
+
+/* ── Padrão visual (mesmo da Home) ─────────────────────────────────────────
+   Botões arredondados, cards rounded-3xl, magenta (secondary) como ação,
+   amarelo (gold) como destaque sobre fundo roxo. */
+@layer components {
+  .ui-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-extrabold transition focus:outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .ui-btn-lg {
+    @apply px-7 py-3.5 text-base;
+  }
+  .ui-btn-sm {
+    @apply px-3.5 py-1.5 text-xs;
+  }
+  .ui-btn-primary {
+    @apply bg-secondary text-white shadow-sm hover:bg-primary focus-visible:ring-secondary/30;
+  }
+  .ui-btn-accent {
+    @apply bg-gold text-primary shadow-sm hover:bg-white focus-visible:ring-gold/40;
+  }
+  .ui-btn-outline {
+    @apply border-2 border-primary/15 bg-white text-primary hover:border-primary/40 focus-visible:ring-primary/15;
+  }
+  .ui-btn-ghost {
+    @apply text-primary hover:bg-primary/5 focus-visible:ring-primary/15;
+  }
+  .ui-btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-300;
+  }
+  .ui-btn-success {
+    @apply bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-300;
+  }
+  /* Botão sobre fundo roxo (cabeçalhos) */
+  .ui-btn-on-dark {
+    @apply border-2 border-white/25 text-white hover:border-white hover:bg-white/10 focus-visible:ring-white/30;
+  }
+
+  .ui-card {
+    @apply rounded-3xl bg-white shadow-card ring-1 ring-primary/5;
+  }
+  .ui-card-pad {
+    @apply p-5 sm:p-6;
+  }
+
+  .ui-label {
+    @apply mb-1.5 block text-sm font-bold text-primary;
+  }
+  .ui-input {
+    @apply w-full rounded-2xl border-2 border-primary/10 bg-white px-4 py-3 text-sm text-text-main outline-none transition placeholder:text-text-muted/60 focus:border-secondary focus:ring-4 focus:ring-secondary/10;
+  }
+
+  .ui-chip {
+    @apply inline-flex items-center rounded-full bg-accent px-3 py-1 text-xs font-bold text-primary/80;
+  }
+
+  .ui-section-title {
+    @apply font-display text-xl font-semibold text-primary sm:text-2xl;
+  }
+
+  /* Conteúdo das páginas abaixo do PageHeader */
+  .ui-page {
+    @apply mx-auto w-full max-w-6xl px-5 py-8 sm:px-8;
+  }
+  .ui-page-wide {
+    @apply mx-auto w-full max-w-[96rem] px-4 py-6 sm:px-6;
+  }
+}

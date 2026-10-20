@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
@@ -26,6 +26,7 @@ import {
 } from "../lib/waiterCallsStore.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 
+import PageHeader from "../components/PageHeader.jsx";
 const SOUND_STORAGE_KEY = "pc_kitchen_sound_enabled";
 const NEW_ORDER_HIGHLIGHT_MS = 20000;
 
@@ -349,7 +350,7 @@ function OrderCard({
       onDragEnd={onDragEnd}
       className={`rounded-2xl border-2 p-4 shadow-sm transition-all duration-200 ${
         isFresh
-          ? "animate-pulse border-gold/60 bg-gold/10 shadow-[0_0_18px_rgba(212,169,77,0.2)]"
+          ? "animate-pulse border-secondary/50 bg-gold/10 shadow-[0_0_18px_rgba(212,169,77,0.2)]"
           : eta?.isOverdue
             ? "border-red-500/50 bg-red-500/10 shadow-[0_0_0_1px_rgba(239,68,68,0.2)]"
             : (stage?.color ?? "border-amber-500/40 bg-amber-500/10")
@@ -433,7 +434,7 @@ function OrderCard({
       </div>
 
       {isFresh ? (
-        <div className="mt-4 inline-flex rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-sm font-black uppercase tracking-[0.18em] text-gold">
+        <div className="mt-4 inline-flex rounded-full border border-secondary/50 bg-gold/10 px-4 py-2 text-sm font-black uppercase tracking-[0.18em] text-primary">
           {t("KITCHEN_NEW_ORDER", "Novo pedido")}
         </div>
       ) : null}
@@ -593,7 +594,7 @@ function OrderCard({
                 )
               }
               placeholder="0000"
-              className="w-24 rounded-xl border border-gray-300 bg-white px-3 py-2 text-center text-lg font-bold tracking-widest focus:border-green-400 focus:outline-none"
+              className="w-24 rounded-2xl border border-gray-300 bg-white px-3 py-2 text-center text-lg font-bold tracking-widest focus:border-green-400 focus:outline-none"
             />
             <button
               type="button"
@@ -602,7 +603,7 @@ function OrderCard({
                 onConfirmDelivery(order.id, deliveryCodeInput);
                 setDeliveryCodeInput("");
               }}
-              className="flex-1 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 py-2 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-40"
+              className="flex-1 rounded-full bg-gradient-to-r from-green-500 to-green-600 py-2 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-40"
             >
               {confirmingDelivery
                 ? t("KITCHEN_CONFIRMING_DELIVERY", "Confirmando...")
@@ -631,7 +632,7 @@ function OrderCard({
                   value={order.assignedMotoboyId}
                   onChange={(e) => onAssignMotoboy(order.id, e.target.value)}
                   disabled={assigningMotoboy}
-                  className="rounded-xl border border-gray-200 bg-white px-2 py-1 text-xs"
+                  className="rounded-2xl border border-gray-200 bg-white px-2 py-1 text-xs"
                 >
                   {motoboys.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -647,7 +648,7 @@ function OrderCard({
                   e.target.value && onAssignMotoboy(order.id, e.target.value)
                 }
                 disabled={assigningMotoboy}
-                className="w-full rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs"
+                className="w-full rounded-2xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs"
               >
                 <option value="">
                   {t("KITCHEN_SELECT_MOTOBOY", "Selecionar motoboy...")}
@@ -679,14 +680,14 @@ function OrderCard({
                 setConfirmCancel(false);
                 onCancel(order.id);
               }}
-              className="rounded-xl bg-red-500 px-3 py-1 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
+              className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
             >
               {cancelling ? "..." : t("YES", "Sim")}
             </button>
             <button
               type="button"
               onClick={() => setConfirmCancel(false)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-1 text-xs font-semibold hover:bg-gray-100"
+              className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold hover:bg-gray-100"
             >
               {t("NO", "Não")}
             </button>
@@ -696,7 +697,7 @@ function OrderCard({
             type="button"
             disabled={cancelling || advancing || confirmingPayment}
             onClick={() => setConfirmCancel(true)}
-            className="mt-2 w-full rounded-2xl border border-red-400/50 bg-red-500/10 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-500/20 disabled:opacity-40"
+            className="mt-2 w-full rounded-full border border-red-400/50 bg-red-500/10 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-500/20 disabled:opacity-40"
           >
             {cancelling
               ? t("KITCHEN_CANCELLING", "Cancelando...")
@@ -711,9 +712,10 @@ function KitchenPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const isNormalKitchenUser = user?.role === "COZINHA";
   const isDeliveryKitchenUser = user?.role === "COZINHA_DELIVERY";
+  const location = useLocation();
   const isKitchenUser = isNormalKitchenUser || isDeliveryKitchenUser;
   const isPreparationOnlyKitchen = isNormalKitchenUser;
   const canLoadMotoboys = [
@@ -1219,16 +1221,55 @@ function KitchenPage() {
 
   if (isPreparationOnlyKitchen) {
     return (
-      <main className="min-h-screen bg-ink p-4 text-gray-900 sm:p-6">
+      <main className="min-h-screen text-gray-900">
+        <header className="sticky top-0 z-30 bg-primary text-white shadow-lg">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+            <div className="flex items-center gap-3">
+              <img
+                src="/LogoDuBob.png"
+                alt="Dubob"
+                className="h-10 w-10 rounded-xl object-contain"
+              />
+              <div>
+                <h1 className="font-display text-xl font-bold leading-tight sm:text-2xl">
+                  {t("KITCHEN_TITLE", "Cozinha")}
+                </h1>
+                <p className="text-xs font-bold text-gold">
+                  {kitchenPreparationOrders.length}{" "}
+                  {kitchenPreparationOrders.length === 1
+                    ? "pedido em preparo"
+                    : "pedidos em preparo"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-2 text-xs font-bold text-white/80">
+                <span className="relative flex h-3 w-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500" />
+                </span>
+                {t("KITCHEN_LIVE", "Ao vivo")}
+              </span>
+              <button
+                type="button"
+                onClick={logout}
+                className="ui-btn ui-btn-sm ui-btn-on-dark"
+              >
+                Sair
+              </button>
+            </div>
+          </div>
+        </header>
+        <div className="p-4 sm:p-6">
         {!isLoading && !isError && (
           <>
             {kitchenPreparationOrders.length === 0 ? (
-              <div className="flex min-h-[calc(100vh-2rem)] items-center justify-center text-center sm:min-h-[calc(100vh-3rem)]">
-                <div className="rounded-3xl border-2 border-dashed border-gray-300 bg-white/45 px-8 py-10 shadow-sm">
-                  <p className="text-5xl font-black uppercase text-gray-900">
+              <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center text-center">
+                <div className="rounded-[2rem] border-2 border-dashed border-primary/20 bg-white/70 px-6 py-10 sm:px-10">
+                  <p className="font-display text-3xl font-bold text-primary sm:text-5xl">
                     Sem pedidos no momento
                   </p>
-                  <p className="mt-4 text-2xl font-bold text-gray-600">
+                  <p className="mt-4 text-lg font-bold text-text-muted sm:text-2xl">
                     A cozinha está aguardando novos pedidos.
                   </p>
                 </div>
@@ -1256,106 +1297,109 @@ function KitchenPage() {
             )}
           </>
         )}
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-ink px-4 py-6 text-gray-900 sm:px-6">
-      {/* Header */}
-      <header className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-3xl text-gold">
-            {t("KITCHEN_TITLE", "Cozinha")}
-          </h1>
-          {showHeaderDetails && (
-            <>
-              <p className="mt-1 text-xs text-smoke">
-                {t(
-                  "KITCHEN_UPDATED_AT",
-                  "Atualizado em {{time}} • tempo real com fallback de 2 min",
-                ).replace("{{time}}", lastUpdate)}
-              </p>
-              <p className="mt-1 text-xs text-red-300">
-                {overdueCount
-                  ? t(
-                      "KITCHEN_OVERDUE_COUNT",
-                      "{{count}} pedidos em atraso",
-                    ).replace("{{count}}", String(overdueCount))
-                  : t("KITCHEN_NO_OVERDUE", "Sem pedidos em atraso")}
-              </p>
-              <p className="mt-1 text-xs text-gold/90">
-                {unreadCount
-                  ? t(
-                      "KITCHEN_UNREAD_ALERTS",
-                      "{{count}} novos alertas nao lidos",
-                    ).replace("{{count}}", String(unreadCount))
-                  : t("KITCHEN_NO_ALERTS", "Nenhum alerta pendente")}
-              </p>
-              <p className="mt-1 text-xs text-smoke">
-                {t("ADMIN_PANEL_DESKTOP_LABEL", "Desktop")}:{" "}
-                {desktopEnabled
-                  ? t("ADMIN_PANEL_DESKTOP_ON", "notificacoes ativas")
-                  : t("ADMIN_PANEL_DESKTOP_OFF", "notificacoes inativas")}
-              </p>
-            </>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={handleGoBack}
-            className="rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
-          >
-            {t("BTN_BACK", "Voltar")}
-          </button>
-          <button
-            onClick={handleClearAlerts}
-            onClick={() => clearStaffUnreadCount()}
-            className="rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
-          >
-            {t("KITCHEN_CLEAR_ALERTS", "Limpar alertas")}{" "}
-            {unreadCount ? `(${unreadCount})` : ""}
-          </button>
-          <button
-            type="button"
-            onClick={handleDesktopToggle}
-            className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
-              desktopEnabled
-                ? "border-gold/40 bg-gold/10 text-gold"
-                : "border-gray-200 bg-gray-50 text-smoke"
-            }`}
-          >
-            {t("ADMIN_PANEL_DESKTOP_LABEL", "Desktop")}{" "}
-            {desktopEnabled
-              ? t("ADMIN_PANEL_DESKTOP_BUTTON_ON", "ligado")
-              : t("ADMIN_PANEL_DESKTOP_BUTTON_OFF", "desligado")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSoundEnabled((current) => !current)}
-            className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
-              soundEnabled
-                ? "border-gold/40 bg-gold/10 text-gold"
-                : "border-gray-200 bg-gray-50 text-smoke"
-            }`}
-          >
-            {t("KITCHEN_SOUND", "Som")}{" "}
-            {soundEnabled
-              ? t("KITCHEN_ON", "ligado")
-              : t("KITCHEN_OFF", "desligado")}
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-3 w-3">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500" />
-            </span>
-            <span className="text-xs text-smoke">
+    <main className="min-h-screen text-gray-900">
+      <PageHeader
+        wide
+        title={
+          isDeliveryKitchenUser || location.pathname === "/cozinha-delivery"
+            ? "Cozinha Delivery"
+            : t("KITCHEN_TITLE", "Cozinha")
+        }
+        subtitle={
+          showHeaderDetails
+            ? t(
+                "KITCHEN_UPDATED_AT",
+                "Atualizado em {{time}} • tempo real com fallback de 2 min",
+              ).replace("{{time}}", lastUpdate)
+            : undefined
+        }
+        actions={
+          <>
+            <span className="mr-1 flex items-center gap-2 text-xs font-bold text-white/80">
+              <span className="relative flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500" />
+              </span>
               {t("KITCHEN_LIVE", "Ao vivo")}
             </span>
+            <button
+              type="button"
+              onClick={handleGoBack}
+              className="ui-btn ui-btn-sm ui-btn-on-dark"
+            >
+              {t("BTN_BACK", "Voltar")}
+            </button>
+            <button
+              type="button"
+              onClick={handleClearAlerts}
+              className="ui-btn ui-btn-sm ui-btn-on-dark"
+            >
+              {t("KITCHEN_CLEAR_ALERTS", "Limpar alertas")}{" "}
+              {unreadCount ? `(${unreadCount})` : ""}
+            </button>
+            <button
+              type="button"
+              onClick={handleDesktopToggle}
+              className={`ui-btn ui-btn-sm border-2 ${
+                desktopEnabled ? "border-gold bg-gold text-primary" : "border-white/25 text-white hover:border-white"
+              }`}
+            >
+              {t("ADMIN_PANEL_DESKTOP_LABEL", "Desktop")}{" "}
+              {desktopEnabled
+                ? t("ADMIN_PANEL_DESKTOP_BUTTON_ON", "ligado")
+                : t("ADMIN_PANEL_DESKTOP_BUTTON_OFF", "desligado")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSoundEnabled((current) => !current)}
+              className={`ui-btn ui-btn-sm border-2 ${
+                soundEnabled ? "border-gold bg-gold text-primary" : "border-white/25 text-white hover:border-white"
+              }`}
+            >
+              {t("KITCHEN_SOUND", "Som")}{" "}
+              {soundEnabled
+                ? t("KITCHEN_ON", "ligado")
+                : t("KITCHEN_OFF", "desligado")}
+            </button>
+          </>
+        }
+      >
+        {showHeaderDetails && (
+          <div className="flex flex-wrap gap-2 text-xs font-bold">
+            <span
+              className={`rounded-full px-3 py-1 ${
+                overdueCount ? "bg-red-500 text-white" : "bg-white/10 text-white/80"
+              }`}
+            >
+              {overdueCount
+                ? t(
+                    "KITCHEN_OVERDUE_COUNT",
+                    "{{count}} pedidos em atraso",
+                  ).replace("{{count}}", String(overdueCount))
+                : t("KITCHEN_NO_OVERDUE", "Sem pedidos em atraso")}
+            </span>
+            <span
+              className={`rounded-full px-3 py-1 ${
+                unreadCount ? "bg-gold text-primary" : "bg-white/10 text-white/80"
+              }`}
+            >
+              {unreadCount
+                ? t(
+                    "KITCHEN_UNREAD_ALERTS",
+                    "{{count}} novos alertas não lidos",
+                  ).replace("{{count}}", String(unreadCount))
+                : t("KITCHEN_NO_ALERTS", "Nenhum alerta pendente")}
+            </span>
           </div>
-        </div>
-      </header>
+        )}
+      </PageHeader>
+      <div className="ui-page-wide">
 
       {showStageSummary && (
         <section
@@ -1375,8 +1419,8 @@ function KitchenPage() {
                 key={stage.key}
                 className={`rounded-2xl border p-4 transition-all duration-300 ${
                   changed
-                    ? "scale-[1.02] border-gold/50 bg-gold/10 shadow-glow"
-                    : "border-gray-200 bg-lacquer/50"
+                    ? "scale-[1.02] border-secondary/50 bg-gold/10 shadow-glow"
+                    : "border-gray-200 bg-white"
                 }`}
               >
                 <p className="text-xs uppercase tracking-[0.2em] text-smoke">
@@ -1395,10 +1439,10 @@ function KitchenPage() {
       )}
 
       {showWaiterCalls && (
-        <section className="mb-5 rounded-2xl border border-gold/20 bg-lacquer/60 p-4">
+        <section className="mb-5 rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="font-display text-xl text-gold">
+              <h2 className="font-display text-xl text-primary">
                 🛎 {t("KITCHEN_WAITER_CALLS_TITLE", "Chamadas de mesa")}
               </h2>
               <p className="mt-1 text-xs text-smoke">
@@ -1411,7 +1455,7 @@ function KitchenPage() {
             <button
               type="button"
               onClick={handleClearAlerts}
-              className="rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
+              className="rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-secondary/40 hover:text-secondary"
             >
               {t("KITCHEN_CLEAR_WAITER_CALLS", "Limpar chamadas")}
               {waiterCalls.length ? ` (${waiterCalls.length})` : ""}
@@ -1422,7 +1466,7 @@ function KitchenPage() {
             {waiterCalls.map((call, index) => (
               <article
                 key={`${call.mesaId ?? "mesa"}-${call.timestamp ?? index}`}
-                className="rounded-2xl border border-gold/20 bg-ink/60 p-4"
+                className="rounded-2xl border border-primary/10 bg-ink/60 p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -1434,7 +1478,7 @@ function KitchenPage() {
                           )
                         : t("KITCHEN_GENERIC_TABLE", "Mesa")}
                     </p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.2em] text-gold">
+                    <p className="mt-1 text-xs uppercase tracking-[0.2em] text-primary">
                       {t("KITCHEN_SERVICE_REQUEST", "Atendimento solicitado")}
                     </p>
                   </div>
@@ -1445,7 +1489,7 @@ function KitchenPage() {
                 <button
                   type="button"
                   onClick={() => handleDismissWaiterCall(call, index)}
-                  className="mt-4 w-full rounded-2xl bg-green-600 px-4 py-3 text-sm font-black uppercase text-white transition hover:bg-green-700"
+                  className="mt-4 w-full rounded-full bg-green-600 px-4 py-3 text-sm font-black uppercase text-white transition hover:bg-green-700"
                 >
                   Dar baixa
                 </button>
@@ -1464,7 +1508,7 @@ function KitchenPage() {
       )}
 
       {latestAlert ? (
-        <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-gold">
+        <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-primary/10 bg-gold/10 px-4 py-3 text-sm text-primary">
           <div>
             <p className="font-semibold">
               {t(
@@ -1475,7 +1519,7 @@ function KitchenPage() {
                 `#${latestAlert.orderId.slice(-6).toUpperCase()}`,
               )}
             </p>
-            <p className="text-xs text-gold/80">
+            <p className="text-xs text-primary">
               {t(
                 "KITCHEN_HIGHLIGHT_SECONDS",
                 "Destaque ativo por {{seconds}} segundos.",
@@ -1488,7 +1532,7 @@ function KitchenPage() {
           <button
             type="button"
             onClick={() => setLatestAlert(null)}
-            className="rounded-xl border border-gold/30 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10"
+            className="rounded-full border border-primary/10 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/5"
           >
             {t("BTN_CLOSE", "Fechar")}
           </button>
@@ -1568,7 +1612,7 @@ function KitchenPage() {
                 </div>
 
                 {isDropActive ? (
-                  <div className="mb-3 rounded-2xl border border-gold/40 bg-gold/10 px-3 py-2 text-center text-xs font-semibold text-gold">
+                  <div className="mb-3 rounded-2xl border border-secondary/50 bg-gold/10 px-3 py-2 text-center text-xs font-semibold text-primary">
                     {t(
                       "KITCHEN_DROP_TO_STAGE",
                       "Solte aqui para mover para {{stage}}",
@@ -1656,6 +1700,7 @@ function KitchenPage() {
           {t("KITCHEN_NO_ACTIVE_ORDERS", "Sem pedidos ativos no momento.")}
         </p>
       )}
+      </div>
     </main>
   );
 }

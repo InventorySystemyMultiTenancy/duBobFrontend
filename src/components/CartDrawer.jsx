@@ -43,7 +43,7 @@ function CartDrawer() {
           <button
             type="button"
             onClick={closeCart}
-            className="rounded-xl border border-border-soft bg-white px-3 py-2 text-sm font-semibold text-text-muted shadow-sm transition hover:border-secondary/40 hover:text-secondary"
+            className="rounded-full border border-border-soft bg-white px-3 py-2 text-sm font-semibold text-text-muted shadow-sm transition hover:border-secondary/40 hover:text-secondary"
           >
             x {t("CART_CLOSE", "Fechar")}
           </button>
@@ -100,7 +100,7 @@ function CartDrawer() {
                 navigate("/checkout");
               }
             }}
-            className={`mt-4 block w-full rounded-2xl px-5 py-4 text-center text-base font-bold transition ${
+            className={`mt-4 block w-full rounded-full px-5 py-4 text-center text-base font-bold transition ${
               total
                 ? "bg-secondary text-white shadow-card hover:bg-primary"
                 : "cursor-not-allowed bg-border-soft/60 text-text-muted"

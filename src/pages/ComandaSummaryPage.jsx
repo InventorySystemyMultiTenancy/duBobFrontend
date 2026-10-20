@@ -5,6 +5,7 @@ import { api } from "../lib/api.js";
 import { askPaymentMethod } from "../lib/paymentMethodPrompt.js";
 import { useAuth } from "../hooks/useAuth.js";
 
+import PageHeader from "../components/PageHeader.jsx";
 const currency = (value) =>
   Number(value || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -92,26 +93,18 @@ export default function ComandaSummaryPage() {
   };
 
   return (
-    <main className="mx-auto min-h-screen max-w-4xl px-4 py-6 text-gray-900 sm:px-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl text-gold">
-            Consulta de Comanda
-          </h1>
-          <p className="mt-1 text-sm text-smoke">
-            Resumo para fechamento e conferência do cliente.
-          </p>
-        </div>
-        <Link
-          to="/comandas"
-          className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-600"
-        >
-          Voltar
-        </Link>
-      </div>
+    <main className="min-h-screen text-gray-900">
+      <PageHeader
+        backTo={isAuthenticated && user?.role !== "CLIENTE" ? "/comandas" : undefined}
+        backLabel="Comandas"
+        eyebrow="Dubob Açaí e Milkshake"
+        title="Sua comanda"
+        subtitle="Resumo do que foi consumido para conferência e fechamento."
+      />
+      <div className="ui-page max-w-4xl">
 
       {isLoading ? (
-        <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
+        <div className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-8 text-center text-sm text-gray-500">
           Carregando comanda...
         </div>
       ) : isError || !data ? (
@@ -120,7 +113,7 @@ export default function ComandaSummaryPage() {
         </div>
       ) : (
         <div className="space-y-5">
-          <section className="rounded-3xl border border-gold/30 bg-white p-6 shadow-sm">
+          <section className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-bold uppercase tracking-widest text-smoke">
@@ -150,7 +143,7 @@ export default function ComandaSummaryPage() {
                 type="button"
                 onClick={handleMarkAllPaid}
                 disabled={markAllPaid.isPending}
-                className="mt-5 w-full rounded-2xl bg-green-600 px-4 py-4 text-lg font-black uppercase text-white disabled:opacity-50"
+                className="mt-5 w-full rounded-full bg-green-600 px-4 py-4 text-lg font-black uppercase text-white disabled:opacity-50"
               >
                 Dar baixa em tudo
               </button>
@@ -158,14 +151,14 @@ export default function ComandaSummaryPage() {
             {data.pendingOrdersCount > 0 && !canClosePayment ? (
               <Link
                 to={`/login?redirect=${encodeURIComponent(`/comandas/${token}`)}`}
-                className="mt-5 block w-full rounded-2xl border border-gold/30 bg-white px-4 py-4 text-center text-sm font-black uppercase text-gold"
+                className="mt-5 block w-full rounded-full border border-primary/10 bg-white px-4 py-4 text-center text-sm font-black uppercase text-primary"
               >
                 Entrar para dar baixa
               </Link>
             ) : null}
           </section>
 
-          <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+          <section className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
             <h2 className="font-display text-2xl text-primary">
               Pedidos e itens
             </h2>
@@ -235,7 +228,7 @@ export default function ComandaSummaryPage() {
                         type="button"
                         onClick={() => handleMarkPaid(order)}
                         disabled={markPaid.isPending || markAllPaid.isPending}
-                        className="mt-3 w-full rounded-xl bg-green-600 px-3 py-3 text-sm font-black uppercase text-white disabled:opacity-50"
+                        className="mt-3 w-full rounded-full bg-green-600 px-3 py-3 text-sm font-black uppercase text-white disabled:opacity-50"
                       >
                         Dar baixa neste pedido
                       </button>
@@ -247,6 +240,7 @@ export default function ComandaSummaryPage() {
           </section>
         </div>
       )}
+      </div>
     </main>
   );
 }

@@ -9,7 +9,7 @@ const STATUS_CONFIG = {
     title: "Preparando",
     subtitle: "Seu pedido está em preparo",
     badge: "bg-gold text-primary",
-    panel: "border-gold/45 bg-white",
+    panel: "border-secondary/50 bg-white",
     text: "text-primary",
   },
   PRONTO: {
@@ -73,14 +73,14 @@ function StatusColumn({ status, orders }) {
     <section className="flex min-h-0 flex-col">
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <h2 className="font-display text-5xl font-black leading-none text-primary">
+          <h2 className="font-display text-3xl font-bold leading-none text-white sm:text-5xl">
             {config.title}
           </h2>
-          <p className="mt-2 text-lg font-semibold text-smoke">
+          <p className="mt-2 text-lg font-semibold text-white/70">
             {config.subtitle}
           </p>
         </div>
-        <span className="rounded-2xl border border-border-soft bg-white px-5 py-2 font-display text-4xl font-black text-primary shadow-card">
+        <span className="rounded-full bg-gold px-5 py-1.5 font-display text-2xl font-bold text-primary shadow-lg sm:px-6 sm:py-2 sm:text-4xl">
           {orders.length}
         </span>
       </div>
@@ -91,7 +91,7 @@ function StatusColumn({ status, orders }) {
             <OrderTile key={order.id} order={order} />
           ))
         ) : (
-          <div className="flex min-h-36 items-center justify-center rounded-3xl border border-border-soft bg-white/70 text-xl font-semibold text-smoke shadow-card">
+          <div className="flex min-h-36 items-center justify-center rounded-3xl border-2 border-dashed border-white/20 text-xl font-semibold text-white/60">
             Nenhum pedido agora
           </div>
         )}
@@ -125,17 +125,32 @@ export default function TVOrdersPage() {
   const ready = visibleOrders.filter((order) => order.status === "PRONTO");
 
   return (
-    <main className="min-h-screen overflow-hidden bg-texture px-8 py-7 text-primary">
-      <header className="mb-7 flex items-center justify-between gap-6">
-        <div>
-          <p className="text-lg font-black uppercase tracking-[0.32em] text-secondary">
+    <main className="relative min-h-screen overflow-hidden bg-primary px-4 py-5 text-white sm:px-8 sm:py-7">
+      <div
+        className="pointer-events-none absolute -left-32 -top-32 h-[30rem] w-[30rem] rounded-full bg-secondary/35 blur-3xl"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute -bottom-40 right-0 h-[30rem] w-[30rem] rounded-full bg-accent-dark/20 blur-3xl"
+        aria-hidden="true"
+      />
+      <header className="relative mb-7 flex flex-wrap items-center justify-between gap-4 sm:gap-6">
+        <div className="flex items-center gap-3 sm:gap-5">
+          <img
+            src="/LogoDuBob.png"
+            alt="Dubob"
+            className="h-12 w-12 rounded-2xl object-contain shadow-xl sm:h-20 sm:w-20"
+          />
+          <div>
+          <p className="text-xs font-black uppercase tracking-[0.32em] text-gold sm:text-lg">
             Acompanhe seu pedido
           </p>
-          <h1 className="mt-2 font-display text-6xl font-black leading-none">
+          <h1 className="mt-1 font-display text-3xl font-bold leading-none sm:mt-2 sm:text-6xl">
             Status dos Pedidos
           </h1>
+          </div>
         </div>
-        <div className="rounded-3xl border border-border-soft bg-white px-6 py-4 text-right shadow-card">
+        <div className="hidden rounded-3xl bg-white px-6 py-4 text-right shadow-card ring-1 ring-primary/5 sm:block">
           <p className="text-sm font-bold uppercase tracking-widest text-smoke">
             Atualização
           </p>
@@ -146,7 +161,7 @@ export default function TVOrdersPage() {
       </header>
 
       {isLoading ? (
-        <div className="rounded-3xl border border-border-soft bg-white p-8 text-2xl font-semibold text-smoke shadow-card">
+        <div className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-8 text-2xl font-semibold text-smoke">
           Carregando pedidos...
         </div>
       ) : isError ? (
@@ -154,7 +169,7 @@ export default function TVOrdersPage() {
           Não foi possível carregar os pedidos.
         </div>
       ) : (
-        <div className="grid h-[calc(100vh-190px)] min-h-0 gap-7 lg:grid-cols-2">
+        <div className="relative grid min-h-0 gap-7 lg:h-[calc(100vh-190px)] lg:grid-cols-2">
           <StatusColumn status="PREPARANDO" orders={preparing} />
           <StatusColumn status="PRONTO" orders={ready} />
         </div>

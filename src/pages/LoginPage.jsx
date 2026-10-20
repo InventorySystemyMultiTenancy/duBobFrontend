@@ -8,12 +8,13 @@ import { useTranslation } from "../context/I18nContext.jsx";
 import { getRoleHome } from "../lib/roleHome.js";
 
 const INPUT_CLS =
-  "w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm outline-none transition focus:border-rosso focus:ring-2 focus:ring-rosso/10";
+  "ui-input py-4";
 
 function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect") || null;
+  const sessionExpired = searchParams.get("expirou") === "1";
   const { login } = useAuth();
   const { t } = useTranslation();
 
@@ -84,19 +85,24 @@ function LoginPage() {
   return (
     <main className="flex min-h-screen bg-white text-gray-900">
       {/* Left — hero */}
-      <div className="relative hidden overflow-hidden lg:flex lg:w-1/2 bg-gradient-to-br from-rosso via-amber-700 to-gray-700">
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 p-12 text-white">
-          <div className="text-center">
-            <div className="mx-auto h-32 w-32 rounded-2xl bg-white/95 p-4 shadow-2xl">
-              <img
-                src="/LogoDuBob.png"
-                alt="Dubob Acai e Milkshake"
-                className="h-full w-full object-contain"
-              />
-            </div>
-          </div>
-          <p className="font-script text-3xl italic text-white drop-shadow-lg text-center">
+      <div className="relative hidden overflow-hidden bg-primary lg:flex lg:w-1/2">
+        <img
+          src="/home/hero.webp"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover opacity-40"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/70 to-primary/30" />
+        <div className="relative flex w-full flex-col justify-end gap-4 p-12 text-white">
+          <img
+            src="/LogoDuBob.png"
+            alt="Dubob Açaí e Milkshake"
+            className="h-20 w-20 rounded-2xl object-contain shadow-2xl"
+          />
+          <p className="font-display text-5xl font-bold leading-tight">
             {t("LOGIN_TAGLINE_H", "Sabor que marca presença!")}
+          </p>
+          <p className="max-w-md text-lg text-white/80">
+            Entre para acompanhar seus pedidos e pedir de novo com um toque.
           </p>
         </div>
       </div>
@@ -114,13 +120,13 @@ function LoginPage() {
           </div>
 
           {/* Tabs */}
-          <div className="mb-6 flex rounded-2xl border border-gray-200 bg-gray-50 p-1">
+          <div className="mb-6 flex rounded-full bg-accent p-1">
             <button
               type="button"
               onClick={() => setTab("login")}
-              className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition ${
+              className={`flex-1 rounded-full py-2.5 text-sm font-semibold transition ${
                 tab === "login"
-                  ? "bg-white shadow text-gray-900"
+                  ? "bg-white text-primary shadow"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -129,9 +135,9 @@ function LoginPage() {
             <button
               type="button"
               onClick={() => setTab("register")}
-              className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition ${
+              className={`flex-1 rounded-full py-2.5 text-sm font-semibold transition ${
                 tab === "register"
-                  ? "bg-white shadow text-gray-900"
+                  ? "bg-white text-primary shadow"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -141,7 +147,12 @@ function LoginPage() {
 
           {tab === "login" ? (
             <>
-              <h1 className="font-display text-2xl font-bold text-gray-900">
+              {sessionExpired && (
+                <p className="mb-4 rounded-2xl bg-gold/20 px-4 py-3 text-sm font-semibold text-primary">
+                  Sua sessão expirou. Entre de novo para continuar.
+                </p>
+              )}
+              <h1 className="font-display text-3xl font-bold text-primary">
                 {t("LOGIN_TITLE", "Bem-vindo")}
               </h1>
               <p className="mt-1 text-sm text-gray-500">
@@ -177,7 +188,7 @@ function LoginPage() {
                 <button
                   type="submit"
                   disabled={loginMutation.isPending}
-                  className="w-full rounded-2xl bg-rosso py-4 text-base font-bold text-white shadow-md transition hover:bg-ember disabled:opacity-50"
+                  className="ui-btn ui-btn-primary ui-btn-lg w-full"
                 >
                   {loginMutation.isPending
                     ? t("LOGIN_BTN_LOADING", "Entrando...")
@@ -187,7 +198,7 @@ function LoginPage() {
             </>
           ) : (
             <>
-              <h1 className="font-display text-2xl font-bold text-gray-900">
+              <h1 className="font-display text-3xl font-bold text-primary">
                 {t("REG_TITLE", "Criar conta")}
               </h1>
               <p className="mt-1 text-sm text-gray-500">
@@ -269,7 +280,7 @@ function LoginPage() {
                 <button
                   type="submit"
                   disabled={registerMutation.isPending}
-                  className="w-full rounded-2xl bg-rosso py-4 text-base font-bold text-white shadow-md transition hover:bg-ember disabled:opacity-50"
+                  className="ui-btn ui-btn-primary ui-btn-lg w-full"
                 >
                   {registerMutation.isPending
                     ? t("REG_BTN_LOADING", "Criando conta...")
@@ -281,7 +292,7 @@ function LoginPage() {
 
           <Link
             to="/"
-            className="mt-6 block text-center text-sm text-gray-400 transition hover:text-rosso"
+            className="mt-6 block text-center text-sm text-gray-400 transition hover:text-secondary"
           >
             {t("LOGIN_BACK", "← Voltar para o cardápio")}
           </Link>

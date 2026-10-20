@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useTranslation } from "../context/I18nContext.jsx";
 import { askPaymentMethod } from "../lib/paymentMethodPrompt.js";
 
+import PageHeader from "../components/PageHeader.jsx";
 const STATUS_CLASS = {
   RECEBIDO: "bg-blue-100 text-blue-700",
   PREPARANDO: "bg-yellow-100 text-yellow-700",
@@ -209,27 +210,17 @@ function AdminOrderHistoryPage() {
   };
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-gray-900 sm:px-6">
-      {/* Header */}
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-3xl text-gold">
-            {t("ADMIN_HISTORY_TITLE", "Histórico de Pedidos")}
-          </h1>
-          <p className="mt-1 text-sm text-smoke">
-            {t(
-              "ADMIN_HISTORY_SUBTITLE",
-              "Todos os pedidos — entregues, cancelados e em andamento.",
-            )}
-          </p>
-        </div>
-        <Link
-          to="/admin"
-          className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
-        >
-          {t("ADMIN_HISTORY_BACK", "← Admin")}
-        </Link>
-      </div>
+    <main className="min-h-screen text-gray-900">
+      <PageHeader
+        backTo="/admin"
+        backLabel="Painel Admin"
+        title={t("ADMIN_HISTORY_TITLE", "Histórico de Pedidos")}
+        subtitle={t(
+          "ADMIN_HISTORY_SUBTITLE",
+          "Todos os pedidos — entregues, cancelados e em andamento.",
+        )}
+      />
+      <div className="ui-page">
 
       {/* Refund alert banner */}
       {needsRefund.length > 0 && (
@@ -257,7 +248,7 @@ function AdminOrderHistoryPage() {
           <button
             type="button"
             onClick={() => setShowOnlyRefund((v) => !v)}
-            className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+            className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition ${
               showOnlyRefund
                 ? "border-red-400 bg-red-200 text-red-800"
                 : "border-red-300 bg-white text-red-700 hover:bg-red-100"
@@ -271,7 +262,7 @@ function AdminOrderHistoryPage() {
       )}
 
       {/* Filters */}
-      <section className="mb-5 rounded-2xl border border-gray-200 bg-white p-4">
+      <section className="mb-5 rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-4">
         <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-smoke">
           {t("ADMIN_HISTORY_FILTERS", "Filtros")}
         </p>
@@ -297,7 +288,7 @@ function AdminOrderHistoryPage() {
                 }
                 if (e.key === "Escape") setShowSuggestions(false);
               }}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-gold/50 focus:outline-none"
+              className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm focus:border-secondary focus:outline-none"
             />
             {showSuggestions && suggestions.length > 0 && (
               <ul className="absolute left-0 top-full z-20 mt-1 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
@@ -309,7 +300,7 @@ function AdminOrderHistoryPage() {
                         setClientName(c.name);
                         setShowSuggestions(false);
                       }}
-                      className="w-full px-4 py-2.5 text-left text-sm text-gray-900 hover:bg-gold/10 hover:text-gold"
+                      className="w-full px-4 py-2.5 text-left text-sm text-gray-900 hover:bg-primary/5 hover:text-secondary"
                     >
                       {c.name}
                     </button>
@@ -326,7 +317,7 @@ function AdminOrderHistoryPage() {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-gold/50 focus:outline-none"
+              className="rounded-2xl border border-gray-200 px-3 py-2 text-sm focus:border-secondary focus:outline-none"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -337,20 +328,20 @@ function AdminOrderHistoryPage() {
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-gold/50 focus:outline-none"
+              className="rounded-2xl border border-gray-200 px-3 py-2 text-sm focus:border-secondary focus:outline-none"
             />
           </div>
           <button
             type="button"
             onClick={handleApply}
-            className="rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+            className="rounded-full bg-gold px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
           >
             {t("ADMIN_HISTORY_FILTER", "Filtrar")}
           </button>
           <button
             type="button"
             onClick={handleClear}
-            className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400"
+            className="rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400"
           >
             {t("ADMIN_HISTORY_CLEAR", "Limpar")}
           </button>
@@ -481,7 +472,7 @@ function AdminOrderHistoryPage() {
                       type="button"
                       disabled={isPaying && payingId?.orderId === order.id}
                       onClick={() => handleMarkAsPaid(order.id)}
-                      className="shrink-0 rounded-xl bg-green-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-700 disabled:opacity-50"
+                      className="shrink-0 rounded-full bg-green-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-700 disabled:opacity-50"
                     >
                       {isPaying && payingId?.orderId === order.id
                         ? "..."
@@ -493,7 +484,7 @@ function AdminOrderHistoryPage() {
                     type="button"
                     disabled={isRefunding && refundingId === order.id}
                     onClick={() => handleMarkAsRefunded(order.id)}
-                    className="shrink-0 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-50"
+                    className="shrink-0 rounded-full bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-50"
                   >
                     {isRefunding && refundingId === order.id
                       ? "..."
@@ -708,6 +699,7 @@ function AdminOrderHistoryPage() {
             </div>
           );
         })}
+      </div>
       </div>
     </main>
   );

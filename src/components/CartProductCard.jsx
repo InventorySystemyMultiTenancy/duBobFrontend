@@ -18,7 +18,7 @@ function CartProductCard({
   const unit = Number(item.price || 0) + addonTotal(item.addons || []);
 
   return (
-    <article className="rounded-2xl border border-border-soft bg-white p-3 text-text-main shadow-card transition-all hover:border-secondary/40 hover:shadow-card-hover">
+    <article className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-3 text-text-main transition-all hover:border-secondary/40 hover:shadow-card-hover">
       <h4 className="font-display text-base font-black text-primary">{nome}</h4>
 
       {item.addons?.length ? (
@@ -46,7 +46,7 @@ function CartProductCard({
           placeholder="Ex: sem molho"
           value={observation}
           onChange={(event) => onObservationChange(event.target.value)}
-          className="w-full resize-none rounded-xl border border-border-soft bg-accent/60 px-3 py-2 text-sm text-text-main outline-none placeholder:text-text-muted/60 focus:border-secondary/60 focus:bg-white"
+          className="w-full resize-none rounded-2xl border border-border-soft bg-accent/60 px-3 py-2 text-sm text-text-main outline-none placeholder:text-text-muted/60 focus:border-secondary/60 focus:bg-white"
         />
       </div>
 

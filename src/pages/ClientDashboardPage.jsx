@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import Navbar from "../components/Navbar.jsx";
+import CartDrawer from "../components/CartDrawer.jsx";
 import { useNavigate } from "react-router-dom";
 import EstimatedTimeBadge from "../components/EstimatedTimeBadge.jsx";
 import OrderTracker from "../components/OrderTracker.jsx";
@@ -10,6 +12,7 @@ import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 
+import PageHeader from "../components/PageHeader.jsx";
 const DUBOB_WHATSAPP =
   import.meta.env.VITE_DUBOB_WHATSAPP ??
   import.meta.env.VITE_PIZZARIA_WHATSAPP ??
@@ -151,31 +154,32 @@ function ClientDashboardPage() {
   };
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-3xl px-4 py-6 text-gray-900 sm:px-6">
-      <header className="flex items-center justify-between">
-        <h1 className="font-display text-3xl text-gold">
-          {t("CLIENT_DASHBOARD_HELLO", "Ola")},{" "}
-          {user?.name?.split(" ")[0] || t("CLIENT_DASHBOARD_CLIENT", "Cliente")}
-        </h1>
-        <Link
-          className="rounded-xl border border-gray-200 px-3 py-2 text-sm transition hover:border-gold/40"
-          to="/"
-        >
-          {t("BTN_BACK", "Voltar")}
-        </Link>
-      </header>
-
+    <main className="min-h-screen text-gray-900">
+      <Navbar />
+      <PageHeader
+        eyebrow="Meus pedidos"
+        title={`${t("CLIENT_DASHBOARD_HELLO", "Olá")}, ${
+          user?.name?.split(" ")[0] || t("CLIENT_DASHBOARD_CLIENT", "Cliente")
+        }`}
+        subtitle="Acompanhe seus pedidos e peça de novo com um toque."
+        actions={
+          <Link to="/cardapio" className="ui-btn ui-btn-accent">
+            Fazer novo pedido
+          </Link>
+        }
+      />
+      <div className="ui-page max-w-3xl">
       {/* Filter bar */}
-      <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {STATUS_FILTERS.map((f) => (
           <button
             key={f.id}
             type="button"
             onClick={() => setActiveFilter(f.id)}
-            className={`shrink-0 rounded-2xl border px-4 py-2 text-xs font-semibold transition-all duration-200 ${
+            className={`shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-200 ${
               activeFilter === f.id
-                ? "border-gold bg-gold/15 text-gold"
-                : "border-gray-200 bg-gray-50 text-smoke hover:border-gold/30"
+                ? "border-secondary bg-secondary text-white"
+                : "border-gray-200 bg-gray-50 text-smoke hover:border-secondary/40"
             }`}
           >
             {statusLabel(f.id)}
@@ -215,7 +219,7 @@ function ClientDashboardPage() {
           return (
             <div
               key={order.id}
-              className="rounded-3xl border border-gold/20 bg-lacquer/70 shadow-glow transition-all duration-300"
+              className="rounded-3xl border border-primary/10 bg-white shadow-glow transition-all duration-300"
             >
               {/* Order header — always visible */}
               <button
@@ -242,7 +246,7 @@ function ClientDashboardPage() {
                     className={`rounded-xl px-3 py-1 text-xs font-bold ${
                       order.status === "CANCELADO"
                         ? "bg-red-500/10 text-red-400"
-                        : "bg-gold/10 text-gold"
+                        : "bg-gold/10 text-primary"
                     }`}
                   >
                     {t(
@@ -250,7 +254,7 @@ function ClientDashboardPage() {
                       order.status.replace(/_/g, " "),
                     )}
                   </span>
-                  <span className="text-sm font-bold text-gold">
+                  <span className="text-sm font-bold text-primary">
                     {Number(order.total).toLocaleString(locale || "pt-BR", {
                       style: "currency",
                       currency: "BRL",
@@ -324,7 +328,7 @@ function ClientDashboardPage() {
                           )}
                           <p className="text-xs text-smoke">{item.quantity}x</p>
                         </div>
-                        <span className="text-sm text-gold">
+                        <span className="text-sm text-primary">
                           {Number(item.unitPrice).toLocaleString(
                             locale || "pt-BR",
                             {
@@ -366,7 +370,7 @@ function ClientDashboardPage() {
                     <button
                       type="button"
                       onClick={() => handleRepeatOrder(order)}
-                      className="mt-4 w-full rounded-2xl border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-semibold text-gold transition hover:bg-gold/20"
+                      className="mt-4 w-full rounded-full border border-primary/10 bg-gold/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-gold/20"
                     >
                       {t("CLIENT_DASHBOARD_REPEAT_ORDER", "Repetir pedido")}
                     </button>
@@ -382,7 +386,7 @@ function ClientDashboardPage() {
                         )}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-green-400/40 bg-green-50 px-4 py-2 text-sm font-semibold text-green-600 transition hover:bg-green-100"
+                        className="flex flex-1 items-center justify-center gap-2 rounded-full border border-green-400/40 bg-green-50 px-4 py-2 text-sm font-semibold text-green-600 transition hover:bg-green-100"
                       >
                         <svg
                           viewBox="0 0 24 24"
@@ -402,14 +406,14 @@ function ClientDashboardPage() {
                             type="button"
                             onClick={() => deleteMutation.mutate(order.id)}
                             disabled={deleteMutation.isPending}
-                            className="rounded-xl bg-red-500 px-3 py-1 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
+                            className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
                           >
                             {t("YES", "Sim")}
                           </button>
                           <button
                             type="button"
                             onClick={() => setDeletingId(null)}
-                            className="rounded-xl border border-gray-200 px-3 py-1 text-xs font-semibold hover:bg-gray-100"
+                            className="rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold hover:bg-gray-100"
                           >
                             {t("NO", "Não")}
                           </button>
@@ -418,7 +422,7 @@ function ClientDashboardPage() {
                         <button
                           type="button"
                           onClick={() => setDeletingId(order.id)}
-                          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-100"
+                          className="flex flex-1 items-center justify-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-100"
                         >
                           <svg
                             className="h-4 w-4"
@@ -444,6 +448,8 @@ function ClientDashboardPage() {
           );
         })}
       </div>
+      </div>
+      <CartDrawer />
     </main>
   );
 }

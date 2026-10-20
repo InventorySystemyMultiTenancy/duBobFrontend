@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 
+import PageHeader from "../components/PageHeader.jsx";
 const EMPTY_FORM = { name: "", number: "", terminalId: "" };
 
 // ── Modal de QR Code ─────────────────────────────────────────────────────────
@@ -58,13 +59,13 @@ function QrModal({ mesa, onClose }) {
         <div className="mt-5 flex gap-3">
           <button
             onClick={handlePrint}
-            className="flex-1 rounded-xl bg-gold py-2.5 text-sm font-semibold text-white hover:opacity-90"
+            className="flex-1 rounded-full bg-gold py-2.5 text-sm font-semibold text-white hover:opacity-90"
           >
             {t("ADMIN_MESAS_PRINT", "🖨️ Imprimir")}
           </button>
           <button
             onClick={onClose}
-            className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:border-gray-400"
+            className="flex-1 rounded-full border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:border-gray-400"
           >
             {t("BTN_CLOSE", "Fechar")}
           </button>
@@ -162,7 +163,7 @@ function MesaModal({ mesa, onClose }) {
               placeholder={t("ADMIN_MESAS_FORM_NAME_PH", "Ex: Mesa Varanda 1")}
               value={form.name}
               onChange={set("name")}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+              className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
             />
           </div>
 
@@ -178,7 +179,7 @@ function MesaModal({ mesa, onClose }) {
               placeholder="Ex: 1"
               value={form.number}
               onChange={set("number")}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+              className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
             />
           </div>
 
@@ -195,7 +196,7 @@ function MesaModal({ mesa, onClose }) {
               placeholder="Ex: PAX_A867EC0ED627"
               value={form.terminalId}
               onChange={set("terminalId")}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-mono focus:border-gold/60 focus:outline-none"
+              className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 text-sm font-mono focus:border-secondary focus:outline-none"
             />
             <p className="mt-1 text-[10px] text-gray-400">
               {t(
@@ -209,7 +210,7 @@ function MesaModal({ mesa, onClose }) {
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="flex-1 rounded-xl bg-rosso py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+              className="flex-1 rounded-full bg-secondary py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
             >
               {mutation.isPending
                 ? t("ADMIN_MESAS_SAVING", "Salvando...")
@@ -218,7 +219,7 @@ function MesaModal({ mesa, onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:border-gray-400"
+              className="flex-1 rounded-full border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:border-gray-400"
             >
               {t("ADMIN_MESAS_CANCEL", "Cancelar")}
             </button>
@@ -288,7 +289,7 @@ function MesaCard({ mesa, onEdit, onQr }) {
     <div
       className={`rounded-2xl border p-4 transition ${
         mesa.isActive
-          ? "border-gold/20 bg-white"
+          ? "border-primary/10 bg-white"
           : "border-gray-200 bg-gray-50 opacity-60"
       }`}
     >
@@ -321,7 +322,7 @@ function MesaCard({ mesa, onEdit, onQr }) {
 
         <button
           onClick={() => onQr(mesa)}
-          className="flex-shrink-0 rounded-xl bg-gold/10 px-3 py-2 text-xs font-semibold text-gold hover:bg-gold/20"
+          className="flex-shrink-0 rounded-full bg-gold/10 px-3 py-2 text-xs font-semibold text-primary hover:bg-gold/20"
         >
           {t("ADMIN_MESAS_QR_BUTTON", "QR Code")}
         </button>
@@ -330,21 +331,21 @@ function MesaCard({ mesa, onEdit, onQr }) {
       <div className="mt-3 flex flex-wrap gap-2">
         <button
           onClick={() => onEdit(mesa)}
-          className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400"
+          className="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400"
         >
           {t("ADMIN_MESAS_EDIT_BUTTON", "✏️ Editar")}
         </button>
         <button
           onClick={handleRegen}
           disabled={regenMutation.isPending}
-          className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400 disabled:opacity-50"
+          className="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400 disabled:opacity-50"
         >
           {t("ADMIN_MESAS_NEW_QR_BUTTON", "🔄 Novo QR")}
         </button>
         <button
           onClick={handleDelete}
           disabled={deleteMutation.isPending}
-          className="rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-400 hover:border-red-300 hover:text-red-600 disabled:opacity-50"
+          className="rounded-full border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-400 hover:border-red-300 hover:text-red-600 disabled:opacity-50"
         >
           {t("ADMIN_MESAS_REMOVE_BUTTON", "🗑️ Remover")}
         </button>
@@ -371,18 +372,23 @@ function AdminMesasPage() {
   });
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-2xl px-4 py-6 text-gray-900 sm:px-6">
-      <div className="mb-6 flex items-center gap-4">
-        <Link
-          to="/admin"
-          className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
-        >
-          {t("ADMIN_MESAS_BACK_PANEL", "← Painel Admin")}
-        </Link>
-        <h1 className="font-display text-3xl text-gold">
-          {t("ADMIN_MESAS_TITLE", "Mesas")}
-        </h1>
-      </div>
+    <main className="min-h-screen text-gray-900">
+      <PageHeader
+        backTo="/admin"
+        backLabel="Painel Admin"
+        title={t("ADMIN_MESAS_TITLE", "Mesas")}
+        subtitle="Cadastre as mesas e imprima o QR Code de pedido de cada uma."
+        actions={
+          <button
+            type="button"
+            onClick={() => setModal({ type: "create" })}
+            className="ui-btn ui-btn-accent"
+          >
+            + {t("ADMIN_MESAS_NEW_BUTTON", "Nova Mesa")}
+          </button>
+        }
+      />
+      <div className="ui-page max-w-2xl">
 
       {/* Como achar o ID da maquininha */}
       <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
@@ -400,13 +406,6 @@ function AdminMesasPage() {
           <code className="font-mono">PAX_A867EC0ED627</code>).
         </p>
       </div>
-
-      <button
-        onClick={() => setModal({ type: "create" })}
-        className="mb-5 w-full rounded-2xl bg-rosso py-3 text-sm font-semibold text-white hover:opacity-90"
-      >
-        + {t("ADMIN_MESAS_NEW_BUTTON", "Nova Mesa")}
-      </button>
 
       {isLoading && (
         <p className="text-center text-sm text-gray-400">
@@ -448,6 +447,7 @@ function AdminMesasPage() {
       {modal?.type === "qr" && (
         <QrModal mesa={modal.mesa} onClose={() => setModal(null)} />
       )}
+      </div>
     </main>
   );
 }

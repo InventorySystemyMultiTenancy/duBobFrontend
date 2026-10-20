@@ -11,6 +11,7 @@ import { useTranslation } from "../context/I18nContext.jsx";
 import MilkShake1 from "/milkshake1.png";
 import acai1 from "/acai1.png";
 
+import PageHeader from "../components/PageHeader.jsx";
 const fmt = (value) =>
   Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -439,23 +440,14 @@ function CardapioPage() {
   };
 
   return (
-    <main className="min-h-screen bg-accent bg-texture font-body text-text-main">
+    <main className="min-h-screen font-body text-text-main">
       <Navbar activeLink="cardapio" />
 
-      <div className="relative overflow-hidden border-b border-secondary/30 bg-primary py-4 text-center text-white sm:py-5">
-        <img
-          src="/cardapio2.png"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover opacity-20"
-        />
-        <div className="absolute inset-0 bg-primary/70" />
-        <p className="relative font-body text-[0.6rem] uppercase tracking-[0.3em] text-gold">
-          {t("CARDAPIO_SINCE", "Acai - Milkshake - Krekole")}
-        </p>
-        <h1 className="relative mt-0.5 font-display text-2xl font-black text-white sm:text-3xl">
-          {t("CARDAPIO_TITLE", "Cardapio Dubob")}
-        </h1>
-      </div>
+      <PageHeader
+        eyebrow={t("CARDAPIO_SINCE", "Açaí · Milkshake · Krekole")}
+        title={t("CARDAPIO_TITLE", "Monte seu pedido")}
+        subtitle="Escolha açaí ou milkshake e siga os passos. Leva menos de um minuto."
+      />
 
       <GuidedMenu
         isProductReady={!isLoading && !isError && displayProducts.length > 0}
@@ -479,7 +471,7 @@ function CardapioPage() {
         <div className="fixed bottom-0 left-0 right-0 z-40 p-3">
           <Link
             to="/mesa/checkout"
-            className="flex items-center justify-between gap-3 rounded-lg bg-secondary px-5 py-4 font-semibold text-white shadow-2xl"
+            className="flex items-center justify-between gap-3 rounded-full bg-secondary px-5 py-4 font-semibold text-white shadow-2xl"
           >
             <span className="flex items-center gap-2 text-sm">
               &#128179; {t("CARDAPIO_PAYMENT_PENDING", "Pagamento pendente")}
@@ -806,7 +798,7 @@ function GuidedMenu({
                     complements: selectedComplements,
                   })
                 }
-                className="mt-4 w-full rounded-lg bg-primary px-4 py-3 text-sm font-black text-white transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-4 w-full rounded-full bg-primary px-4 py-3 text-sm font-black text-white transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Adicionar acai
               </button>

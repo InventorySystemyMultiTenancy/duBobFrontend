@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 
+import PageHeader from "../components/PageHeader.jsx";
 const todayString = () => new Date().toISOString().slice(0, 10);
 
 const monthStartString = () => {
@@ -89,26 +90,18 @@ export default function AdminExpensesPage() {
   };
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-6 font-body text-primary sm:px-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl text-primary">Gastos</h1>
-          <p className="mt-1 text-sm text-smoke">
-            Lancamentos que descontam direto do lucro no relatorio.
-          </p>
-        </div>
-        <Link
-          to="/admin"
-          className="rounded-xl border border-border-soft bg-white px-4 py-2 text-sm font-semibold text-primary transition hover:border-secondary/40"
-        >
-          &larr; Admin
-        </Link>
-      </header>
-
-      <section className="mt-6 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+    <main className="min-h-screen font-body text-primary">
+      <PageHeader
+        backTo="/admin"
+        backLabel="Painel Admin"
+        title="Gastos"
+        subtitle="Lançamentos que descontam direto do lucro no relatório."
+      />
+      <div className="ui-page">
+      <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
         <form
           onSubmit={onSubmit}
-          className="rounded-3xl border border-border-soft bg-white p-5 shadow-card"
+          className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5"
         >
           <h2 className="font-display text-xl text-primary">Novo gasto</h2>
           <div className="mt-4 grid gap-3">
@@ -203,14 +196,14 @@ export default function AdminExpensesPage() {
             <button
               type="submit"
               disabled={createExpense.isPending}
-              className="rounded-2xl bg-secondary px-4 py-3 text-sm font-bold text-white transition hover:bg-secondary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full bg-secondary px-4 py-3 text-sm font-bold text-white transition hover:bg-secondary/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {createExpense.isPending ? "Salvando..." : "Adicionar gasto"}
             </button>
           </div>
         </form>
 
-        <section className="rounded-3xl border border-border-soft bg-white p-5 shadow-card">
+        <section className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="font-display text-xl text-primary">
@@ -237,7 +230,7 @@ export default function AdminExpensesPage() {
                 type="date"
                 value={from}
                 onChange={(event) => setFrom(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-border-soft bg-accent/35 px-3 py-2 text-sm text-primary outline-none focus:border-secondary/50"
+                className="mt-1 w-full rounded-2xl border border-border-soft bg-accent/35 px-3 py-2 text-sm text-primary outline-none focus:border-secondary/50"
               />
             </label>
             <label className="text-xs font-semibold uppercase tracking-widest text-smoke">
@@ -246,7 +239,7 @@ export default function AdminExpensesPage() {
                 type="date"
                 value={to}
                 onChange={(event) => setTo(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-border-soft bg-accent/35 px-3 py-2 text-sm text-primary outline-none focus:border-secondary/50"
+                className="mt-1 w-full rounded-2xl border border-border-soft bg-accent/35 px-3 py-2 text-sm text-primary outline-none focus:border-secondary/50"
               />
             </label>
           </div>
@@ -306,6 +299,7 @@ export default function AdminExpensesPage() {
           </div>
         </section>
       </section>
+      </div>
     </main>
   );
 }

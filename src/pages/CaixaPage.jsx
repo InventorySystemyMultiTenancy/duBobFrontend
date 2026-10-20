@@ -3,8 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
+import { useAuth } from "../hooks/useAuth.js";
+import { getRoleHome } from "../lib/roleHome.js";
 import { askPaymentMethod } from "../lib/paymentMethodPrompt.js";
 
+import PageHeader from "../components/PageHeader.jsx";
 const currency = (value) =>
   Number(value || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -78,7 +81,7 @@ function PendingOrderCard({ order, onPay, disabled }) {
   const origin = getOrigin(order);
 
   return (
-    <article className="rounded-3xl border border-gold/20 bg-white p-5 shadow-sm">
+    <article className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -137,7 +140,7 @@ function PendingOrderCard({ order, onPay, disabled }) {
         type="button"
         onClick={() => onPay(order)}
         disabled={disabled}
-        className="mt-5 w-full rounded-2xl bg-green-600 px-4 py-4 text-lg font-black uppercase text-white shadow-sm transition hover:bg-green-700 disabled:opacity-50"
+        className="mt-5 w-full rounded-full bg-green-600 px-4 py-4 text-lg font-black uppercase text-white shadow-sm transition hover:bg-green-700 disabled:opacity-50"
       >
         Dar baixa / pago
       </button>
@@ -146,6 +149,7 @@ function PendingOrderCard({ order, onPay, disabled }) {
 }
 
 export default function CaixaPage() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [originFilter, setOriginFilter] = useState("TODOS");
   const [comandaSearch, setComandaSearch] = useState("");
@@ -211,30 +215,18 @@ export default function CaixaPage() {
   const filters = ["TODOS", "Mesa", "Comanda", "Entrega", "Retirada", "Pedido"];
 
   return (
-    <main className="min-h-screen bg-accent px-4 py-6 text-gray-900 sm:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="font-display text-4xl text-gold">Caixa</h1>
-            <p className="mt-1 text-sm text-smoke">
-              Todos os pedidos em aberto para receber e dar baixa.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              to="/comandas"
-              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-600"
-            >
-              Comandas
-            </Link>
-            <Link
-              to="/admin"
-              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-600"
-            >
-              Voltar
-            </Link>
-          </div>
-        </div>
+    <main className="min-h-screen text-gray-900">
+      <PageHeader
+        backTo={getRoleHome(user)}
+        title="Caixa"
+        subtitle="Todos os pedidos em aberto para receber e dar baixa."
+        actions={
+          <Link to="/comandas" className="ui-btn ui-btn-on-dark">
+            Comandas
+          </Link>
+        }
+      />
+      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
 
         <section className="mb-5 grid gap-4 md:grid-cols-2">
           <div className="rounded-3xl border border-red-200 bg-white p-5 shadow-sm">
@@ -245,7 +237,7 @@ export default function CaixaPage() {
               {currency(totals.pendingTotal)}
             </p>
           </div>
-          <div className="rounded-3xl border border-gold/20 bg-white p-5 shadow-sm">
+          <div className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
             <p className="text-sm font-bold uppercase tracking-widest text-smoke">
               Pedidos pendentes
             </p>
@@ -261,7 +253,7 @@ export default function CaixaPage() {
             value={comandaSearch}
             onChange={(event) => setComandaSearch(event.target.value)}
             placeholder="Pesquisar comanda por nome ou número"
-            className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-gold/60"
+            className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-secondary"
           />
           <div className="flex flex-wrap gap-2">
             {filters.map((filter) => (

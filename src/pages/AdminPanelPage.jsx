@@ -17,6 +17,7 @@ import {
 } from "../lib/staffAlertsStore.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
+import PageHeader from "../components/PageHeader.jsx";
 import {
   clearWaiterCalls,
   getWaiterCalls,
@@ -134,27 +135,21 @@ function AdminPanelPage() {
   };
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-gray-900 sm:px-6">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-3xl text-gold">
-            {t("ADMIN_PANEL_TITLE", "Painel Admin")}
-          </h1>
-          <p className="mt-1 text-sm text-smoke">
-            {t(
-              "ADMIN_PANEL_SUBTITLE",
-              "Visão operacional para equipe da Dubob.",
-            )}
-          </p>
-        </div>
-        <Link
-          to="/"
-          className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
-        >
-          {t("ADMIN_PANEL_BACK_HOME", "← Início")}
-        </Link>
-      </div>
+    <main className="min-h-screen text-gray-900">
+      <PageHeader
+        eyebrow={user?.name ? `Olá, ${user.name.split(" ")[0]}` : undefined}
+        title={t("ADMIN_PANEL_TITLE", "Painel Admin")}
+        subtitle={t(
+          "ADMIN_PANEL_SUBTITLE",
+          "Visão operacional para equipe da Dubob.",
+        )}
+        actions={
+          <Link to="/" className="ui-btn ui-btn-on-dark">
+            {t("ADMIN_PANEL_BACK_HOME", "← Início")}
+          </Link>
+        }
+      />
+      <div className="ui-page">
 
       {/* Status bar */}
       <div className="mb-5 flex flex-wrap items-center gap-3">
@@ -176,7 +171,7 @@ function AdminPanelPage() {
           </span>
         )}
         {unreadCount > 0 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-gold/10 px-3 py-1 text-xs font-semibold text-primary">
             🔔{" "}
             {t("ADMIN_PANEL_ALERTS_COUNT", "{{count}} alertas").replace(
               "{{count}}",
@@ -197,13 +192,13 @@ function AdminPanelPage() {
         {isAdmin && (
           <Link
             to="/admin/produtos"
-            className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+            className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
           >
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 text-2xl">
               🍔
             </span>
             <div>
-              <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+              <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
                 {t(
                   "ADMIN_PANEL_CARD_PRODUCTS_TITLE",
                   "Gerenciar Produtos",
@@ -221,13 +216,13 @@ function AdminPanelPage() {
 
         <Link
           to="/admin/vendas"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+          className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-500/15 text-2xl">
             📈
           </span>
           <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+            <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
               {t("ADMIN_PANEL_CARD_SALES_TITLE", "Análise de Vendas")}
             </h2>
             <p className="mt-0.5 text-xs text-smoke">
@@ -241,13 +236,13 @@ function AdminPanelPage() {
 
         <Link
           to="/cozinha"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+          className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-yellow-500/15 text-2xl">
             👨‍🍳
           </span>
           <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+            <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
               {t("ADMIN_PANEL_CARD_KITCHEN_TITLE", "Painel da Cozinha")}
             </h2>
             <p className="mt-0.5 text-xs text-smoke">
@@ -261,13 +256,13 @@ function AdminPanelPage() {
 
         <Link
           to="/admin/historico"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+          className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/15 text-2xl">
             📋
           </span>
           <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+            <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
               {t(
                 "ADMIN_PANEL_CARD_HISTORY_TITLE",
                 "Histórico de Pedidos",
@@ -285,13 +280,13 @@ function AdminPanelPage() {
         {isAdmin && (
           <Link
             to="/admin/usuarios"
-            className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+            className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
           >
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-2xl">
               👤
             </span>
             <div>
-              <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+              <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
                 {t("ADMIN_PANEL_CARD_USERS_TITLE", "Criar Usuário")}
               </h2>
               <p className="mt-0.5 text-xs text-smoke">
@@ -307,13 +302,13 @@ function AdminPanelPage() {
         {isAdmin && (
           <Link
             to="/admin/totens"
-            className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+            className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
           >
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-500/15 text-lg font-black">
               T
             </span>
             <div>
-              <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+              <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
                 Totens
               </h2>
               <p className="mt-0.5 text-xs text-smoke">
@@ -325,13 +320,13 @@ function AdminPanelPage() {
 
         <Link
           to="/admin/gastos"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+          className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-500/15 text-xl font-black">
             -R$
           </span>
           <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+            <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
               Gastos
             </h2>
             <p className="mt-0.5 text-xs text-smoke">
@@ -342,13 +337,13 @@ function AdminPanelPage() {
 
         <Link
           to="/caixa"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+          className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-500/15 text-2xl">
             R$
           </span>
           <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+            <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
               Caixa
             </h2>
             <p className="mt-0.5 text-xs text-smoke">
@@ -358,13 +353,13 @@ function AdminPanelPage() {
         </Link>
         <Link
           to="/atendente"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+          className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-2xl">
             🧾
           </span>
           <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+            <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
               Atendimento
             </h2>
             <p className="mt-0.5 text-xs text-smoke">
@@ -374,13 +369,13 @@ function AdminPanelPage() {
         </Link>
         <Link
           to="/comandas"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+          className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-2xl">
             🎫
           </span>
           <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+            <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
               Comandas
             </h2>
             <p className="mt-0.5 text-xs text-smoke">
@@ -390,13 +385,13 @@ function AdminPanelPage() {
         </Link>
         <Link
           to="/cozinha-delivery"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+          className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 text-2xl">
             🛵
           </span>
           <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+            <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
               Cozinha Delivery
             </h2>
             <p className="mt-0.5 text-xs text-smoke">
@@ -406,13 +401,13 @@ function AdminPanelPage() {
         </Link>
         <Link
           to="/motoboy"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+          className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-lime-500/15 text-2xl">
             🏍️
           </span>
           <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+            <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
               Motoboy
             </h2>
             <p className="mt-0.5 text-xs text-smoke">
@@ -422,13 +417,13 @@ function AdminPanelPage() {
         </Link>
         <Link
           to="/tv"
-          className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+          className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-2xl">
             📺
           </span>
           <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+            <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
               TV / Telão
             </h2>
             <p className="mt-0.5 text-xs text-smoke">
@@ -440,13 +435,13 @@ function AdminPanelPage() {
           <>
             <Link
               to="/admin/mesas"
-              className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+              className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-500/15 text-2xl">
                 🪑
               </span>
               <div>
-                <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+                <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
                   Mesas
                 </h2>
                 <p className="mt-0.5 text-xs text-smoke">
@@ -456,13 +451,13 @@ function AdminPanelPage() {
             </Link>
             <Link
               to="/admin/cardapio-mesa"
-              className="group flex items-start gap-4 rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50 hover:shadow-md"
+              className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-fuchsia-500/15 text-2xl">
                 🔳
               </span>
               <div>
-                <h2 className="font-semibold text-gray-900 group-hover:text-gold">
+                <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
                   QR do Cardápio de Mesa
                 </h2>
                 <p className="mt-0.5 text-xs text-smoke">
@@ -488,7 +483,7 @@ function AdminPanelPage() {
         </p>
       ) : null}
 
-      <section className="mt-6 rounded-3xl border border-secondary/20 bg-lacquer/70 p-4 sm:p-6">
+      <section className="mt-6 rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-display text-xl text-primary">
@@ -505,7 +500,7 @@ function AdminPanelPage() {
           <button
             type="button"
             onClick={handleClearAlerts}
-            className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-smoke transition hover:border-secondary/30 hover:text-secondary"
+            className="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-smoke transition hover:border-secondary/30 hover:text-secondary"
           >
             {t("ADMIN_PANEL_CLEAR_WAITER_CALLS", "Limpar chamadas")}
             {waiterCalls.length ? ` (${waiterCalls.length})` : ""}
@@ -554,9 +549,9 @@ function AdminPanelPage() {
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         {/* Fila Prioritária */}
-        <section className="rounded-3xl border border-gold/20 bg-lacquer/70 p-4 sm:p-6">
+        <section className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-4 sm:p-6">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-display text-xl text-gold">
+            <h2 className="font-display text-xl text-primary">
               🔥{" "}
               {t(
                 "ADMIN_PANEL_PRIORITY_QUEUE_TITLE",
@@ -567,10 +562,10 @@ function AdminPanelPage() {
               <button
                 type="button"
                 onClick={handleDesktopToggle}
-                className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                   desktopEnabled
-                    ? "border-gold/30 text-gold hover:bg-gold/10"
-                    : "border-gray-200 text-smoke hover:border-gold/30 hover:text-gold"
+                    ? "border-primary/10 text-primary hover:bg-primary/5"
+                    : "border-gray-200 text-smoke hover:border-secondary/40 hover:text-secondary"
                 }`}
               >
                 🖥{" "}
@@ -581,7 +576,7 @@ function AdminPanelPage() {
               <button
                 type="button"
                 onClick={handleClearAlerts}
-                className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
+                className="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-smoke transition hover:border-secondary/40 hover:text-secondary"
               >
                 {t("ADMIN_PANEL_MARK_ALERTS_READ", "Limpar alertas")}
                 {unreadCount ? ` (${unreadCount})` : ""}
@@ -621,7 +616,7 @@ function AdminPanelPage() {
         </section>
 
         {/* Mesas e comandas com pagamento pendente */}
-        <section className="rounded-3xl border border-amber-400/30 bg-lacquer/70 p-4 sm:p-6">
+        <section className="rounded-3xl border border-amber-400/30 bg-white p-4 sm:p-6">
           <div className="flex items-center gap-2">
             <h2 className="font-display text-xl text-amber-500">
               💳{" "}
@@ -674,6 +669,7 @@ function AdminPanelPage() {
             ) : null}
           </ul>
         </section>
+      </div>
       </div>
     </main>
   );

@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 
+import PageHeader from "../components/PageHeader.jsx";
 const EMPTY_FORM = { name: "", number: "", terminalId: "" };
 
 function TotemModal({ totem, onClose }) {
@@ -76,7 +77,7 @@ function TotemModal({ totem, onClose }) {
               placeholder="Ex: Totem Balcao"
               value={form.name}
               onChange={set("name")}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+              className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
             />
           </div>
 
@@ -92,7 +93,7 @@ function TotemModal({ totem, onClose }) {
               placeholder="Ex: 1"
               value={form.number}
               onChange={set("number")}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+              className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
             />
             <p className="mt-1 text-[10px] text-gray-400">
               O numero define a rota: numero 1 vira /totem1.
@@ -109,7 +110,7 @@ function TotemModal({ totem, onClose }) {
               placeholder="Ex: PAX_A867EC0ED627"
               value={form.terminalId}
               onChange={set("terminalId")}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 font-mono text-sm focus:border-gold/60 focus:outline-none"
+              className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 font-mono text-sm focus:border-secondary focus:outline-none"
             />
           </div>
 
@@ -117,14 +118,14 @@ function TotemModal({ totem, onClose }) {
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="flex-1 rounded-xl bg-rosso py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+              className="flex-1 rounded-full bg-secondary py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
             >
               {mutation.isPending ? "Salvando..." : "Salvar"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:border-gray-400"
+              className="flex-1 rounded-full border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:border-gray-400"
             >
               Cancelar
             </button>
@@ -179,7 +180,7 @@ function TotemCard({ totem, onEdit }) {
     <div
       className={`rounded-2xl border p-4 transition ${
         totem.isActive
-          ? "border-gold/20 bg-white"
+          ? "border-primary/10 bg-white"
           : "border-gray-200 bg-gray-50 opacity-60"
       }`}
     >
@@ -210,7 +211,7 @@ function TotemCard({ totem, onEdit }) {
         <button
           type="button"
           onClick={copyUrl}
-          className="shrink-0 rounded-xl bg-gold/10 px-3 py-2 text-xs font-semibold text-gold hover:bg-gold/20"
+          className="shrink-0 rounded-full bg-gold/10 px-3 py-2 text-xs font-semibold text-primary hover:bg-gold/20"
         >
           Copiar link
         </button>
@@ -220,7 +221,7 @@ function TotemCard({ totem, onEdit }) {
         <button
           type="button"
           onClick={() => onEdit(totem)}
-          className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400"
+          className="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400"
         >
           Editar
         </button>
@@ -228,7 +229,7 @@ function TotemCard({ totem, onEdit }) {
           type="button"
           onClick={() => toggleMutation.mutate()}
           disabled={toggleMutation.isPending}
-          className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400 disabled:opacity-50"
+          className="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400 disabled:opacity-50"
         >
           {totem.isActive ? "Desativar" : "Ativar"}
         </button>
@@ -236,7 +237,7 @@ function TotemCard({ totem, onEdit }) {
           type="button"
           onClick={handleDelete}
           disabled={deleteMutation.isPending}
-          className="rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-400 hover:border-red-300 hover:text-red-600 disabled:opacity-50"
+          className="rounded-full border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-400 hover:border-red-300 hover:text-red-600 disabled:opacity-50"
         >
           Remover
         </button>
@@ -260,16 +261,23 @@ function AdminTotensPage() {
   });
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-2xl px-4 py-6 text-gray-900 sm:px-6">
-      <div className="mb-6 flex items-center gap-4">
-        <Link
-          to="/admin"
-          className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
-        >
-          Voltar
-        </Link>
-        <h1 className="font-display text-3xl text-gold">Totens</h1>
-      </div>
+    <main className="min-h-screen text-gray-900">
+      <PageHeader
+        backTo="/admin"
+        backLabel="Painel Admin"
+        title="Totens"
+        subtitle="Cada totem tem seu endereço (/totem1, /totem2...) e sua maquininha."
+        actions={
+          <button
+            type="button"
+            onClick={() => setModal({ type: "create" })}
+            className="ui-btn ui-btn-accent"
+          >
+            + Novo totem
+          </button>
+        }
+      />
+      <div className="ui-page max-w-2xl">
 
       <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
         <p className="font-semibold">Rotas separadas por totem</p>
@@ -279,14 +287,6 @@ function AdminTotensPage() {
           <code className="font-mono">/totem2</code>.
         </p>
       </div>
-
-      <button
-        type="button"
-        onClick={() => setModal({ type: "create" })}
-        className="mb-5 w-full rounded-2xl bg-rosso py-3 text-sm font-semibold text-white hover:opacity-90"
-      >
-        + Novo Totem
-      </button>
 
       {isLoading ? (
         <p className="text-center text-sm text-gray-400">
@@ -321,6 +321,7 @@ function AdminTotensPage() {
       {modal?.type === "edit" ? (
         <TotemModal totem={modal.totem} onClose={() => setModal(null)} />
       ) : null}
+      </div>
     </main>
   );
 }

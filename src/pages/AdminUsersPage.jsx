@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 
+import PageHeader from "../components/PageHeader.jsx";
 const ROLES = [
   {
     value: "ATENDENTE",
@@ -157,20 +158,15 @@ function AdminUsersPage() {
   };
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-xl px-4 py-6 text-gray-900 sm:px-6">
-      <div className="mb-6 flex items-center gap-4">
-        <Link
-          to="/admin"
-          className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
-        >
-          {t("ADMIN_USERS_BACK_PANEL", "← Painel Admin")}
-        </Link>
-        <h1 className="font-display text-3xl text-gold">
-          {t("ADMIN_USERS_TITLE", "Criar Usuário")}
-        </h1>
-      </div>
-
-      <div className="rounded-3xl border border-gold/20 bg-white p-6 shadow-sm">
+    <main className="min-h-screen text-gray-900">
+      <PageHeader
+        backTo="/admin"
+        backLabel="Painel Admin"
+        title={t("ADMIN_USERS_TITLE", "Criar Usuário")}
+        subtitle="Escolha o perfil e preencha os dados de acesso."
+      />
+      <div className="ui-page max-w-xl">
+      <div className="ui-card p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Role selector */}
           <div>
@@ -185,9 +181,9 @@ function AdminUsersPage() {
                   onClick={() =>
                     setForm((prev) => ({ ...prev, role: r.value }))
                   }
-                  className={`rounded-2xl border py-3 text-sm font-semibold transition ${
+                  className={`rounded-full border py-3 text-sm font-semibold transition ${
                     form.role === r.value
-                      ? "border-rosso bg-rosso text-white shadow"
+                      ? "border-secondary bg-secondary text-white shadow"
                       : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-400"
                   }`}
                 >
@@ -210,7 +206,7 @@ function AdminUsersPage() {
               placeholder={t("ADMIN_USERS_NAME_PLACEHOLDER", "Ex: João Silva")}
               value={form.name}
               onChange={set("name")}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+              className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
             />
           </div>
 
@@ -224,7 +220,7 @@ function AdminUsersPage() {
               placeholder={t("ADMIN_USERS_EMAIL_PLACEHOLDER", "ex@email.com")}
               value={form.email}
               onChange={set("email")}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+              className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
             />
           </div>
 
@@ -241,7 +237,7 @@ function AdminUsersPage() {
               )}
               value={form.phone}
               onChange={set("phone")}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+              className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
             />
             <p className="mt-1 text-xs text-gray-400">
               {t(
@@ -267,7 +263,7 @@ function AdminUsersPage() {
                 )}
                 value={form.password}
                 onChange={set("password")}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 pr-10 text-sm focus:border-gold/60 focus:outline-none"
+                className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 pr-10 text-sm focus:border-secondary focus:outline-none"
               />
               <button
                 type="button"
@@ -282,7 +278,7 @@ function AdminUsersPage() {
           <button
             type="submit"
             disabled={createMutation.isPending}
-            className="w-full rounded-2xl bg-rosso py-3.5 text-sm font-bold text-white shadow transition hover:bg-ember disabled:opacity-50"
+            className="w-full rounded-full bg-secondary py-3.5 text-sm font-bold text-white shadow transition hover:bg-ember disabled:opacity-50"
           >
             {createMutation.isPending
               ? t("ADMIN_USERS_CREATING", "Criando...")
@@ -336,6 +332,7 @@ function AdminUsersPage() {
           </button>
         </div>
       )}
+      </div>
     </main>
   );
 }

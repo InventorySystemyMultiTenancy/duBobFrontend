@@ -2,9 +2,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
+import { useAuth } from "../hooks/useAuth.js";
 import { askPaymentMethod } from "../lib/paymentMethodPrompt.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 
+import PageHeader from "../components/PageHeader.jsx";
 const currency = (v) =>
   Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -40,6 +42,7 @@ const getWazeUrl = (order) => {
 
 function MotoboyPage() {
   const { t } = useTranslation();
+  const { user, logout } = useAuth();
   const [deliveryCodes, setDeliveryCodes] = useState({});
   const [confirmingByOrderId, setConfirmingByOrderId] = useState({});
   const [markingPaidByOrderId, setMarkingPaidByOrderId] = useState({});
@@ -119,19 +122,33 @@ function MotoboyPage() {
   const orders = data ?? [];
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-2xl px-4 py-6">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-gray-900">
-          🛵 {t("MOTOBOY_TITLE", "Entregas")}
-        </h1>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-gray-400"
-        >
-          {t("MOTOBOY_REFRESH", "Atualizar")}
-        </button>
-      </div>
+    <main className="min-h-screen">
+      <PageHeader
+        eyebrow={user?.name ? `Olá, ${user.name.split(" ")[0]}` : undefined}
+        title={`🛵 ${t("MOTOBOY_TITLE", "Entregas")}`}
+        subtitle="Pedidos prontos atribuídos a você."
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="ui-btn ui-btn-accent"
+            >
+              {t("MOTOBOY_REFRESH", "Atualizar")}
+            </button>
+            {user?.role === "MOTOBOY" && (
+              <button
+                type="button"
+                onClick={logout}
+                className="ui-btn ui-btn-on-dark"
+              >
+                Sair
+              </button>
+            )}
+          </>
+        }
+      />
+      <div className="ui-page max-w-2xl">
 
       {isLoading && (
         <p className="mt-8 text-center text-sm text-gray-500">
@@ -170,7 +187,7 @@ function MotoboyPage() {
         {orders.map((order) => (
           <article
             key={order.id}
-            className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm"
+            className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5"
           >
             {/* Header */}
             <div className="flex items-start justify-between gap-2">
@@ -240,7 +257,7 @@ function MotoboyPage() {
                     type="button"
                     onClick={() => handleMarkAsPaid(order.id)}
                     disabled={markingPaidByOrderId[order.id]}
-                    className="rounded-xl bg-emerald-700 px-3 py-1 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-full bg-emerald-700 px-3 py-1 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {markingPaidByOrderId[order.id]
                       ? t("MOTOBOY_SAVING", "Salvando...")
@@ -257,7 +274,7 @@ function MotoboyPage() {
                   href={getGoogleMapsUrl(order)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 py-3 text-sm font-bold text-blue-700 transition hover:bg-blue-100"
+                  className="flex items-center justify-center gap-2 rounded-full border border-blue-200 bg-blue-50 py-3 text-sm font-bold text-blue-700 transition hover:bg-blue-100"
                 >
                   <svg
                     className="h-4 w-4"
@@ -272,7 +289,7 @@ function MotoboyPage() {
                   href={getWazeUrl(order)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-cyan-200 bg-cyan-50 py-3 text-sm font-bold text-cyan-700 transition hover:bg-cyan-100"
+                  className="flex items-center justify-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 py-3 text-sm font-bold text-cyan-700 transition hover:bg-cyan-100"
                 >
                   <svg
                     className="h-4 w-4"
@@ -290,7 +307,7 @@ function MotoboyPage() {
                   href={`https://www.google.com/maps/search/${encodeURIComponent(order.deliveryAddress)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 py-3 text-sm font-bold text-blue-700 transition hover:bg-blue-100"
+                  className="flex w-full items-center justify-center gap-2 rounded-full border border-blue-200 bg-blue-50 py-3 text-sm font-bold text-blue-700 transition hover:bg-blue-100"
                 >
                   {t(
                     "MOTOBOY_SEARCH_ADDRESS",
@@ -325,7 +342,7 @@ function MotoboyPage() {
                       }));
                     }}
                     placeholder={t("MOTOBOY_CODE_PLACEHOLDER", "Ex.: 1234")}
-                    className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm outline-none ring-blue-500 transition focus:ring-2"
+                    className="w-full rounded-2xl border border-gray-300 bg-white px-3 py-2 text-sm outline-none ring-blue-500 transition focus:ring-2"
                   />
                   <button
                     type="button"
@@ -334,7 +351,7 @@ function MotoboyPage() {
                       (deliveryCodes[order.id] ?? "").length !== 4
                     }
                     onClick={() => handleConfirmDelivery(order.id)}
-                    className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {confirmingByOrderId[order.id]
                       ? t("MOTOBOY_CONFIRMING", "Confirmando...")
@@ -354,6 +371,7 @@ function MotoboyPage() {
             )}
           </article>
         ))}
+      </div>
       </div>
     </main>
   );

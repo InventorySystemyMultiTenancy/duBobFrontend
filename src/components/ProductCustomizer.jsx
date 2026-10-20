@@ -71,7 +71,7 @@ function ProductCustomizer({ product, addonsOptions = DEFAULT_ADDONS, removalOpt
   };
 
   return (
-    <section className="rounded-xl border border-border-soft bg-white p-5 text-text-main shadow-card-hover sm:p-6">
+    <section className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5 text-text-main shadow-card-hover sm:p-6">
       <header className="mb-5 border-b border-border-soft pb-4">
         <h2 className="font-display text-xl font-bold text-primary">
           {product?.nome || product?.name}
@@ -150,7 +150,7 @@ function ProductCustomizer({ product, addonsOptions = DEFAULT_ADDONS, removalOpt
             value={observation}
             onChange={(e) => setObservation(e.target.value)}
             placeholder="Ex: sem cebola, molho separado..."
-            className="w-full resize-none rounded-lg border border-border-soft bg-accent/30 px-3 py-2 text-sm text-text-main outline-none placeholder:text-text-muted/50 focus:border-secondary/50"
+            className="w-full resize-none rounded-2xl border border-border-soft bg-accent/30 px-3 py-2 text-sm text-text-main outline-none placeholder:text-text-muted/50 focus:border-secondary/50"
           />
         </div>
       </div>
@@ -183,7 +183,7 @@ function ProductCustomizer({ product, addonsOptions = DEFAULT_ADDONS, removalOpt
           type="button"
           onClick={handleAddToCart}
           disabled={!product?.id}
-          className="mt-4 w-full rounded-lg bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-4 w-full rounded-full bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
         >
           Adicionar ao Pedido
         </button>

@@ -1,16 +1,14 @@
 import { Link } from "react-router-dom";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import CartDrawer from "../components/CartDrawer.jsx";
 import Navbar from "../components/Navbar.jsx";
+import PhotoCarousel from "../components/PhotoCarousel.jsx";
 import { useTranslation } from "../context/I18nContext.jsx";
 
 const WHATSAPP_NUMBER = String(
   import.meta.env.VITE_DUBOB_WHATSAPP || "5543996714390",
 ).replace(/\D/g, "");
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
-
-// Alinha a galeria com o conteúdo (max-w-6xl) e deixa as fotos vazarem à direita.
-const GALLERY_GUTTER = "max(1.25rem, calc((100vw - 72rem) / 2 + 2rem))";
 
 const GALLERY = [
   { image: "/home/g1.webp", title: "Açaí com frutas e granola" },
@@ -207,7 +205,6 @@ function Lightbox({ items, index, onClose, onNavigate }) {
 
 function HomePage() {
   const { t } = useTranslation();
-  const galleryRef = useRef(null);
   const [lightbox, setLightbox] = useState(null); // { items, index }
 
   const openLightbox = (items, index) => setLightbox({ items, index });
@@ -224,12 +221,6 @@ function HomePage() {
         : current,
     );
   }, []);
-
-  const scrollGallery = (direction) => {
-    const track = galleryRef.current;
-    if (!track) return;
-    track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: "smooth" });
-  };
 
   return (
     <main className="min-h-screen bg-white font-body text-text-main">
@@ -416,60 +407,18 @@ function HomePage() {
       {/* ── Galeria ──────────────────────────────────────────── */}
       <section className="bg-accent/60 py-14 sm:py-20">
         <div className="mx-auto max-w-6xl px-5 sm:px-8">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="font-display text-3xl font-bold text-primary sm:text-4xl">
-                {t("HOME_GALLERY_TITLE", "Dá uma olhada")}
-              </h2>
-              <p className="mt-2 text-base text-text-muted">
-                {t("HOME_GALLERY_DESC", "Fotos reais dos nossos copos.")}
-              </p>
-            </div>
-            <div className="hidden gap-2 sm:flex">
-              <button
-                type="button"
-                onClick={() => scrollGallery(-1)}
-                aria-label="Fotos anteriores"
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-primary shadow-card transition hover:bg-primary hover:text-white"
-              >
-                <ChevronIcon direction="left" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollGallery(1)}
-                aria-label="Próximas fotos"
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-primary shadow-card transition hover:bg-primary hover:text-white"
-              >
-                <ChevronIcon />
-              </button>
-            </div>
+          <h2 className="font-display text-3xl font-bold text-primary sm:text-4xl">
+            {t("HOME_GALLERY_TITLE", "Dá uma olhada")}
+          </h2>
+          <p className="mt-2 text-base text-text-muted">
+            {t("HOME_GALLERY_DESC", "Fotos reais dos nossos copos.")}
+          </p>
+          <div className="mt-8">
+            <PhotoCarousel
+              items={GALLERY}
+              onSelect={(index) => openLightbox(GALLERY, index)}
+            />
           </div>
-        </div>
-
-        <div
-          ref={galleryRef}
-          className="mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{
-            paddingInline: GALLERY_GUTTER,
-            scrollPaddingInline: GALLERY_GUTTER,
-          }}
-        >
-          {GALLERY.map((item, index) => (
-            <button
-              key={item.image}
-              type="button"
-              onClick={() => openLightbox(GALLERY, index)}
-              aria-label={`Ampliar foto: ${item.title}`}
-              className="group relative w-60 shrink-0 snap-start overflow-hidden rounded-3xl bg-white shadow-card focus:outline-none focus-visible:ring-4 focus-visible:ring-secondary/40 sm:w-72"
-            >
-              <img
-                src={item.image}
-                alt={item.title}
-                loading="lazy"
-                className="aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-105"
-              />
-            </button>
-          ))}
         </div>
       </section>
 

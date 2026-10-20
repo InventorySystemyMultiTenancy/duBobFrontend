@@ -11,7 +11,7 @@ function OrderTracker({ status = "RECEBIDO" }) {
   const isCancelled = status === "CANCELADO";
 
   return (
-    <section className="rounded-3xl border border-gold/20 bg-lacquer/70 p-4 sm:p-6">
+    <section className="rounded-3xl border border-primary/10 bg-white p-4 sm:p-6">
       <h3 className="font-display text-xl text-gold">Timeline do Pedido</h3>
 
       {isCancelled ? (

@@ -8,6 +8,7 @@ import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 import { TOTEM_ID_KEY, TOTEM_NAME_KEY, TOTEM_SLUG_KEY } from "../lib/totemMode.js";
 
+import PageHeader from "../components/PageHeader.jsx";
 const POLL_INTERVAL_MS = 4000;
 
 const currency = (v) =>
@@ -346,7 +347,7 @@ function CheckoutPage() {
               clearCart();
               navigate(currentTotemPath, { replace: true });
             }}
-            className="mt-8 rounded-2xl bg-secondary px-10 py-5 text-xl font-black uppercase tracking-wide text-white transition hover:bg-primary"
+            className="mt-8 rounded-full bg-secondary px-10 py-5 text-xl font-black uppercase tracking-wide text-white transition hover:bg-primary"
           >
             Novo atendimento
           </button>
@@ -359,10 +360,10 @@ function CheckoutPage() {
   if (waitingOrderId) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-ink px-4 text-gray-900">
-        <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-xl">
+        <div className="w-full max-w-md rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-8 text-center shadow-xl">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gold/10">
             <svg
-              className="h-8 w-8 animate-spin text-gold"
+              className="h-8 w-8 animate-spin text-primary"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -382,7 +383,7 @@ function CheckoutPage() {
               />
             </svg>
           </div>
-          <h1 className="mt-5 font-display text-2xl text-gold">
+          <h1 className="mt-5 font-display text-2xl text-primary">
             {isTotemMode
               ? "Aguardando pagamento na maquininha"
               : t("CHECKOUT_WAITING_TITLE", "Aguardando pagamento")}
@@ -431,21 +432,21 @@ function CheckoutPage() {
           </div>
 
           {!items.length ? (
-            <div className="mx-auto w-full max-w-xl rounded-2xl border border-border-soft bg-white p-8 text-center shadow-card">
+            <div className="mx-auto w-full max-w-xl rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-8 text-center">
               <p className="text-xl font-bold text-primary">
                 Seu carrinho esta vazio.
               </p>
               <button
                 type="button"
                 onClick={() => navigate("/cardapio")}
-                className="mt-6 rounded-2xl bg-secondary px-8 py-4 text-lg font-black text-white transition hover:bg-primary"
+                className="mt-6 rounded-full bg-secondary px-8 py-4 text-lg font-black text-white transition hover:bg-primary"
               >
                 Voltar ao cardapio
               </button>
             </div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-              <section className="rounded-2xl border border-border-soft bg-white p-6 shadow-card">
+              <section className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-6">
                 <h2 className="text-3xl font-black">Itens escolhidos</h2>
                 <div className="mt-5 space-y-3">
                   {items.map((item) => (
@@ -473,7 +474,7 @@ function CheckoutPage() {
                 </div>
               </section>
 
-              <aside className="rounded-2xl border border-border-soft bg-white p-6 shadow-card">
+              <aside className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-6">
                 <h2 className="text-3xl font-black">Resumo</h2>
                 <div className="mt-5 space-y-3 text-lg">
                   <div className="flex justify-between text-text-muted">
@@ -504,7 +505,7 @@ function CheckoutPage() {
                   type="button"
                   disabled={!canConfirm}
                   onClick={handleTotemTerminalCheckout}
-                  className="mt-6 w-full rounded-2xl bg-secondary px-6 py-5 text-xl font-black uppercase tracking-wide text-white shadow-card transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-6 w-full rounded-full bg-secondary px-6 py-5 text-xl font-black uppercase tracking-wide text-white shadow-card transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isLoading ? "Enviando para maquininha..." : "Pagar"}
                 </button>
@@ -512,7 +513,7 @@ function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => navigate("/cardapio")}
-                  className="mt-3 w-full rounded-2xl border border-border-soft bg-white px-6 py-4 text-lg font-black text-primary transition hover:border-secondary"
+                  className="mt-3 w-full rounded-full border border-border-soft bg-white px-6 py-4 text-lg font-black text-primary transition hover:border-secondary"
                 >
                   Voltar e alterar
                 </button>
@@ -525,35 +526,51 @@ function CheckoutPage() {
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-4xl px-4 py-6 text-gray-900 sm:px-6">
-      <div className="mb-6 flex items-center gap-4">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
-        >
-          {t("BTN_BACK", "← Voltar")}
-        </button>
-        <h1 className="font-display text-3xl text-gold">Checkout</h1>
-      </div>
-
+    <main className="min-h-screen text-gray-900">
+      <PageHeader
+        eyebrow="Quase lá"
+        title="Finalizar pedido"
+        subtitle="Escolha entrega ou retirada e pague com segurança."
+        actions={
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="ui-btn ui-btn-on-dark"
+          >
+            {t("BTN_BACK", "← Voltar")}
+          </button>
+        }
+      />
+      <div className="ui-page max-w-4xl">
       {!items.length ? (
-        <p className="mt-6 rounded-2xl border border-gray-200 bg-gray-100 p-4 text-sm text-smoke">
-          {t("CHECKOUT_EMPTY", "Seu carrinho está vazio.")}
-        </p>
+        <div className="ui-card p-8 text-center">
+          <p className="font-display text-2xl font-semibold text-primary">
+            {t("CHECKOUT_EMPTY", "Seu carrinho está vazio.")}
+          </p>
+          <p className="mt-2 text-sm text-text-muted">
+            Monte seu açaí ou milkshake e volte aqui para finalizar.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/cardapio")}
+            className="ui-btn ui-btn-primary ui-btn-lg mt-6"
+          >
+            Ver cardápio
+          </button>
+        </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Left: Address + Freight */}
           <section className="space-y-4">
-            <div className="rounded-3xl border border-gold/20 bg-white p-5">
+            <div className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
               {/* Tipo de entrega */}
               <div className="mb-5 flex gap-3">
                 <button
                   type="button"
                   onClick={() => setDeliveryType("entrega")}
-                  className={`flex-1 rounded-2xl border py-3 text-sm font-bold transition ${
+                  className={`flex-1 rounded-full border py-3 text-sm font-bold transition ${
                     deliveryType === "entrega"
-                      ? "border-rosso bg-rosso text-white"
+                      ? "border-secondary bg-secondary text-white"
                       : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"
                   }`}
                 >
@@ -562,7 +579,7 @@ function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => setDeliveryType("retirada")}
-                  className={`flex-1 rounded-2xl border py-3 text-sm font-bold transition ${
+                  className={`flex-1 rounded-full border py-3 text-sm font-bold transition ${
                     deliveryType === "retirada"
                       ? "border-green-600 bg-green-600 text-white"
                       : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"
@@ -586,7 +603,7 @@ function CheckoutPage() {
                 </div>
               ) : (
                 <>
-                  <h2 className="font-display text-xl text-gold">
+                  <h2 className="font-display text-xl text-primary">
                     {t("CHECKOUT_ADDRESS_TITLE", "Endereço de Entrega")}
                   </h2>
 
@@ -603,7 +620,7 @@ function CheckoutPage() {
                         value={cep}
                         onChange={handleCepChange}
                         maxLength={9}
-                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                        className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
                       />
                     </div>
 
@@ -620,7 +637,7 @@ function CheckoutPage() {
                           setNumero(e.target.value);
                           setFreight(null);
                         }}
-                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                        className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
                       />
                     </div>
 
@@ -634,7 +651,7 @@ function CheckoutPage() {
                         placeholder="Preenchido automaticamente pelo CEP"
                         value={rua}
                         onChange={(e) => setRua(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                        className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
                       />
                     </div>
 
@@ -648,7 +665,7 @@ function CheckoutPage() {
                         placeholder="Apto, bloco, casa..."
                         value={complemento}
                         onChange={(e) => setComplemento(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                        className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
                       />
                     </div>
 
@@ -662,7 +679,7 @@ function CheckoutPage() {
                         placeholder="Preenchido pelo CEP"
                         value={bairro}
                         onChange={(e) => setBairro(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                        className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
                       />
                     </div>
 
@@ -676,7 +693,7 @@ function CheckoutPage() {
                         placeholder="Ex: próximo ao mercado, portão azul..."
                         value={referencia}
                         onChange={(e) => setReferencia(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                        className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
                       />
                     </div>
 
@@ -690,7 +707,7 @@ function CheckoutPage() {
                         placeholder="Ex: sem cebola, borda recheada..."
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                        className="w-full resize-none rounded-2xl border border-gray-200 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
                       />
                     </div>
                   </div>
@@ -700,7 +717,7 @@ function CheckoutPage() {
                     type="button"
                     disabled={freightLoading}
                     onClick={calculateFreight}
-                    className="mt-4 w-full rounded-2xl bg-rosso py-3 text-sm font-bold text-white transition hover:bg-ember disabled:opacity-50"
+                    className="mt-4 w-full rounded-full bg-secondary py-3 text-sm font-bold text-white transition hover:bg-ember disabled:opacity-50"
                   >
                     {freightLoading
                       ? t("BTN_CALC_FREIGHT_LOADING", "Calculando frete...")
@@ -737,8 +754,8 @@ function CheckoutPage() {
 
           {/* Right: Summary + Payment */}
           <section className="space-y-4">
-            <div className="rounded-3xl border border-gold/20 bg-white p-5">
-              <h2 className="font-display text-xl text-gold">Resumo</h2>
+            <div className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
+              <h2 className="font-display text-xl text-primary">Resumo</h2>
               <ul className="mt-4 space-y-2 text-sm">
                 {items.map((item) => (
                   <li
@@ -751,7 +768,7 @@ function CheckoutPage() {
                       </p>
                       <p className="text-xs text-smoke">{item.description}</p>
                     </div>
-                    <p className="shrink-0 font-semibold text-gold">
+                    <p className="shrink-0 font-semibold text-primary">
                       x{item.quantity}
                     </p>
                   </li>
@@ -776,22 +793,22 @@ function CheckoutPage() {
                         : "— calcule o frete"}
                   </span>
                 </div>
-                <div className="flex justify-between pt-1 text-base font-bold text-gold">
+                <div className="flex justify-between pt-1 text-base font-bold text-primary">
                   <span>Total</span>
                   <span>{currency(totalWithFreight)}</span>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-3xl border border-gold/20 bg-white p-5">
-              <h2 className="font-display text-xl text-gold">Pagamento</h2>
+            <div className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
+              <h2 className="font-display text-xl text-primary">Pagamento</h2>
               <div className="mt-3 flex rounded-2xl border border-gray-200 bg-gray-50 p-1">
                 <button
                   type="button"
                   onClick={() => setPaymentMode("online")}
-                  className={`flex-1 rounded-xl py-3 text-sm font-semibold transition ${
+                  className={`flex-1 rounded-full py-3 text-sm font-semibold transition ${
                     paymentMode === "online"
-                      ? "bg-rosso text-white shadow"
+                      ? "bg-secondary text-white shadow"
                       : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
@@ -800,7 +817,7 @@ function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentMode("presencial")}
-                  className={`flex-1 rounded-xl py-3 text-sm font-semibold transition ${
+                  className={`flex-1 rounded-full py-3 text-sm font-semibold transition ${
                     paymentMode === "presencial"
                       ? "bg-white text-gray-900 shadow"
                       : "text-gray-500 hover:text-gray-700"
@@ -811,7 +828,7 @@ function CheckoutPage() {
               </div>
 
               {paymentMode === "online" ? (
-                <div className="mt-3 rounded-2xl border border-gold/20 bg-gray-50 p-4">
+                <div className="mt-3 rounded-2xl border border-primary/10 bg-gray-50 p-4">
                   <img
                     src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-navigation/6.6.71/mercadopago/logo__large@2x.png"
                     alt="Mercado Pago"
@@ -843,7 +860,7 @@ function CheckoutPage() {
                   ? handleOnlineCheckout
                   : handlePresencialCheckout
               }
-              className="w-full rounded-2xl bg-rosso px-5 py-4 text-base font-bold text-white shadow-md transition hover:bg-ember disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-full bg-secondary px-5 py-4 text-base font-bold text-white shadow-md transition hover:bg-ember disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading
                 ? "Processando..."
@@ -854,6 +871,7 @@ function CheckoutPage() {
           </section>
         </div>
       )}
+      </div>
     </main>
   );
 }

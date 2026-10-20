@@ -6,6 +6,7 @@ import Swal from "sweetalert2";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 
+import PageHeader from "../components/PageHeader.jsx";
 const emptyForm = (initialValues = {}) => ({
   name: "",
   description: "",
@@ -499,8 +500,8 @@ function ProductModal({
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4">
       <div className="fixed inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative z-10 my-auto w-full max-w-2xl rounded-3xl border border-border-soft bg-white p-5 shadow-2xl sm:p-6">
-        <h2 className="font-display text-2xl text-gold">
+      <div className="relative z-10 my-auto w-full max-w-2xl rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5 shadow-2xl sm:p-6">
+        <h2 className="font-display text-2xl text-primary">
           {isEdit
             ? t("ADMIN_PRODUCTS_EDIT_TITLE", "Editar Produto")
             : t("ADMIN_PRODUCTS_NEW_TITLE", "Novo Produto")}
@@ -515,7 +516,7 @@ function ProductModal({
             <input
               value={form.name}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-              className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
+              className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-secondary"
               placeholder={t(
                 "ADMIN_PRODUCTS_NAME_PLACEHOLDER",
                 "Ex: Calabresa Imperial",
@@ -537,7 +538,7 @@ function ProductModal({
                 setForm((p) => ({ ...p, description: e.target.value }))
               }
               rows={2}
-              className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
+              className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-secondary"
               placeholder={t(
                 "ADMIN_PRODUCTS_DESCRIPTION_PLACEHOLDER",
                 "Breve descricao do sabor...",
@@ -556,7 +557,7 @@ function ProductModal({
               onChange={(e) =>
                 setForm((p) => ({ ...p, category: e.target.value }))
               }
-              className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
+              className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-secondary"
               placeholder={t(
                 "ADMIN_PRODUCTS_CATEGORY_PLACEHOLDER",
                 "Ex: Doce, Salgado, Bebidas...",
@@ -582,8 +583,8 @@ function ProductModal({
                     key={day.value}
                     className={`flex cursor-pointer items-center justify-center rounded-xl border px-2 py-2 text-xs font-semibold transition ${
                       checked
-                        ? "border-gold bg-gold/15 text-gold"
-                        : "border-gray-200 bg-gray-100 text-gray-700 hover:border-gold/40"
+                        ? "border-secondary bg-secondary text-white"
+                        : "border-gray-200 bg-gray-100 text-gray-700 hover:border-secondary/40"
                     }`}
                   >
                     <input
@@ -614,7 +615,7 @@ function ProductModal({
               onChange={(e) =>
                 setForm((p) => ({ ...p, imageUrl: e.target.value }))
               }
-              className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
+              className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-secondary"
               placeholder="https://..."
             />
             {errors.imageUrl && (
@@ -660,7 +661,7 @@ function ProductModal({
               {form.sizes.map((sizeRow, index) => (
                 <div
                   key={`${sizeRow.size}-${index}`}
-                  className="rounded-xl border border-border-soft bg-white p-3 shadow-sm"
+                  className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-3"
                 >
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[150px_minmax(0,1fr)_120px_120px]">
                     <div>
@@ -670,7 +671,7 @@ function ProductModal({
                       <select
                         value={sizeRow.size}
                         onChange={(e) => updateSizeRow(index, { size: e.target.value })}
-                        className="w-full min-w-0 rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
+                        className="w-full min-w-0 rounded-2xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
                       >
                         {SIZE_OPTIONS.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -692,7 +693,7 @@ function ProductModal({
                       <input
                         value={sizeRow.label}
                         onChange={(e) => updateSizeRow(index, { label: e.target.value })}
-                        className="w-full min-w-0 rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
+                        className="w-full min-w-0 rounded-2xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
                         placeholder="Ex: P - 300 ml"
                       />
                     </div>
@@ -707,7 +708,7 @@ function ProductModal({
                         min="0"
                         value={sizeRow.price}
                         onChange={(e) => updateSizeRow(index, { price: e.target.value })}
-                        className="w-full min-w-0 rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
+                        className="w-full min-w-0 rounded-2xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
                         placeholder="0,00"
                       />
                       {errors[`price_${index}`] && (
@@ -727,7 +728,7 @@ function ProductModal({
                         min="0"
                         value={sizeRow.costPrice}
                         onChange={(e) => updateSizeRow(index, { costPrice: e.target.value })}
-                        className="w-full min-w-0 rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
+                        className="w-full min-w-0 rounded-2xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
                         placeholder="0,00"
                       />
                       {errors[`cost_${index}`] && (
@@ -757,14 +758,14 @@ function ProductModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-2xl border border-gray-200 py-3 text-sm text-smoke transition hover:border-gray-400"
+              className="flex-1 rounded-full border border-gray-200 py-3 text-sm text-smoke transition hover:border-gray-400"
             >
               {t("BTN_CANCEL", "Cancelar")}
             </button>
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="flex-1 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-400 py-3 text-sm font-bold text-[#11161d] transition hover:opacity-90 disabled:opacity-50"
+              className="flex-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 py-3 text-sm font-bold text-[#11161d] transition hover:opacity-90 disabled:opacity-50"
             >
               {mutation.isPending
                 ? t("ADMIN_PRODUCTS_SAVING", "Salvando...")
@@ -965,7 +966,7 @@ function ProductCard({ product, onEdit }) {
     <article
       className={`rounded-2xl border p-4 transition-all duration-200 ${
         product.isActive
-          ? "border-gray-200 bg-lacquer/70"
+          ? "border-gray-200 bg-white"
           : "border-gray-100 bg-gray-50 opacity-50"
       }`}
     >
@@ -1040,7 +1041,7 @@ function ProductCard({ product, onEdit }) {
         <button
           type="button"
           onClick={() => onEdit(product)}
-          className="rounded-2xl border border-gold/30 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10"
+          className="rounded-full border border-primary/10 py-2 text-xs font-semibold text-primary transition hover:bg-primary/5"
         >
           {t("EDIT", "Editar")}
         </button>
@@ -1048,7 +1049,7 @@ function ProductCard({ product, onEdit }) {
           type="button"
           disabled={toggleActive.isPending}
           onClick={() => toggleActive.mutate()}
-          className={`rounded-2xl border py-2 text-xs font-semibold transition ${
+          className={`rounded-full border py-2 text-xs font-semibold transition ${
             product.isActive
               ? "border-red-500/30 text-red-400 hover:bg-red-500/10"
               : "border-green-500/30 text-green-400 hover:bg-green-500/10"
@@ -1063,7 +1064,7 @@ function ProductCard({ product, onEdit }) {
             type="button"
             disabled={deleteProduct.isPending}
             onClick={confirmDeleteProduct}
-            className="rounded-2xl border border-red-500/40 py-2 text-xs font-semibold text-red-500 transition hover:bg-red-500/10 disabled:opacity-50"
+            className="rounded-full border border-red-500/40 py-2 text-xs font-semibold text-red-500 transition hover:bg-red-500/10 disabled:opacity-50"
           >
             {t("ADMIN_PRODUCTS_DELETE", "Excluir")}
           </button>
@@ -1154,23 +1155,13 @@ function AdminProductsPage() {
   });
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-gray-900 sm:px-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-3xl text-gold">
-            {t("ADMIN_PRODUCTS_TITLE", "Produtos")}
-          </h1>
-          <p className="mt-1 text-sm text-smoke">
-            {t("ADMIN_PRODUCTS_SUBTITLE", "Gerencie o cardapio da Dubob")}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/admin/produtos"
-            className="rounded-xl border border-gray-200 px-3 py-2 text-sm transition hover:border-gold/30"
-          >
-            &larr; Produtos
-          </Link>
+    <main className="min-h-screen text-gray-900">
+      <PageHeader
+        backTo="/admin/produtos"
+        backLabel="Cardápio"
+        title={t("ADMIN_PRODUCTS_TITLE", "Produtos")}
+        subtitle={t("ADMIN_PRODUCTS_SUBTITLE", "Gerencie o cardápio da Dubob")}
+        actions={
           <button
             type="button"
             onClick={() =>
@@ -1179,12 +1170,13 @@ function AdminProductsPage() {
                 preset: activeSectionConfig.preset ?? {},
               })
             }
-            className="rounded-2xl bg-amber-400 px-4 py-2 text-sm font-bold text-[#11161d] transition hover:bg-amber-300"
+            className="ui-btn ui-btn-accent"
           >
             + {t("ADMIN_PRODUCTS_NEW_BUTTON", "Novo Produto")}
           </button>
-        </div>
-      </header>
+        }
+      />
+      <div className="ui-page">
 
       {isLoading && (
         <div className="mt-6 grid animate-pulse gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -1202,7 +1194,7 @@ function AdminProductsPage() {
 
       {!isLoading && !isError && (
         <>
-          <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <section className="mt-6 rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-4">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-smoke">
@@ -1220,7 +1212,7 @@ function AdminProductsPage() {
                   type="button"
                   disabled={importDefaults.isPending}
                   onClick={() => importDefaults.mutate()}
-                  className="shrink-0 rounded-xl bg-secondary px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
+                  className="shrink-0 rounded-full bg-secondary px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {importDefaults.isPending
                     ? "Importando..."
@@ -1237,8 +1229,8 @@ function AdminProductsPage() {
                   onClick={() => setActiveSection(section.id)}
                   className={`rounded-xl border px-3 py-3 text-left transition ${
                     activeSection === section.id
-                      ? "border-gold bg-gold/15 text-gold"
-                      : "border-gray-200 bg-gray-50 text-gray-800 hover:border-gold/40"
+                      ? "border-secondary bg-secondary text-white"
+                      : "border-gray-200 bg-gray-50 text-gray-800 hover:border-secondary/40"
                   }`}
                 >
                   <span className="block text-sm font-bold">
@@ -1288,6 +1280,7 @@ function AdminProductsPage() {
           initialValues={isNewModal ? modal.preset : {}}
         />
       )}
+      </div>
     </main>
   );
 }

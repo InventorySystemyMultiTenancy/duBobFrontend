@@ -72,7 +72,7 @@ export default function LanguageSelector() {
               }}
               className={`flex cursor-pointer items-center gap-2.5 px-3 py-2.5 text-sm transition-colors hover:bg-gray-50 ${
                 lang.code === locale
-                  ? "font-semibold text-rosso"
+                  ? "font-semibold text-secondary"
                   : "text-gray-700"
               }`}
             >
@@ -80,7 +80,7 @@ export default function LanguageSelector() {
               <span>{lang.label}</span>
               {lang.code === locale && (
                 <svg
-                  className="ml-auto h-4 w-4 text-rosso"
+                  className="ml-auto h-4 w-4 text-secondary"
                   viewBox="0 0 20 20"
                   fill="currentColor"
                   aria-hidden="true"
