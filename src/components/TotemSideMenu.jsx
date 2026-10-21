@@ -8,7 +8,7 @@ import { TOTEM_SLUG_KEY } from "../lib/totemMode.js";
  * Menu lateral do totem: botão hambúrguer ao lado do logo que abre uma aba
  * pela esquerda com Voltar, as seções do pedido e Sair.
  * Props:
- *   sections: [{ id, title, items: [{ id, label, hint?, active?, half?, onSelect }] }]
+ *   sections: [{ id, title, items: [{ id, label, hint?, active?, half?, disabled?, onSelect }] }]
  *     half: ocupa meia largura (ex.: linhas do milk shake lado a lado)
  *   canGoBack / onBack: volta um passo no pedido
  */
@@ -102,11 +102,12 @@ export default function TotemSideMenu({ sections, canGoBack, onBack }) {
                   <button
                     key={item.id}
                     type="button"
+                    disabled={item.disabled}
                     onClick={() => {
                       item.onSelect();
                       close();
                     }}
-                    className={`flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-left text-base font-black transition ${
+                    className={`flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-left text-base font-black transition disabled:cursor-not-allowed disabled:opacity-40 ${
                       item.half ? "" : "col-span-2"
                     } ${
                       item.active

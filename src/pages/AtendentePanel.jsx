@@ -1104,6 +1104,7 @@ export default function AtendentePanel() {
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
+                          data-allow-repeat
                           onClick={() =>
                             updateQuantity(
                               item.key,
@@ -1119,6 +1120,7 @@ export default function AtendentePanel() {
                         </span>
                         <button
                           type="button"
+                          data-allow-repeat
                           onClick={() =>
                             updateQuantity(
                               item.key,

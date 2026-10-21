@@ -8,10 +8,13 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
 import { I18nProvider } from "./context/I18nContext.jsx";
 import "./index.css";
+import { installClickGuard } from "./lib/clickGuard.js";
 import { clearTotemMode, shouldForceExitTotem } from "./lib/totemMode.js";
 import RealtimeBridge from "./realtime/RealtimeBridge.jsx";
 
 const queryClient = new QueryClient();
+
+installClickGuard();
 
 if (shouldForceExitTotem()) {
   clearTotemMode();

@@ -314,6 +314,7 @@ export default function ComandasPage() {
                   key={product.id}
                   type="button"
                   disabled={!selectedId}
+                  data-allow-repeat
                   onClick={() => addProduct(product)}
                   className="flex items-center gap-3 rounded-2xl border border-gray-200 p-3 text-left transition hover:border-secondary/40 disabled:opacity-50"
                 >
@@ -367,7 +368,7 @@ export default function ComandasPage() {
                           {item.quantity} x {currency(primaryPrice(item.product))}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2" data-allow-repeat>
                         <button
                           type="button"
                           onClick={() =>

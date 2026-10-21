@@ -27,6 +27,16 @@ body {
   min-height: 100vh;
 }
 
+/* Sem zoom de duplo toque (totem/celular); o toque responde na hora. */
+html {
+  touch-action: manipulation;
+}
+
+/* Botão travado pela trava de duplo clique (lib/clickGuard.js) enquanto espera a resposta. */
+[data-click-locked="true"] {
+  cursor: progress;
+}
+
 body.install-prompt-open {
   padding-bottom: 6rem;
 }

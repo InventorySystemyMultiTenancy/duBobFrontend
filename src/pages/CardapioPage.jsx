@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import CartDrawer from "../components/CartDrawer.jsx";
@@ -493,6 +493,20 @@ function CardapioPage() {
   );
 }
 
+// Passo a passo do pedido: cada tela mostra só uma etapa.
+const PRODUCT_STEPS = {
+  milkshake: [
+    { id: "linha", label: "Linha", title: "Escolha a linha" },
+    { id: "tamanho", label: "Tamanho", title: "Escolha o tamanho" },
+    { id: "sabor", label: "Sabor", title: "Escolha o sabor" },
+  ],
+  acai: [
+    { id: "tamanho", label: "Tamanho", title: "Escolha o tamanho do copo" },
+    { id: "sabor", label: "Sabor", title: "Escolha o sabor do açaí" },
+    { id: "complementos", label: "Complementos", title: "Escolha os complementos" },
+  ],
+};
+
 function GuidedMenu({
   isProductReady,
   milkshakeLines,
@@ -507,23 +521,23 @@ function GuidedMenu({
     ? searchParams.get("tipo")
     : null;
   const [productType, setProductType] = useState(initialType);
-  const [selectedLineId, setSelectedLineId] = useState(milkshakeLines[0].id);
+  const [step, setStep] = useState(
+    initialType ? PRODUCT_STEPS[initialType][0].id : null,
+  );
+  const [selectedLineId, setSelectedLineId] = useState(null);
   const [selectedMilkshakeSize, setSelectedMilkshakeSize] = useState(null);
   const [selectedFlavor, setSelectedFlavor] = useState("");
   const [selectedAcaiSize, setSelectedAcaiSize] = useState(null);
   const [selectedAcaiFlavor, setSelectedAcaiFlavor] = useState("");
   const [selectedComplements, setSelectedComplements] = useState([]);
-  const milkshakeFlowRef = useRef(null);
-  const milkshakeSizeRef = useRef(null);
-  const milkshakeFlavorRef = useRef(null);
-  const acaiFlowRef = useRef(null);
-  const acaiFlavorRef = useRef(null);
-  const acaiComplementsRef = useRef(null);
   const isTotemProductIntro = isTotemMode && !productType;
 
   const selectedLine =
     milkshakeLines.find((line) => line.id === selectedLineId) ??
     milkshakeLines[0];
+  const steps = productType ? PRODUCT_STEPS[productType] : [];
+  const stepIndex = steps.findIndex((item) => item.id === step);
+  const currentStep = steps[stepIndex];
 
   const toggleComplement = (complement) => {
     setSelectedComplements((prev) => {
@@ -535,25 +549,10 @@ function GuidedMenu({
     });
   };
 
-  useEffect(() => {
-    if (!initialType) return undefined;
-    const ref = initialType === "acai" ? acaiFlowRef : milkshakeFlowRef;
-    const timer = window.setTimeout(() => {
-      ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 150);
-    return () => window.clearTimeout(timer);
-  }, [initialType]);
-
-  const scrollToFlow = (ref) => {
-    window.setTimeout(() => {
-      ref.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 50);
-  };
+  const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   const resetSelections = () => {
+    setSelectedLineId(null);
     setSelectedMilkshakeSize(null);
     setSelectedFlavor("");
     setSelectedAcaiSize(null);
@@ -561,42 +560,104 @@ function GuidedMenu({
     setSelectedComplements([]);
   };
 
-  const selectProduct = (type) => {
+  // Só deixa ir para uma etapa se as anteriores já foram escolhidas.
+  const isStepReachable = (type, stepId) => {
+    if (stepId === PRODUCT_STEPS[type][0].id) return true;
+    if (productType !== type) return false;
+    if (type === "acai") {
+      if (stepId === "sabor") return Boolean(selectedAcaiSize);
+      return Boolean(selectedAcaiSize && selectedAcaiFlavor);
+    }
+    if (stepId === "tamanho") return Boolean(selectedLineId);
+    return Boolean(selectedLineId && selectedMilkshakeSize);
+  };
+
+  const startProduct = (type) => {
     setProductType(type);
     resetSelections();
-    scrollToFlow(type === "acai" ? acaiFlowRef : milkshakeFlowRef);
+    setStep(PRODUCT_STEPS[type][0].id);
+    scrollTop();
   };
 
-  // Menu lateral do totem: abre o produto (sem perder o que já foi escolhido)
-  // e rola até a etapa tocada.
-  const goToStep = (type, ref) => {
+  const goToStep = (type, stepId) => {
     if (productType !== type) {
-      setProductType(type);
+      startProduct(type);
+      return;
+    }
+    if (!isStepReachable(type, stepId)) return;
+    setStep(stepId);
+    scrollTop();
+  };
+
+  // Voltar vai para a etapa anterior; na primeira, volta para a escolha do produto.
+  const goBack = () => {
+    if (stepIndex > 0) setStep(steps[stepIndex - 1].id);
+    else setProductType(null);
+    scrollTop();
+  };
+
+  // Depois de colocar no carrinho, recomeça na escolha do produto.
+  const finishItem = () => {
+    setProductType(null);
+    resetSelections();
+    scrollTop();
+  };
+
+  const pickLine = (lineId) => {
+    if (productType !== "milkshake") {
+      setProductType("milkshake");
       resetSelections();
     }
-    scrollToFlow(ref);
-  };
-
-  const selectMilkshakeLine = (lineId) => {
-    if (productType !== "milkshake") setProductType("milkshake");
-    resetSelections();
-    setSelectedLineId(lineId);
-    scrollToFlow(milkshakeFlowRef);
-  };
-
-  // Voltar desfaz a última escolha; sem escolhas, volta para a escolha do produto.
-  const goBack = () => {
-    if (productType === "acai") {
-      if (selectedComplements.length) setSelectedComplements([]);
-      else if (selectedAcaiFlavor) setSelectedAcaiFlavor("");
-      else if (selectedAcaiSize) setSelectedAcaiSize(null);
-      else setProductType(null);
-    } else if (productType === "milkshake") {
-      if (selectedFlavor) setSelectedFlavor("");
-      else if (selectedMilkshakeSize) setSelectedMilkshakeSize(null);
-      else setProductType(null);
+    if (lineId !== selectedLineId) {
+      setSelectedMilkshakeSize(null);
+      setSelectedFlavor("");
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setSelectedLineId(lineId);
+    setStep("tamanho");
+    scrollTop();
+  };
+
+  const pickMilkshakeSize = (size) => {
+    setSelectedMilkshakeSize(size);
+    setSelectedFlavor("");
+    setStep("sabor");
+    scrollTop();
+  };
+
+  // O sabor só marca a escolha; quem coloca no carrinho é o botão da barra de baixo,
+  // para um toque sem querer não adicionar nada.
+  const pickMilkshakeFlavor = (flavor) => {
+    setSelectedFlavor(flavor.name);
+  };
+
+  const addMilkshake = () => {
+    onAddMilkshake({
+      line: selectedLine,
+      flavor: selectedFlavor,
+      size: selectedMilkshakeSize,
+    });
+    finishItem();
+  };
+
+  const pickAcaiSize = (size) => {
+    setSelectedAcaiSize(size);
+    setStep("sabor");
+    scrollTop();
+  };
+
+  const pickAcaiFlavor = (flavor) => {
+    setSelectedAcaiFlavor(flavor.name);
+    setStep("complementos");
+    scrollTop();
+  };
+
+  const addAcai = () => {
+    onAddAcai({
+      size: selectedAcaiSize,
+      flavor: selectedAcaiFlavor,
+      complements: selectedComplements,
+    });
+    finishItem();
   };
 
   const sizeHint = (size) => (size ? `${size.label} - ${size.ml}` : "");
@@ -611,53 +672,64 @@ function GuidedMenu({
           label: line.title,
           half: true,
           active: productType === "milkshake" && selectedLineId === line.id,
-          onSelect: () => selectMilkshakeLine(line.id),
+          onSelect: () => pickLine(line.id),
         })),
         {
           id: "milkshake-tamanho",
           label: "Tamanho",
           hint: productType === "milkshake" ? sizeHint(selectedMilkshakeSize) : "",
-          onSelect: () => goToStep("milkshake", milkshakeSizeRef),
+          active: productType === "milkshake" && step === "tamanho",
+          disabled: !isStepReachable("milkshake", "tamanho"),
+          onSelect: () => goToStep("milkshake", "tamanho"),
         },
         {
           id: "milkshake-sabor",
           label: "Sabor",
-          hint: productType === "milkshake" ? selectedFlavor : "",
-          onSelect: () => goToStep("milkshake", milkshakeFlavorRef),
+          active: productType === "milkshake" && step === "sabor",
+          disabled: !isStepReachable("milkshake", "sabor"),
+          onSelect: () => goToStep("milkshake", "sabor"),
         },
       ],
     },
     {
       id: "acai",
       title: "Açaí",
-      items: [
-        {
-          id: "acai-tamanho",
-          label: "Tamanho",
-          hint: productType === "acai" ? sizeHint(selectedAcaiSize) : "",
-          active: productType === "acai" && !selectedAcaiSize,
-          onSelect: () => goToStep("acai", acaiFlowRef),
-        },
-        {
-          id: "acai-sabor",
-          label: "Sabor",
-          hint: productType === "acai" ? selectedAcaiFlavor : "",
-          active: productType === "acai" && Boolean(selectedAcaiSize) && !selectedAcaiFlavor,
-          onSelect: () => goToStep("acai", acaiFlavorRef),
-        },
-        {
-          id: "acai-complementos",
-          label: "Complementos",
-          hint:
-            productType === "acai" && selectedComplements.length
-              ? `${selectedComplements.length}/8`
-              : "",
-          active: productType === "acai" && Boolean(selectedAcaiFlavor),
-          onSelect: () => goToStep("acai", acaiComplementsRef),
-        },
-      ],
+      items: PRODUCT_STEPS.acai.map((item) => ({
+        id: `acai-${item.id}`,
+        label: item.label,
+        hint:
+          productType !== "acai"
+            ? ""
+            : item.id === "tamanho"
+              ? sizeHint(selectedAcaiSize)
+              : item.id === "sabor"
+                ? selectedAcaiFlavor
+                : selectedComplements.length
+                  ? `${selectedComplements.length}/8`
+                  : "",
+        active: productType === "acai" && step === item.id,
+        disabled: !isStepReachable("acai", item.id),
+        onSelect: () => goToStep("acai", item.id),
+      })),
     },
   ];
+
+  const stepSubtitle =
+    productType === "milkshake"
+      ? step === "linha"
+        ? "Toque em uma opção."
+        : step === "tamanho"
+          ? `${selectedLine.title}. Toque no tamanho.`
+          : `${selectedLine.title}, ${sizeHint(selectedMilkshakeSize)}. Toque no sabor e confirme embaixo.`
+      : step === "tamanho"
+        ? "Toque no tamanho."
+        : step === "sabor"
+          ? `Copo ${sizeHint(selectedAcaiSize)}. Toque no sabor.`
+          : "Toque para marcar ou desmarcar. 4 estão inclusos; do 5º ao 8º custa R$ 5,00 a mais.";
+
+  const extraComplements = selectedComplements.length > 4;
+  const acaiTotal = (selectedAcaiSize?.price ?? 0) + (extraComplements ? 5 : 0);
+  const big = isTotemMode;
 
   return (
     <section
@@ -681,437 +753,426 @@ function GuidedMenu({
         />
       )}
 
-      <div className={isTotemProductIntro ? "sr-only" : "mb-3"}>
-        <p className="text-xs font-black uppercase tracking-[0.28em] text-secondary">
-          Monte seu pedido
-        </p>
-        <h2 className="mt-1 text-2xl font-black text-primary sm:text-[1.7rem]">
-          Escolha o produto primeiro
-        </h2>
-      </div>
-
-      <div
-        className={`grid gap-5 ${
-          isTotemProductIntro
-            ? "h-[calc(100vh-6.75rem)] min-h-[620px] grid-rows-2"
-            : "md:grid-cols-2"
-        }`}
-      >
-        <button
-          type="button"
-          onClick={() => selectProduct("milkshake")}
-          className={`overflow-hidden rounded-lg border text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover ${
-            isTotemProductIntro ? "flex min-h-0 flex-col" : ""
-          } ${
-            productType === "milkshake"
-              ? "border-secondary bg-white"
-              : "border-border-soft bg-white"
-          }`}
-        >
-          <img
-            src={MilkShake1}
-            alt="Milk shake Dubob"
-            className={`w-full object-cover ${
-              isTotemProductIntro
-                ? "min-h-0 flex-1"
-                : "h-64 sm:h-72 lg:h-80"
-            }`}
-          />
-          <div className={isTotemProductIntro ? "p-6" : "p-5"}>
-            <h3
-              className={`font-black text-primary ${
-                isTotemProductIntro ? "text-4xl" : "text-2xl"
-              }`}
-            >
-              Milk shake
-            </h3>
-            <p
-              className={`mt-1 leading-relaxed text-text-muted ${
-                isTotemProductIntro ? "text-xl" : "text-base"
-              }`}
-            >
-              Escolha a linha, depois o tamanho, depois o sabor.
+      {!productType ? (
+        <>
+          <div className={isTotemProductIntro ? "sr-only" : "mb-3"}>
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-secondary">
+              Monte seu pedido
             </p>
+            <h2 className="mt-1 text-2xl font-black text-primary sm:text-[1.7rem]">
+              Escolha o produto primeiro
+            </h2>
           </div>
-        </button>
 
-        <button
-          type="button"
-          onClick={() => selectProduct("acai")}
-          className={`overflow-hidden rounded-lg border text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover ${
-            isTotemProductIntro ? "flex min-h-0 flex-col" : ""
-          } ${
-            productType === "acai"
-              ? "border-secondary bg-white"
-              : "border-border-soft bg-white"
-          }`}
-        >
-          <img
-            src={acai1}
-            alt="Acai Dubob"
-            className={`w-full object-cover ${
-              isTotemProductIntro
-                ? "min-h-0 flex-1"
-                : "h-64 sm:h-72 lg:h-80"
-            }`}
-          />
-          <div className={isTotemProductIntro ? "p-6" : "p-5"}>
-            <h3
-              className={`font-black text-primary ${
-                isTotemProductIntro ? "text-4xl" : "text-2xl"
-              }`}
-            >
-              Acai
-            </h3>
-            <p
-              className={`mt-1 leading-relaxed text-text-muted ${
-                isTotemProductIntro ? "text-xl" : "text-base"
-              }`}
-            >
-              Escolha tamanho, sabor e ate 4 complementos inclusos.
-            </p>
-          </div>
-        </button>
-      </div>
-
-      {productType === "acai" && (
-        <div
-          ref={acaiFlowRef}
-          className="mt-5 scroll-mt-24 rounded-lg border border-border-soft bg-white p-4 shadow-card sm:p-5"
-        >
           <div
             className={`grid gap-5 ${
-              isTotemMode ? "" : "lg:grid-cols-[240px_1fr_300px]"
+              isTotemProductIntro
+                ? "h-[calc(100vh-6.75rem)] min-h-[620px] grid-rows-2"
+                : "md:grid-cols-2"
             }`}
           >
-            <div>
-              <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-secondary">
-                1. Tamanho do copo
-              </p>
-              <div
-                className={`grid gap-2 ${
-                  isTotemMode ? "sm:grid-cols-2 xl:grid-cols-4" : ""
-                }`}
-              >
-                {acaiOptions.sizes.map((size) => (
-                  <button
-                    key={size.id}
-                    type="button"
-                    onClick={() => setSelectedAcaiSize(size)}
-                    className={`flex w-full items-center justify-between rounded-lg border px-3 py-3 text-left transition ${
-                      selectedAcaiSize?.id === size.id
-                        ? "border-secondary bg-secondary/10"
-                        : "border-border-soft bg-accent/50 hover:border-secondary/40"
-                    }`}
-                  >
-                    <span>
-                      <span className="block text-sm font-black text-primary">
-                        {size.label} - {size.ml}
-                      </span>
-                    </span>
-                    <span className="text-sm font-black text-secondary">
-                      {fmt(size.price)}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <ProductChoiceButton
+              image={MilkShake1}
+              alt="Milk shake Dubob"
+              title="Milk shake"
+              description="Escolha a linha, depois o tamanho, depois o sabor."
+              large={isTotemProductIntro}
+              onClick={() => startProduct("milkshake")}
+            />
+            <ProductChoiceButton
+              image={acai1}
+              alt="Acai Dubob"
+              title="Acai"
+              description="Escolha tamanho, sabor e ate 4 complementos inclusos."
+              large={isTotemProductIntro}
+              onClick={() => startProduct("acai")}
+            />
+          </div>
+        </>
+      ) : (
+        <div
+          className={
+            big
+              ? "flex min-h-[calc(100vh-7.5rem)] flex-col rounded-3xl bg-white p-5 shadow-card sm:p-8"
+              : "rounded-lg border border-border-soft bg-white p-4 shadow-card sm:p-6"
+          }
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <button
+              type="button"
+              onClick={goBack}
+              className={`flex items-center gap-3 font-black text-primary transition active:scale-95 ${
+                big
+                  ? "rounded-2xl border-4 border-primary/20 bg-white px-8 py-5 text-3xl hover:border-secondary"
+                  : "rounded-lg border-2 border-primary/15 bg-white px-4 py-2 text-sm hover:border-secondary"
+              }`}
+            >
+              <span aria-hidden="true">←</span> Voltar
+            </button>
 
-            <div>
+            <div className={`flex flex-col gap-2 ${big ? "items-end" : "items-start sm:items-end"}`}>
               <p
-                ref={acaiFlavorRef}
-                className="mb-3 scroll-mt-24 text-xs font-black uppercase tracking-[0.22em] text-secondary"
+                className={`font-bold text-primary/75 ${big ? "text-2xl" : "text-xs"}`}
               >
-                2. Sabor do acai
+                {productType === "acai" ? "Açaí" : "Milk shake"} · Passo{" "}
+                {stepIndex + 1} de {steps.length}
               </p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {acaiOptions.flavors.map((flavor) => (
-                  <FlavorOptionButton
+              <ol className="flex flex-wrap gap-2">
+                {steps.map((item, index) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      disabled={!isStepReachable(productType, item.id)}
+                      onClick={() => goToStep(productType, item.id)}
+                      className={`rounded-full font-black transition disabled:cursor-not-allowed disabled:opacity-35 ${
+                        big ? "px-5 py-3 text-xl" : "px-3 py-1 text-xs"
+                      } ${
+                        item.id === step
+                          ? "bg-secondary text-white"
+                          : index < stepIndex
+                            ? "bg-primary/10 text-primary"
+                            : "bg-accent text-primary"
+                      }`}
+                    >
+                      {index < stepIndex ? "✓ " : `${index + 1}. `}
+                      {item.label}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+
+          <div className={big ? "mb-6 mt-6" : "mb-5 mt-5"}>
+            <h2
+              className={`font-black leading-tight text-primary ${
+                big ? "text-5xl" : "text-2xl"
+              }`}
+            >
+              {currentStep?.title}
+            </h2>
+            <p
+              className={`mt-2 font-semibold text-primary/75 ${
+                big ? "text-2xl" : "text-sm"
+              }`}
+            >
+              {stepSubtitle}
+            </p>
+          </div>
+
+          {!isProductReady && (
+            <p className={`mb-4 font-bold text-red-600 ${big ? "text-xl" : "text-sm"}`}>
+              Carregando produtos para liberar o pedido...
+            </p>
+          )}
+
+          {productType === "milkshake" && step === "linha" && (
+            <div className={fewOptionsGrid(big)}>
+              {milkshakeLines.map((line) => (
+                <OptionTile
+                  key={line.id}
+                  big={big}
+                  fill
+                  title={line.title}
+                  detail={`${line.flavors.length} sabores`}
+                  price={`a partir de ${fmt(Math.min(...line.sizes.map((size) => size.price)))}`}
+                  selected={selectedLineId === line.id}
+                  onClick={() => pickLine(line.id)}
+                />
+              ))}
+            </div>
+          )}
+
+          {productType === "milkshake" && step === "tamanho" && (
+            <div className={fewOptionsGrid(big)}>
+              {selectedLine.sizes.map((size) => (
+                <OptionTile
+                  key={size.id}
+                  big={big}
+                  fill
+                  title={size.label}
+                  detail={size.ml}
+                  price={fmt(size.price)}
+                  selected={selectedMilkshakeSize?.id === size.id}
+                  disabled={!isProductReady}
+                  onClick={() => pickMilkshakeSize(size)}
+                />
+              ))}
+            </div>
+          )}
+
+          {productType === "milkshake" && step === "sabor" && (
+            <>
+              <div className={manyOptionsGrid(big)}>
+                {selectedLine.flavors.map((flavor) => (
+                  <OptionTile
                     key={flavor.id}
-                    option={flavor}
-                    selected={selectedAcaiFlavor === flavor.name}
-                    disabled={!selectedAcaiSize}
-                    fallbackImage={acai1}
-                    large={isTotemMode}
-                    onClick={() => setSelectedAcaiFlavor(flavor.name)}
+                    big={big}
+                    title={flavor.name}
+                    image={flavor.imageUrl || (big ? "" : MilkShake1)}
+                    selected={selectedFlavor === flavor.name}
+                    disabled={!isProductReady}
+                    onClick={() => pickMilkshakeFlavor(flavor)}
                   />
                 ))}
               </div>
+              <ConfirmBar
+                big={big}
+                summary={
+                  selectedFlavor
+                    ? `${selectedLine.title} · ${sizeHint(selectedMilkshakeSize)} · ${selectedFlavor}`
+                    : "Toque em um sabor acima"
+                }
+                total={fmt(selectedMilkshakeSize?.price ?? 0)}
+                disabled={!isProductReady || !selectedFlavor}
+                onConfirm={addMilkshake}
+              />
+            </>
+          )}
 
-              <p
-                ref={acaiComplementsRef}
-                className="mb-3 mt-5 scroll-mt-24 text-xs font-black uppercase tracking-[0.22em] text-secondary"
-              >
-                3. Complementos
-              </p>
-              <div
-                className={`grid gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3 ${
-                  isTotemMode ? "max-h-[32vh]" : "max-h-[320px]"
-                }`}
-              >
+          {productType === "acai" && step === "tamanho" && (
+            <div className={fewOptionsGrid(big)}>
+              {acaiOptions.sizes.map((size) => (
+                <OptionTile
+                  key={size.id}
+                  big={big}
+                  fill
+                  title={size.label}
+                  detail={size.ml}
+                  price={fmt(size.price)}
+                  selected={selectedAcaiSize?.id === size.id}
+                  onClick={() => pickAcaiSize(size)}
+                />
+              ))}
+            </div>
+          )}
+
+          {productType === "acai" && step === "sabor" && (
+            <div
+              className={
+                acaiOptions.flavors.length <= 4
+                  ? fewOptionsGrid(big)
+                  : manyOptionsGrid(big)
+              }
+            >
+              {acaiOptions.flavors.map((flavor) => (
+                <OptionTile
+                  key={flavor.id}
+                  big={big}
+                  fill={acaiOptions.flavors.length <= 4}
+                  title={flavor.name}
+                  image={flavor.imageUrl || (big ? "" : acai1)}
+                  selected={selectedAcaiFlavor === flavor.name}
+                  onClick={() => pickAcaiFlavor(flavor)}
+                />
+              ))}
+            </div>
+          )}
+
+          {productType === "acai" && step === "complementos" && (
+            <>
+              <div className={manyOptionsGrid(big)}>
                 {acaiOptions.complements.map((complement) => {
                   const selected = selectedComplements.some(
                     (item) => item.name === complement.name,
                   );
                   return (
-                    <FlavorOptionButton
+                    <OptionTile
                       key={complement.id}
-                      option={complement}
+                      big={big}
+                      title={complement.name}
+                      image={complement.imageUrl || (big ? "" : acai1)}
                       selected={selected}
-                      disabled={!selectedAcaiFlavor}
-                      fallbackImage={acai1}
-                      large={isTotemMode}
+                      disabled={!selected && selectedComplements.length >= 8}
                       onClick={() => toggleComplement(complement)}
                     />
                   );
                 })}
               </div>
-            </div>
-
-            <aside className="rounded-lg border border-border-soft bg-accent/60 p-4">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-secondary">
-                Resumo
-              </p>
-              <div className="mt-3 space-y-2 text-sm text-text-muted">
-                <p>
-                  <strong className="text-primary">Copo:</strong>{" "}
-                  {selectedAcaiSize
-                    ? `${selectedAcaiSize.label} - ${selectedAcaiSize.ml}`
-                    : "Escolha o tamanho"}
-                </p>
-                <p>
-                  <strong className="text-primary">Sabor:</strong>{" "}
-                  {selectedAcaiFlavor || "Escolha o sabor"}
-                </p>
-                <p>
-                  <strong className="text-primary">Complementos:</strong>{" "}
-                  {selectedComplements.length}/8
-                </p>
-                <p className="rounded-lg bg-white p-3 text-xs leading-relaxed">
-                  Ate 4 complementos inclusos. Do 5 ao 8 adiciona{" "}
-                  <strong className="text-secondary">R$ 5,00</strong>.
-                </p>
-              </div>
-              <div className="mt-4 border-t border-border-soft pt-4">
-                <p className="text-xs text-text-muted">
-                  Total
-                </p>
-                <p className="text-2xl font-black text-secondary">
-                  {fmt(
-                    (selectedAcaiSize?.price ?? 0) +
-                      (selectedComplements.length > 4 ? 5 : 0),
-                  )}
-                </p>
-              </div>
-              <button
-                type="button"
-                disabled={
-                  !isProductReady ||
-                  !selectedAcaiSize ||
-                  !selectedAcaiFlavor ||
-                  selectedComplements.length === 0
+              <ConfirmBar
+                big={big}
+                summary={
+                  selectedComplements.length
+                    ? `${selectedComplements.length} de 8 escolhidos${
+                        extraComplements ? " (inclui + R$ 5,00)" : ""
+                      }`
+                    : "Escolha pelo menos 1 complemento"
                 }
-                onClick={() =>
-                  onAddAcai({
-                    size: selectedAcaiSize,
-                    flavor: selectedAcaiFlavor,
-                    complements: selectedComplements,
-                  })
-                }
-                className="mt-4 w-full rounded-full bg-primary px-4 py-3 text-sm font-black text-white transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Adicionar acai
-              </button>
-            </aside>
-          </div>
-        </div>
-      )}
-
-      {productType === "milkshake" && (
-        <div
-          ref={milkshakeFlowRef}
-          className="mt-5 scroll-mt-24 rounded-lg border border-border-soft bg-white p-4 shadow-card sm:p-5"
-        >
-          <div className={`mb-4 flex flex-wrap ${isTotemMode ? "gap-3" : "gap-2"}`}>
-            {milkshakeLines.map((line) => (
-              <button
-                key={line.id}
-                type="button"
-                onClick={() => {
-                  setSelectedLineId(line.id);
-                  setSelectedMilkshakeSize(null);
-                  setSelectedFlavor("");
-                }}
-                className={`rounded-lg border font-black transition ${
-                  isTotemMode ? "px-7 py-4 text-xl" : "px-4 py-2 text-sm"
-                } ${
-                  selectedLineId === line.id
-                    ? "border-secondary bg-secondary text-white"
-                    : "border-border-soft bg-accent text-primary hover:border-secondary/50"
-                }`}
-              >
-                {line.title}
-              </button>
-            ))}
-          </div>
-
-          <div
-            className={`grid gap-5 ${
-              isTotemMode ? "" : "lg:grid-cols-[1fr_320px]"
-            }`}
-          >
-            <aside
-              ref={milkshakeSizeRef}
-              className="scroll-mt-24 rounded-lg border border-border-soft bg-accent/60 p-4"
-            >
-              <p
-                className={`font-black uppercase tracking-[0.22em] text-secondary ${
-                  isTotemMode ? "text-lg" : "text-xs"
-                }`}
-              >
-                1. Escolha o tamanho
-              </p>
-              <div
-                className={`mt-3 grid gap-2 ${
-                  isTotemMode ? "sm:grid-cols-2 xl:grid-cols-4" : ""
-                }`}
-              >
-                {selectedLine.sizes.map((size) => (
-                  <button
-                    key={size.id}
-                    type="button"
-                    disabled={!isProductReady}
-                    onClick={() => {
-                      setSelectedMilkshakeSize(size);
-                      setSelectedFlavor("");
-                    }}
-                    className={`flex w-full items-center justify-between rounded-lg border text-left transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                      isTotemMode ? "min-h-28 px-6 py-5" : "px-3 py-3"
-                    } ${
-                      selectedMilkshakeSize?.id === size.id
-                        ? "border-secondary bg-secondary/10"
-                        : "border-border-soft bg-white hover:border-secondary"
-                    }`}
-                  >
-                    <span>
-                      <span
-                        className={`block font-black text-primary ${
-                          isTotemMode ? "text-2xl" : "text-sm"
-                        }`}
-                      >
-                        {size.label} - {size.ml}
-                      </span>
-                      <span
-                        className={`text-text-muted ${
-                          isTotemMode ? "text-base" : "text-xs"
-                        }`}
-                      >
-                        Escolha antes do sabor
-                      </span>
-                    </span>
-                    <span
-                      className={`font-black text-secondary ${
-                        isTotemMode ? "text-2xl" : "text-sm"
-                      }`}
-                    >
-                      {fmt(size.price)}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              {!isProductReady && (
-                <p className="mt-3 text-xs text-red-500">
-                  Carregando produtos para liberar o pedido.
-                </p>
-              )}
-            </aside>
-
-            <div ref={milkshakeFlavorRef} className="scroll-mt-24">
-              <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-secondary">
-                2. Escolha o sabor
-              </p>
-              <div
-                className={`grid gap-2 overflow-y-auto pr-1 sm:grid-cols-2 ${
-                  isTotemMode ? "max-h-[42vh] xl:grid-cols-3" : "max-h-[420px] xl:grid-cols-3"
-                }`}
-              >
-                {selectedLine.flavors.map((flavor) => (
-                  <FlavorOptionButton
-                    key={flavor.id}
-                    option={flavor}
-                    selected={selectedFlavor === flavor.name}
-                    disabled={!selectedMilkshakeSize || !isProductReady}
-                    fallbackImage={MilkShake1}
-                    large={isTotemMode}
-                    caption="Imagens meramente ilustrativas"
-                    onClick={() => {
-                      setSelectedFlavor(flavor.name);
-                      onAddMilkshake({
-                        line: selectedLine,
-                        flavor: flavor.name,
-                        size: selectedMilkshakeSize,
-                      });
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
+                detail={`Copo ${sizeHint(selectedAcaiSize)} · ${selectedAcaiFlavor}`}
+                total={fmt(acaiTotal)}
+                disabled={!isProductReady || selectedComplements.length === 0}
+                onConfirm={addAcai}
+              />
+            </>
+          )}
         </div>
       )}
     </section>
   );
 }
 
-function FlavorOptionButton({
-  option,
+// Até 4 opções: ocupam o resto da tela (2x2 em pé, 4 lado a lado deitada).
+const fewOptionsGrid = (big) =>
+  big
+    ? "grid flex-1 auto-rows-fr grid-cols-2 gap-4 sm:gap-5 landscape:grid-cols-4"
+    : "grid gap-3 sm:grid-cols-2 xl:grid-cols-4";
+
+// Listas longas (sabores, complementos): cartões grandes com rolagem da página.
+const manyOptionsGrid = (big) =>
+  big
+    ? "grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3"
+    : "grid gap-3 sm:grid-cols-2 xl:grid-cols-3";
+
+function OptionTile({
+  title,
+  detail,
+  price,
+  image,
   selected,
   disabled = false,
-  fallbackImage,
-  large = false,
-  caption,
+  big = false,
+  fill = false,
   onClick,
 }) {
-  const imageUrl = option.imageUrl || fallbackImage;
-
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`overflow-hidden rounded-lg border text-left text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+      aria-pressed={selected}
+      className={`relative flex flex-col overflow-hidden text-left transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${
+        big ? "rounded-3xl border-4" : "rounded-lg border-2"
+      } ${
         selected
-          ? "border-secondary bg-secondary/10 text-primary"
-          : "border-border-soft bg-accent/50 text-text-muted hover:border-secondary/40 hover:text-primary"
-      }`}
+          ? "border-secondary bg-secondary/10"
+          : "border-primary/10 bg-accent/50 hover:border-secondary/50"
+      } ${fill ? "h-full" : ""}`}
     >
-      {imageUrl ? (
-        <img
-          src={imageUrl}
-          alt={option.name}
-          className={`w-full object-cover ${large ? "h-56" : "h-32"}`}
-          onError={(event) => {
-            if (fallbackImage && event.currentTarget.src !== fallbackImage) {
-              event.currentTarget.src = fallbackImage;
-              return;
-            }
-          }}
-        />
-      ) : (
-        <div className={`w-full bg-accent-dark/40 ${large ? "h-56" : "h-32"}`} />
+      {selected && (
+        <span
+          className={`absolute right-3 top-3 z-10 flex items-center justify-center rounded-full bg-secondary font-black text-white shadow-lg ${
+            big ? "h-14 w-14 text-3xl" : "h-8 w-8 text-base"
+          }`}
+          aria-hidden="true"
+        >
+          ✓
+        </span>
       )}
+      {image ? (
+        <img
+          src={image}
+          alt=""
+          className={`w-full object-cover ${
+            fill ? "min-h-0 flex-1" : big ? "h-44" : "h-32"
+          }`}
+        />
+      ) : null}
       <span
-        className={`block px-4 font-black leading-tight ${
-          large ? "py-5 text-2xl" : "py-3 text-sm"
+        className={`flex flex-col ${
+          image ? "" : "flex-1 justify-center"
+        } ${
+          fill && !image ? "items-center text-center" : ""
+        } ${big ? "gap-1 px-6 py-6" : "gap-0.5 px-4 py-3"} ${
+          big && !fill && !image ? "min-h-32" : ""
         }`}
       >
-        {option.name}
-      </span>
-      {caption ? (
-        <span className="-mt-3 block px-4 pb-4 text-[10px] font-medium leading-tight text-text-muted/55">
-          {caption}
+        <span
+          className={`font-black leading-tight text-primary ${
+            big ? (fill ? "text-5xl sm:text-6xl landscape:text-5xl" : "text-3xl") : "text-base"
+          }`}
+        >
+          {title}
         </span>
-      ) : null}
+        {detail && (
+          <span
+            className={`font-bold text-primary/70 ${
+              big ? (fill ? "text-3xl" : "text-xl") : "text-xs"
+            }`}
+          >
+            {detail}
+          </span>
+        )}
+        {price && (
+          <span
+            className={`font-black text-secondary ${
+              big ? (fill ? "mt-2 text-4xl" : "text-2xl") : "text-sm"
+            }`}
+          >
+            {price}
+          </span>
+        )}
+      </span>
+    </button>
+  );
+}
+
+// Barra fixa embaixo com o resumo e o botão de colocar no carrinho.
+function ConfirmBar({ big, summary, detail, total, disabled, onConfirm }) {
+  return (
+    <div
+      className={`sticky bottom-0 z-[60] mt-6 flex flex-wrap items-center justify-between gap-4 border-t-2 border-primary/10 bg-white/95 backdrop-blur ${
+        big ? "-mx-5 px-5 py-5 pr-32 sm:-mx-8 sm:px-8 sm:pr-36" : "-mx-4 px-4 py-3 sm:-mx-6 sm:px-6"
+      }`}
+    >
+      <div className="min-w-0">
+        <p className={`font-black text-primary ${big ? "text-2xl" : "text-sm"}`}>
+          {summary}
+        </p>
+        {detail && (
+          <p className={`font-semibold text-primary/70 ${big ? "text-xl" : "text-xs"}`}>
+            {detail}
+          </p>
+        )}
+      </div>
+      <div className="flex items-center gap-5">
+        <p className={`font-black text-secondary ${big ? "text-4xl" : "text-xl"}`}>
+          {total}
+        </p>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onConfirm}
+          className={`rounded-2xl bg-secondary font-black text-white shadow-card transition active:scale-95 hover:bg-primary disabled:cursor-not-allowed disabled:bg-primary/25 ${
+            big ? "px-10 py-6 text-3xl" : "px-5 py-3 text-sm"
+          }`}
+        >
+          Colocar no carrinho
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ProductChoiceButton({ image, alt, title, description, large, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`overflow-hidden rounded-lg border border-border-soft bg-white text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover ${
+        large ? "flex min-h-0 flex-col" : ""
+      }`}
+    >
+      <img
+        src={image}
+        alt={alt}
+        className={`w-full object-cover ${
+          large ? "min-h-0 flex-1" : "h-64 sm:h-72 lg:h-80"
+        }`}
+      />
+      <div className={large ? "p-6" : "p-5"}>
+        <h3
+          className={`font-black text-primary ${large ? "text-4xl" : "text-2xl"}`}
+        >
+          {title}
+        </h3>
+        <p
+          className={`mt-1 leading-relaxed text-text-muted ${
+            large ? "text-xl" : "text-base"
+          }`}
+        >
+          {description}
+        </p>
+      </div>
     </button>
   );
 }
