@@ -47,6 +47,73 @@ export function clearTotemMode() {
   localStorage.removeItem("pc_token");
   localStorage.removeItem("pc_user");
   sessionStorage.removeItem(TOTEM_FULLSCREEN_REQUESTED_KEY);
+  sessionStorage.removeItem("pc_totem_fullscreen_unavailable");
+}
+
+// Tela cheia do totem. Navegadores de quiosque (Fully Kiosk) já rodam em tela
+// cheia e não aceitam a API de tela cheia — nesses casos o aviso "volte para
+// a tela cheia" nunca pode aparecer, senão o totem fica preso nele.
+const TOTEM_FULLSCREEN_UNAVAILABLE_KEY = "pc_totem_fullscreen_unavailable";
+const FULLSCREEN_REQUEST_TIMEOUT_MS = 1500;
+// Avisa o TotemIdleGuard para reavaliar o aviso quando um pedido de tela cheia termina.
+export const TOTEM_FULLSCREEN_CHECK_EVENT = "pc_totem_fullscreen_check";
+let fullscreenRequestPending = false;
+
+function isKioskBrowser() {
+  return (
+    typeof window.fully !== "undefined" ||
+    /fully|kiosk/i.test(navigator.userAgent)
+  );
+}
+
+function canRequestFullscreen() {
+  return (
+    !isKioskBrowser() &&
+    document.fullscreenEnabled !== false &&
+    typeof document.documentElement.requestFullscreen === "function" &&
+    sessionStorage.getItem(TOTEM_FULLSCREEN_UNAVAILABLE_KEY) !== "true"
+  );
+}
+
+function looksFullscreen() {
+  return (
+    Boolean(document.fullscreenElement) ||
+    Boolean(window.matchMedia?.("(display-mode: fullscreen)").matches) ||
+    (window.innerHeight >= window.screen.height - 1 &&
+      window.innerWidth >= window.screen.width - 1)
+  );
+}
+
+export function shouldShowFullscreenPrompt() {
+  return !fullscreenRequestPending && canRequestFullscreen() && !looksFullscreen();
+}
+
+// Pede tela cheia sem nunca travar: se o aparelho não entrar em tela cheia,
+// marca como indisponível e o aviso não volta mais nesta sessão.
+export function requestTotemFullscreen() {
+  if (!canRequestFullscreen() || document.fullscreenElement) {
+    return Promise.resolve();
+  }
+  fullscreenRequestPending = true;
+  let request;
+  try {
+    // Chamado direto no toque (o navegador exige o gesto do usuário).
+    request = Promise.resolve(document.documentElement.requestFullscreen()).catch(
+      () => {},
+    );
+  } catch {
+    request = Promise.resolve();
+  }
+  const timeout = new Promise((resolve) =>
+    window.setTimeout(resolve, FULLSCREEN_REQUEST_TIMEOUT_MS),
+  );
+  return Promise.race([request, timeout]).then(() => {
+    fullscreenRequestPending = false;
+    if (!document.fullscreenElement) {
+      sessionStorage.setItem(TOTEM_FULLSCREEN_UNAVAILABLE_KEY, "true");
+    }
+    window.dispatchEvent(new Event(TOTEM_FULLSCREEN_CHECK_EVENT));
+  });
 }
 
 // Enquanto o cliente paga na maquininha, o timeout de inatividade não pode

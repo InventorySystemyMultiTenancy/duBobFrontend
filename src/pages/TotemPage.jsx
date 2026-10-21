@@ -8,6 +8,7 @@ import { api } from "../lib/api.js";
 import {
   clearTotemMode,
   getTotemPendingOrder,
+  requestTotemFullscreen,
   TOTEM_ID_KEY,
   TOTEM_FULLSCREEN_REQUESTED_KEY,
   TOTEM_MODE_KEY,
@@ -35,14 +36,6 @@ const TOTEM_CPF_LOGIN_ENABLED = false;
 
 function onlyDigits(value) {
   return String(value || "").replace(/\D/g, "");
-}
-
-function requestTotemFullscreen() {
-  const element = document.documentElement;
-  if (!document.fullscreenElement && element.requestFullscreen) {
-    return element.requestFullscreen().catch(() => {});
-  }
-  return Promise.resolve();
 }
 
 function TotemPage() {

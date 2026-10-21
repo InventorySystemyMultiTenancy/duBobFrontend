@@ -5,6 +5,9 @@ import { useCart } from "../context/CartContext.jsx";
 import {
   clearTotemMode,
   isTotemPaymentPending,
+  requestTotemFullscreen,
+  shouldShowFullscreenPrompt,
+  TOTEM_FULLSCREEN_CHECK_EVENT,
   TOTEM_FULLSCREEN_REQUESTED_KEY,
   TOTEM_MODE_KEY,
   TOTEM_PAYMENT_PENDING_EVENT,
@@ -29,14 +32,6 @@ function isTotemModeEnabled() {
 
 function isTotemFullscreenRequested() {
   return sessionStorage.getItem(TOTEM_FULLSCREEN_REQUESTED_KEY) === "true";
-}
-
-function requestTotemFullscreen() {
-  const element = document.documentElement;
-  if (!document.fullscreenElement && element.requestFullscreen) {
-    return element.requestFullscreen().catch(() => {});
-  }
-  return Promise.resolve();
 }
 
 function getTotemPath() {
@@ -146,6 +141,10 @@ function TotemIdleGuard() {
       "pc_totem_fullscreen_request_change",
       syncFullscreenRequest,
     );
+    // A tela do totem pode ter ligado o modo antes deste efeito registrar os
+    // ouvintes (primeira abertura de /totem1): confere o estado atual.
+    syncMode();
+    syncFullscreenRequest();
 
     return () => {
       window.removeEventListener("storage", syncMode);
@@ -167,7 +166,7 @@ function TotemIdleGuard() {
         setShowFullscreenPrompt(false);
         return;
       }
-      setShowFullscreenPrompt(!document.fullscreenElement);
+      setShowFullscreenPrompt(shouldShowFullscreenPrompt());
     };
 
     const handleKeyDown = (event) => {
@@ -199,12 +198,14 @@ function TotemIdleGuard() {
     };
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
+    window.addEventListener(TOTEM_FULLSCREEN_CHECK_EVENT, handleFullscreenChange);
     window.addEventListener("keydown", handleKeyDown, { capture: true });
     window.addEventListener("beforeunload", handleBeforeUnload);
     handleFullscreenChange();
 
     return () => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      window.removeEventListener(TOTEM_FULLSCREEN_CHECK_EVENT, handleFullscreenChange);
       window.removeEventListener("keydown", handleKeyDown, { capture: true });
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
@@ -346,8 +347,9 @@ function TotemIdleGuard() {
           <button
             type="button"
             onClick={() => {
-              requestTotemFullscreen().then(() => {
-                setShowFullscreenPrompt(!document.fullscreenElement);
+              // Some sempre depois do toque, mesmo se a tela cheia não funcionar.
+              requestTotemFullscreen().finally(() => {
+                setShowFullscreenPrompt(false);
               });
             }}
             className="w-full max-w-xl rounded-2xl border border-white/30 bg-white p-8 text-primary shadow-2xl"
