@@ -326,9 +326,10 @@ function TotemPage() {
   const handleIntroClick = () => {
     sessionStorage.setItem(TOTEM_FULLSCREEN_REQUESTED_KEY, "true");
     window.dispatchEvent(new Event("pc_totem_fullscreen_request_change"));
-    requestTotemFullscreen().finally(() => {
-      setStep("identify");
-    });
+    // Avança na hora: a tela cheia é pedida em paralelo e nunca segura o toque
+    // (no Fully Kiosk o pedido de tela cheia pode não responder nunca).
+    requestTotemFullscreen();
+    setStep("identify");
   };
 
   if (totemLoading) {

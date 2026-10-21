@@ -347,10 +347,9 @@ function TotemIdleGuard() {
           <button
             type="button"
             onClick={() => {
-              // Some sempre depois do toque, mesmo se a tela cheia não funcionar.
-              requestTotemFullscreen().finally(() => {
-                setShowFullscreenPrompt(false);
-              });
+              // Some na hora do toque, mesmo se a tela cheia não funcionar.
+              requestTotemFullscreen();
+              setShowFullscreenPrompt(false);
             }}
             className="w-full max-w-xl rounded-2xl border border-white/30 bg-white p-8 text-primary shadow-2xl"
           >
