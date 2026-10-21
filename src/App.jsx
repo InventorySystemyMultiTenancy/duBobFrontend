@@ -1,5 +1,6 @@
 import InstallPrompt from "./components/InstallPrompt.jsx";
 import TotemIdleGuard from "./components/TotemIdleGuard.jsx";
+import UpdateAvailableBanner from "./components/UpdateAvailableBanner.jsx";
 import AppRoutes from "./Routes.jsx";
 
 function App() {
@@ -8,6 +9,7 @@ function App() {
       <AppRoutes />
       <TotemIdleGuard />
       <InstallPrompt />
+      <UpdateAvailableBanner />
     </>
   );
 }

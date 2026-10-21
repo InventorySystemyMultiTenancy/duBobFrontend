@@ -27,24 +27,9 @@ const INPUT_CLS =
   "w-full rounded-2xl border border-border-soft bg-white px-5 py-5 text-xl font-semibold text-primary outline-none transition placeholder:text-text-muted/60 focus:border-secondary focus:ring-4 focus:ring-secondary/15";
 const BUTTON_CLS =
   "w-full rounded-2xl bg-secondary px-6 py-5 text-xl font-black uppercase tracking-wide text-white shadow-card transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60";
-const TOTEM_LOGIN_TILES = [
-  "/carrossel/1.png",
-  "/carrossel/2.png",
-  "/carrossel/3.png",
-  "/carrossel/4.png",
-  "/carrossel/5.png",
-  "/carrossel/6.png",
-  "/carrossel/7.png",
-  "/carrossel/8.png",
-  "/carrossel/9.png",
-  "/carrossel/10.png",
-  "/carrossel/11.png",
-  "/carrossel/12.png",
-  "/acai.png",
-  "/acai1.png",
-  "/milkshake1.png",
-  "/cardapio2.png",
-];
+// Login por CPF desativado por enquanto: no totem todos entram como convidado.
+// Trocar para true para voltar a mostrar o card "Entrar com CPF".
+const TOTEM_CPF_LOGIN_ENABLED = false;
 
 function onlyDigits(value) {
   return String(value || "").replace(/\D/g, "");
@@ -404,39 +389,54 @@ function TotemPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-primary px-8 py-10 text-primary">
-      <div className="absolute inset-0 grid grid-cols-4 gap-3 p-3 opacity-90 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
-        {Array.from({ length: 56 }, (_, index) => {
-          const image = TOTEM_LOGIN_TILES[index % TOTEM_LOGIN_TILES.length];
-          return (
-            <div
-              key={`${image}-${index}`}
-              className="aspect-square overflow-hidden rounded-2xl bg-white/10"
-            >
-              <img
-                src={image}
-                alt=""
-                className="h-full w-full object-cover"
-                draggable="false"
-              />
-            </div>
-          );
-        })}
-      </div>
-      <div className="absolute inset-0 bg-white/35 backdrop-blur-[0.5px]" />
-      <div className="absolute inset-0 bg-gradient-to-b from-accent/55 via-accent/35 to-accent/65" />
+      <img
+        src="/home/hero.webp"
+        alt=""
+        className="absolute inset-0 h-full w-full origin-bottom scale-125 object-cover blur-[1px] landscape:origin-center landscape:scale-110 landscape:object-[center_35%]"
+        draggable="false"
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/30 via-primary/15 to-primary/50" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(91,6,56,0.35)_0%,_rgba(91,6,56,0)_60%)]" />
 
-      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl flex-col justify-center">
-        <div className="mb-8 text-center">
-          <p className="text-sm font-black uppercase tracking-[0.32em] text-secondary">
-            {totem?.name ?? "Totem Dubob"}
-          </p>
-          <h1 className="mt-3 text-5xl font-black">
-            {step === "register" ? "Criar cadastro" : "Como voce quer entrar?"}
+      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl flex-col items-center justify-center">
+        {step === "register" ? (
+          <h1 className="mb-8 text-center text-5xl font-black text-white">
+            Criar cadastro
           </h1>
-        </div>
+        ) : null}
 
-        {step === "identify" ? (
-          <div className="grid gap-6 lg:grid-cols-2">
+        {step === "identify" && !TOTEM_CPF_LOGIN_ENABLED ? (
+          <form
+            onSubmit={handleGuestSubmit}
+            className="flex w-full max-w-2xl flex-col items-center"
+          >
+            <img
+              src="/LogoDuBob.png"
+              alt="Dubob"
+              className="h-48 w-auto rounded-[2.5rem] shadow-2xl ring-4 ring-white/15 sm:h-60"
+              draggable="false"
+            />
+            <div className="mt-14 w-full space-y-5">
+              <input
+                className="w-full rounded-2xl border-4 border-transparent bg-white px-7 py-7 text-center text-3xl font-bold text-primary shadow-2xl outline-none transition placeholder:font-semibold placeholder:text-text-muted/60 focus:border-gold"
+                type="text"
+                autoComplete="off"
+                placeholder="Digite seu nome"
+                aria-label="Digite seu nome"
+                value={guestName}
+                onChange={(event) => setGuestName(event.target.value)}
+              />
+              <button
+                className="w-full rounded-2xl bg-secondary px-6 py-7 text-3xl font-black uppercase tracking-wide text-white shadow-card transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
+                type="submit"
+                disabled={guestMutation.isPending}
+              >
+                {guestMutation.isPending ? "Entrando..." : "Entrar"}
+              </button>
+            </div>
+          </form>
+        ) : step === "identify" ? (
+          <div className="grid w-full gap-6 lg:grid-cols-2">
             <form
               onSubmit={handleCpfSubmit}
               className="rounded-2xl border border-white/70 bg-white/90 p-6 shadow-2xl backdrop-blur-md"
