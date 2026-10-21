@@ -12,6 +12,7 @@ import MilkShake1 from "/milkshake1.png";
 import acai1 from "/acai1.png";
 
 import PageHeader from "../components/PageHeader.jsx";
+import TotemSideMenu from "../components/TotemSideMenu.jsx";
 const fmt = (value) =>
   Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -285,6 +286,7 @@ function CardapioPage() {
   const { user } = useAuth();
   const { addItem, addItems, openCart } = useCart();
   const { t } = useTranslation();
+  const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
 
   const { data: mesaOrders = [] } = useQuery({
     queryKey: ["mesa-orders"],
@@ -443,11 +445,13 @@ function CardapioPage() {
     <main className="min-h-screen font-body text-text-main">
       <Navbar activeLink="cardapio" />
 
-      <PageHeader
-        eyebrow={t("CARDAPIO_SINCE", "Açaí · Milkshake · Krekole")}
-        title={t("CARDAPIO_TITLE", "Monte seu pedido")}
-        subtitle="Escolha açaí ou milkshake e siga os passos. Leva menos de um minuto."
-      />
+      {!isTotemMode && (
+        <PageHeader
+          eyebrow={t("CARDAPIO_SINCE", "Açaí · Milkshake · Krekole")}
+          title={t("CARDAPIO_TITLE", "Monte seu pedido")}
+          subtitle="Escolha açaí ou milkshake e siga os passos. Leva menos de um minuto."
+        />
+      )}
 
       <GuidedMenu
         isProductReady={!isLoading && !isError && displayProducts.length > 0}
@@ -463,9 +467,11 @@ function CardapioPage() {
         </p>
       )}
 
-      <footer className="border-t border-border-soft bg-white py-6 text-center text-xs text-text-muted">
-        {t("FOOTER_COPYRIGHT", "Dubob Acai e Milkshake - Desde 2000")}
-      </footer>
+      {!isTotemMode && (
+        <footer className="border-t border-border-soft bg-white py-6 text-center text-xs text-text-muted">
+          {t("FOOTER_COPYRIGHT", "Dubob Acai e Milkshake - Desde 2000")}
+        </footer>
+      )}
 
       {pendingTotal > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-40 p-3">
@@ -508,7 +514,11 @@ function GuidedMenu({
   const [selectedAcaiFlavor, setSelectedAcaiFlavor] = useState("");
   const [selectedComplements, setSelectedComplements] = useState([]);
   const milkshakeFlowRef = useRef(null);
+  const milkshakeSizeRef = useRef(null);
+  const milkshakeFlavorRef = useRef(null);
   const acaiFlowRef = useRef(null);
+  const acaiFlavorRef = useRef(null);
+  const acaiComplementsRef = useRef(null);
   const isTotemProductIntro = isTotemMode && !productType;
 
   const selectedLine =
@@ -543,14 +553,134 @@ function GuidedMenu({
     }, 50);
   };
 
+  const resetSelections = () => {
+    setSelectedMilkshakeSize(null);
+    setSelectedFlavor("");
+    setSelectedAcaiSize(null);
+    setSelectedAcaiFlavor("");
+    setSelectedComplements([]);
+  };
+
+  const selectProduct = (type) => {
+    setProductType(type);
+    resetSelections();
+    scrollToFlow(type === "acai" ? acaiFlowRef : milkshakeFlowRef);
+  };
+
+  // Menu lateral do totem: abre o produto (sem perder o que já foi escolhido)
+  // e rola até a etapa tocada.
+  const goToStep = (type, ref) => {
+    if (productType !== type) {
+      setProductType(type);
+      resetSelections();
+    }
+    scrollToFlow(ref);
+  };
+
+  const selectMilkshakeLine = (lineId) => {
+    if (productType !== "milkshake") setProductType("milkshake");
+    resetSelections();
+    setSelectedLineId(lineId);
+    scrollToFlow(milkshakeFlowRef);
+  };
+
+  // Voltar desfaz a última escolha; sem escolhas, volta para a escolha do produto.
+  const goBack = () => {
+    if (productType === "acai") {
+      if (selectedComplements.length) setSelectedComplements([]);
+      else if (selectedAcaiFlavor) setSelectedAcaiFlavor("");
+      else if (selectedAcaiSize) setSelectedAcaiSize(null);
+      else setProductType(null);
+    } else if (productType === "milkshake") {
+      if (selectedFlavor) setSelectedFlavor("");
+      else if (selectedMilkshakeSize) setSelectedMilkshakeSize(null);
+      else setProductType(null);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const sizeHint = (size) => (size ? `${size.label} - ${size.ml}` : "");
+
+  const totemMenuSections = [
+    {
+      id: "milkshake",
+      title: "Milk shake",
+      items: [
+        ...milkshakeLines.map((line) => ({
+          id: `linha-${line.id}`,
+          label: line.title,
+          half: true,
+          active: productType === "milkshake" && selectedLineId === line.id,
+          onSelect: () => selectMilkshakeLine(line.id),
+        })),
+        {
+          id: "milkshake-tamanho",
+          label: "Tamanho",
+          hint: productType === "milkshake" ? sizeHint(selectedMilkshakeSize) : "",
+          onSelect: () => goToStep("milkshake", milkshakeSizeRef),
+        },
+        {
+          id: "milkshake-sabor",
+          label: "Sabor",
+          hint: productType === "milkshake" ? selectedFlavor : "",
+          onSelect: () => goToStep("milkshake", milkshakeFlavorRef),
+        },
+      ],
+    },
+    {
+      id: "acai",
+      title: "Açaí",
+      items: [
+        {
+          id: "acai-tamanho",
+          label: "Tamanho",
+          hint: productType === "acai" ? sizeHint(selectedAcaiSize) : "",
+          active: productType === "acai" && !selectedAcaiSize,
+          onSelect: () => goToStep("acai", acaiFlowRef),
+        },
+        {
+          id: "acai-sabor",
+          label: "Sabor",
+          hint: productType === "acai" ? selectedAcaiFlavor : "",
+          active: productType === "acai" && Boolean(selectedAcaiSize) && !selectedAcaiFlavor,
+          onSelect: () => goToStep("acai", acaiFlavorRef),
+        },
+        {
+          id: "acai-complementos",
+          label: "Complementos",
+          hint:
+            productType === "acai" && selectedComplements.length
+              ? `${selectedComplements.length}/8`
+              : "",
+          active: productType === "acai" && Boolean(selectedAcaiFlavor),
+          onSelect: () => goToStep("acai", acaiComplementsRef),
+        },
+      ],
+    },
+  ];
+
   return (
     <section
       className={`mx-auto ${
         isTotemProductIntro
-          ? "min-h-[calc(100vh-7.5rem)] max-w-none px-3 py-3 sm:px-4"
-          : "max-w-7xl px-4 py-5 sm:px-8"
+          ? "min-h-screen max-w-none px-3 pb-3 pt-24 sm:px-4"
+          : isTotemMode
+            ? "max-w-7xl px-4 pb-32 pt-24 sm:px-8"
+            : "max-w-7xl px-4 py-5 sm:px-8"
       }`}
     >
+      {isTotemMode && productType && (
+        // Faixa atrás do logo e do menu para o conteúdo rolado não ficar por baixo deles.
+        <div className="fixed inset-x-0 top-0 z-[65] h-24 bg-white/80 shadow-sm backdrop-blur-md" />
+      )}
+      {isTotemMode && (
+        <TotemSideMenu
+          sections={totemMenuSections}
+          canGoBack={Boolean(productType)}
+          onBack={goBack}
+        />
+      )}
+
       <div className={isTotemProductIntro ? "sr-only" : "mb-3"}>
         <p className="text-xs font-black uppercase tracking-[0.28em] text-secondary">
           Monte seu pedido
@@ -563,21 +693,13 @@ function GuidedMenu({
       <div
         className={`grid gap-5 ${
           isTotemProductIntro
-            ? "h-[calc(100vh-8.25rem)] min-h-[620px] grid-rows-2"
+            ? "h-[calc(100vh-6.75rem)] min-h-[620px] grid-rows-2"
             : "md:grid-cols-2"
         }`}
       >
         <button
           type="button"
-          onClick={() => {
-            setProductType("milkshake");
-            setSelectedMilkshakeSize(null);
-            setSelectedFlavor("");
-            setSelectedAcaiSize(null);
-            setSelectedAcaiFlavor("");
-            setSelectedComplements([]);
-            scrollToFlow(milkshakeFlowRef);
-          }}
+          onClick={() => selectProduct("milkshake")}
           className={`overflow-hidden rounded-lg border text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover ${
             isTotemProductIntro ? "flex min-h-0 flex-col" : ""
           } ${
@@ -615,15 +737,7 @@ function GuidedMenu({
 
         <button
           type="button"
-          onClick={() => {
-            setProductType("acai");
-            setSelectedMilkshakeSize(null);
-            setSelectedFlavor("");
-            setSelectedAcaiSize(null);
-            setSelectedAcaiFlavor("");
-            setSelectedComplements([]);
-            scrollToFlow(acaiFlowRef);
-          }}
+          onClick={() => selectProduct("acai")}
           className={`overflow-hidden rounded-lg border text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover ${
             isTotemProductIntro ? "flex min-h-0 flex-col" : ""
           } ${
@@ -704,7 +818,10 @@ function GuidedMenu({
             </div>
 
             <div>
-              <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-secondary">
+              <p
+                ref={acaiFlavorRef}
+                className="mb-3 scroll-mt-24 text-xs font-black uppercase tracking-[0.22em] text-secondary"
+              >
                 2. Sabor do acai
               </p>
               <div className="grid gap-2 sm:grid-cols-2">
@@ -721,7 +838,10 @@ function GuidedMenu({
                 ))}
               </div>
 
-              <p className="mb-3 mt-5 text-xs font-black uppercase tracking-[0.22em] text-secondary">
+              <p
+                ref={acaiComplementsRef}
+                className="mb-3 mt-5 scroll-mt-24 text-xs font-black uppercase tracking-[0.22em] text-secondary"
+              >
                 3. Complementos
               </p>
               <div
@@ -840,7 +960,10 @@ function GuidedMenu({
               isTotemMode ? "" : "lg:grid-cols-[1fr_320px]"
             }`}
           >
-            <aside className="rounded-lg border border-border-soft bg-accent/60 p-4">
+            <aside
+              ref={milkshakeSizeRef}
+              className="scroll-mt-24 rounded-lg border border-border-soft bg-accent/60 p-4"
+            >
               <p
                 className={`font-black uppercase tracking-[0.22em] text-secondary ${
                   isTotemMode ? "text-lg" : "text-xs"
@@ -903,7 +1026,7 @@ function GuidedMenu({
               )}
             </aside>
 
-            <div>
+            <div ref={milkshakeFlavorRef} className="scroll-mt-24">
               <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-secondary">
                 2. Escolha o sabor
               </p>

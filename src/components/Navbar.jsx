@@ -97,7 +97,7 @@ export default function Navbar({ activeLink }) {
     );
 
     return (
-      <div className="fixed right-4 top-4 z-[85]">
+      <div className="fixed bottom-6 right-6 z-[85]">
         <button
           type="button"
           onClick={openCart}
