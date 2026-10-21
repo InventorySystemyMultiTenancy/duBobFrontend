@@ -6,7 +6,12 @@ import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
-import { TOTEM_ID_KEY, TOTEM_NAME_KEY, TOTEM_SLUG_KEY } from "../lib/totemMode.js";
+import {
+  setTotemPaymentPending,
+  TOTEM_ID_KEY,
+  TOTEM_NAME_KEY,
+  TOTEM_SLUG_KEY,
+} from "../lib/totemMode.js";
 
 import PageHeader from "../components/PageHeader.jsx";
 const POLL_INTERVAL_MS = 4000;
@@ -55,7 +60,15 @@ function CheckoutPage() {
   const [paymentMode, setPaymentMode] = useState("online");
   const [waitingOrderId, setWaitingOrderId] = useState(null);
   const [paidTotemOrder, setPaidTotemOrder] = useState(null);
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const pollRef = useRef(null);
+
+  // Esperando a maquininha: o timeout do totem não pode voltar para o início.
+  useEffect(() => {
+    if (!isTotemMode || !waitingOrderId) return undefined;
+    setTotemPaymentPending(true);
+    return () => setTotemPaymentPending(false);
+  }, [isTotemMode, waitingOrderId]);
 
   // Address
   const [cep, setCep] = useState("");
@@ -240,6 +253,28 @@ function CheckoutPage() {
     },
   });
 
+  const cancelTerminalMutation = useMutation({
+    mutationFn: async (orderId) => {
+      const response = await api.post("/totem/payments/cancel", { orderId });
+      return response.data?.data;
+    },
+    onSuccess: () => {
+      clearInterval(pollRef.current);
+      setConfirmCancel(false);
+      setWaitingOrderId(null);
+      toast.success("Pagamento cancelado.");
+    },
+    onError: (err) => {
+      setConfirmCancel(false);
+      const data = err?.response?.data;
+      toast.error(
+        data?.error?.message ||
+          data?.message ||
+          "Não foi possível cancelar. Chame um atendente.",
+      );
+    },
+  });
+
   const handleOnlineCheckout = async () => {
     try {
       const order = await createOrderMutation.mutateAsync("PIX");
@@ -411,6 +446,40 @@ function CheckoutPage() {
               "Esta página atualiza automaticamente a cada poucos segundos.",
             )}
           </p>
+          {isTotemMode &&
+            (confirmCancel ? (
+              <div className="mt-6 space-y-3">
+                <p className="text-lg font-black text-primary">
+                  Cancelar o pagamento?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    disabled={cancelTerminalMutation.isPending}
+                    onClick={() => setConfirmCancel(false)}
+                    className="w-1/2 rounded-2xl border-2 border-primary/15 px-4 py-4 text-lg font-black text-primary transition hover:border-secondary disabled:opacity-50"
+                  >
+                    Não
+                  </button>
+                  <button
+                    type="button"
+                    disabled={cancelTerminalMutation.isPending}
+                    onClick={() => cancelTerminalMutation.mutate(waitingOrderId)}
+                    className="w-1/2 rounded-2xl bg-red-600 px-4 py-4 text-lg font-black text-white transition hover:bg-red-700 disabled:opacity-60"
+                  >
+                    {cancelTerminalMutation.isPending ? "Cancelando..." : "Sim, cancelar"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmCancel(true)}
+                className="mt-6 w-full rounded-2xl border-2 border-red-200 bg-white px-6 py-4 text-lg font-black text-red-600 transition hover:border-red-500"
+              >
+                Cancelar pagamento
+              </button>
+            ))}
         </div>
       </main>
     );

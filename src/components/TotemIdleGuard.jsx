@@ -4,8 +4,10 @@ import { useAuth } from "../hooks/useAuth.js";
 import { useCart } from "../context/CartContext.jsx";
 import {
   clearTotemMode,
+  isTotemPaymentPending,
   TOTEM_FULLSCREEN_REQUESTED_KEY,
   TOTEM_MODE_KEY,
+  TOTEM_PAYMENT_PENDING_EVENT,
   TOTEM_SLUG_KEY,
 } from "../lib/totemMode.js";
 import { verifyExitPin } from "../lib/exitPin.js";
@@ -48,6 +50,7 @@ function TotemIdleGuard() {
   const { logout } = useAuth();
   const { clearCart, closeCart } = useCart();
   const [isTotemMode, setIsTotemMode] = useState(isTotemModeEnabled);
+  const [paymentPending, setPaymentPending] = useState(isTotemPaymentPending);
   const [showWarning, setShowWarning] = useState(false);
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const [fullscreenRequested, setFullscreenRequested] = useState(
@@ -108,6 +111,7 @@ function TotemIdleGuard() {
 
     if (
       !isTotemMode ||
+      paymentPending ||
       showWarning ||
       location.pathname === "/totem" ||
       /^\/totem\d+$/i.test(location.pathname)
@@ -119,7 +123,18 @@ function TotemIdleGuard() {
       setRemaining(WARNING_TIME);
       setShowWarning(true);
     }, IDLE_TIME_MS);
-  }, [clearIdleTimer, isTotemMode, location.pathname, showWarning]);
+  }, [clearIdleTimer, isTotemMode, location.pathname, paymentPending, showWarning]);
+
+  useEffect(() => {
+    const syncPaymentPending = () => {
+      const pending = isTotemPaymentPending();
+      setPaymentPending(pending);
+      if (pending) setShowWarning(false);
+    };
+    window.addEventListener(TOTEM_PAYMENT_PENDING_EVENT, syncPaymentPending);
+    return () =>
+      window.removeEventListener(TOTEM_PAYMENT_PENDING_EVENT, syncPaymentPending);
+  }, []);
 
   useEffect(() => {
     const syncMode = () => setIsTotemMode(isTotemModeEnabled());
