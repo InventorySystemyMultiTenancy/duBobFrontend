@@ -187,6 +187,13 @@ const ACAI_COMPLEMENTS = [
   "Chocolate com Avela",
 ];
 
+// Cadastrado pelo backend ao subir (server.js); o preço vale do banco no pedido.
+const ACAI_EXTRA_COMPLEMENTS_ADDON = {
+  id: "db_addon_acai_extra_complementos",
+  nome: "4 complementos extras",
+  price: 5,
+};
+
 const CONFIG_CATEGORY_KEYWORDS = [
   "sabor acai",
   "sabor acai",
@@ -284,7 +291,7 @@ function buildAcaiOptions(products) {
 
 function CardapioPage() {
   const { user } = useAuth();
-  const { addItem, addItems, openCart } = useCart();
+  const { addItem, openCart } = useCart();
   const { t } = useTranslation();
   const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
 
@@ -368,76 +375,35 @@ function CardapioPage() {
       );
     if (!product?.id) return;
 
+    // Do 5º ao 8º complemento cobra +R$ 5,00 como adicional do mesmo item
+    // (um produto só no carrinho e no pedido).
     const extraComplements = complements.length > 4;
+    const complementNames = complements.map((item) => item.name);
     const observation = [
       `Sabor: ${flavor}`,
       `Tamanho: ${size.label} ${size.ml}`,
-      `Complementos: ${complements.map((item) => item.name).join(", ") || "nenhum"}`,
-      extraComplements ? "Adicional: +4 complementos" : "",
-    ]
-      .filter(Boolean)
-      .join(" | ");
+      `Complementos: ${complementNames.join(", ") || "nenhum"}`,
+    ].join(" | ");
+    const extraAddon = extraComplements ? [ACAI_EXTRA_COMPLEMENTS_ADDON] : [];
 
-    const cartItems = [
-      {
-        key: [
-          product.id,
-          "acai",
-          flavor,
-          size.id,
-          complements.map((item) => item.name).join("."),
-        ].join("|"),
-        id: product.id,
-        nome: `Acai ${flavor} ${size.label} (${size.ml})`,
-        price: size.price,
-        addons: [],
-        removals: [],
-        observation,
-        quantity: 1,
+    addItem({
+      key: [product.id, "acai", flavor, size.id, complementNames.join(".")].join(
+        "|",
+      ),
+      id: product.id,
+      nome: `Acai ${flavor} ${size.label} (${size.ml})`,
+      price: size.price,
+      addons: extraAddon,
+      removals: [],
+      observation,
+      quantity: 1,
+      size: size.id,
+      payload: {
+        productId: product.id,
         size: size.id,
-        payload: {
-          productId: product.id,
-          size: size.id,
-          addonIds: [],
-        },
+        addonIds: extraAddon.map((addon) => addon.id),
       },
-    ];
-
-    if (extraComplements) {
-      const extraProduct =
-        products.find((p) => p.id === "db_acai_extra_complementos") ||
-        products.find((p) =>
-          normalizeText(p.name).includes("adicional 4 complementos"),
-        );
-      if (extraProduct?.id) {
-        cartItems.push({
-          key: [
-            extraProduct.id,
-            "acai-extra",
-            complements
-              .slice(4)
-              .map((item) => item.name)
-              .join("."),
-          ].join("|"),
-          id: extraProduct.id,
-          nome: "Adicional +4 complementos acai",
-          price: 5,
-          addons: [],
-          removals: [],
-          observation: `Complementos extras: ${complements
-            .slice(4)
-            .map((item) => item.name)
-            .join(", ")}`,
-          quantity: 1,
-          payload: {
-            productId: extraProduct.id,
-            addonIds: [],
-          },
-        });
-      }
-    }
-
-    addItems(cartItems);
+    });
     openCart();
   };
 
