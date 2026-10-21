@@ -7,6 +7,9 @@ import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 import {
+  clearTotemPendingOrder,
+  getTotemPendingOrder,
+  saveTotemPendingOrder,
   setTotemPaymentPending,
   TOTEM_ID_KEY,
   TOTEM_NAME_KEY,
@@ -58,14 +61,23 @@ function CheckoutPage() {
   const currentTotemName = localStorage.getItem(TOTEM_NAME_KEY);
   const currentTotemPath = currentTotemSlug ? `/${currentTotemSlug}` : "/totem";
   const [paymentMode, setPaymentMode] = useState("online");
-  const [waitingOrderId, setWaitingOrderId] = useState(null);
+  // No totem, retoma a espera se a página recarregou no meio do pagamento.
+  const [waitingOrderId, setWaitingOrderId] = useState(() =>
+    isTotemMode ? getTotemPendingOrder() : null,
+  );
   const [paidTotemOrder, setPaidTotemOrder] = useState(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const pollRef = useRef(null);
 
-  // Esperando a maquininha: o timeout do totem não pode voltar para o início.
+  // Esperando a maquininha: o timeout do totem não pode voltar para o início,
+  // e o pedido fica salvo até aprovar, recusar ou cancelar.
   useEffect(() => {
-    if (!isTotemMode || !waitingOrderId) return undefined;
+    if (!isTotemMode) return undefined;
+    if (!waitingOrderId) {
+      clearTotemPendingOrder();
+      return undefined;
+    }
+    saveTotemPendingOrder(waitingOrderId);
     setTotemPaymentPending(true);
     return () => setTotemPaymentPending(false);
   }, [isTotemMode, waitingOrderId]);
@@ -110,15 +122,27 @@ function CheckoutPage() {
           clearInterval(pollRef.current);
           toast.error("Pagamento recusado. Tente novamente.");
           setWaitingOrderId(null);
+        } else if (order?.status === "CANCELADO") {
+          clearInterval(pollRef.current);
+          toast.error("Pedido cancelado.");
+          setWaitingOrderId(null);
         }
-      } catch {
-        // ignore transient errors
+      } catch (err) {
+        // Pedido sumiu ou a sessão do totem acabou: não deixa a tela presa na espera.
+        if (isTotemMode && [401, 403, 404].includes(err?.response?.status)) {
+          clearInterval(pollRef.current);
+          clearTotemPendingOrder();
+          logout();
+          clearCart();
+          navigate(currentTotemPath, { replace: true });
+        }
+        // demais erros (internet oscilando): tenta de novo no próximo ciclo
       }
     };
     pollRef.current = setInterval(poll, POLL_INTERVAL_MS);
     poll();
     return () => clearInterval(pollRef.current);
-  }, [waitingOrderId, clearCart, navigate, isTotemMode]);
+  }, [waitingOrderId, clearCart, navigate, isTotemMode, logout, currentTotemPath]);
 
   // ViaCEP auto-fill
   const fetchViaCep = useCallback(async (rawCep) => {

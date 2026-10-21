@@ -5,7 +5,40 @@ export const TOTEM_NAME_KEY = "pc_totem_name";
 export const TOTEM_FULLSCREEN_REQUESTED_KEY =
   "pc_totem_fullscreen_requested";
 
+// Pedido esperando pagamento na maquininha. Fica salvo para, se a página
+// recarregar ou o totem reiniciar, voltar direto para a tela de espera.
+const TOTEM_PENDING_ORDER_KEY = "pc_totem_pending_order";
+const TOTEM_PENDING_ORDER_MAX_AGE_MS = 15 * 60 * 1000;
+
+export function saveTotemPendingOrder(orderId) {
+  localStorage.setItem(
+    TOTEM_PENDING_ORDER_KEY,
+    JSON.stringify({ orderId, savedAt: Date.now() }),
+  );
+}
+
+export function clearTotemPendingOrder() {
+  localStorage.removeItem(TOTEM_PENDING_ORDER_KEY);
+}
+
+export function getTotemPendingOrder() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(TOTEM_PENDING_ORDER_KEY));
+    if (
+      saved?.orderId &&
+      Date.now() - Number(saved.savedAt) < TOTEM_PENDING_ORDER_MAX_AGE_MS
+    ) {
+      return saved.orderId;
+    }
+  } catch {
+    // valor inválido: descarta abaixo
+  }
+  clearTotemPendingOrder();
+  return null;
+}
+
 export function clearTotemMode() {
+  clearTotemPendingOrder();
   localStorage.removeItem(TOTEM_MODE_KEY);
   localStorage.removeItem(TOTEM_ID_KEY);
   localStorage.removeItem(TOTEM_SLUG_KEY);

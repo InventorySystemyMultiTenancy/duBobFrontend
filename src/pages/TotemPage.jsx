@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
@@ -7,6 +7,7 @@ import { useCart } from "../context/CartContext.jsx";
 import { api } from "../lib/api.js";
 import {
   clearTotemMode,
+  getTotemPendingOrder,
   TOTEM_ID_KEY,
   TOTEM_FULLSCREEN_REQUESTED_KEY,
   TOTEM_MODE_KEY,
@@ -73,6 +74,16 @@ function TotemPage() {
     closeCart();
   };
 
+  // Totem reiniciou no meio de um pagamento na maquininha: volta para a
+  // tela de espera em vez de apagar a sessão do cliente.
+  const resumePendingPayment = useCallback(() => {
+    if (!getTotemPendingOrder() || !localStorage.getItem("pc_token")) {
+      return false;
+    }
+    navigate("/checkout", { replace: true });
+    return true;
+  }, [navigate]);
+
   useEffect(() => {
     if (shouldForceExitTotem()) {
       clearTotemMode();
@@ -132,7 +143,7 @@ function TotemPage() {
 
       localStorage.setItem(TOTEM_MODE_KEY, "true");
       window.dispatchEvent(new Event("pc_totem_mode_change"));
-      resetTotemSessionRef.current();
+      if (!resumePendingPayment()) resetTotemSessionRef.current();
       return () => {
         ignore = true;
       };
@@ -140,8 +151,8 @@ function TotemPage() {
 
     localStorage.setItem(TOTEM_MODE_KEY, "true");
     window.dispatchEvent(new Event("pc_totem_mode_change"));
-    resetTotemSessionRef.current();
-  }, [totemSlug]);
+    if (!resumePendingPayment()) resetTotemSessionRef.current();
+  }, [totemSlug, resumePendingPayment]);
 
   useEffect(() => {
     const clearIdleTimer = () => {
