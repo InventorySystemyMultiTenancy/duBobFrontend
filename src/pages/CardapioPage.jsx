@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import CartDrawer from "../components/CartDrawer.jsx";
@@ -791,27 +791,30 @@ function GuidedMenu({
               : "rounded-lg border border-border-soft bg-white p-4 shadow-card sm:p-6"
           }
         >
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <button
-              type="button"
-              onClick={goBack}
-              className={`flex items-center gap-3 font-black text-primary transition active:scale-95 ${
-                big
-                  ? "rounded-2xl border-4 border-primary/20 bg-white px-8 py-5 text-3xl hover:border-secondary"
-                  : "rounded-lg border-2 border-primary/15 bg-white px-4 py-2 text-sm hover:border-secondary"
-              }`}
-            >
-              <span aria-hidden="true">←</span> Voltar
-            </button>
-
-            <div className={`flex flex-col gap-2 ${big ? "items-end" : "items-start sm:items-end"}`}>
+          {/* Voltar e "Passo X de Y" na mesma linha; etapas centralizadas embaixo. */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-4">
+              <button
+                type="button"
+                onClick={goBack}
+                className={`flex items-center gap-3 font-black text-primary transition active:scale-95 ${
+                  big
+                    ? "rounded-2xl border-4 border-primary/20 bg-white px-8 py-5 text-3xl hover:border-secondary"
+                    : "rounded-lg border-2 border-primary/15 bg-white px-4 py-2 text-sm hover:border-secondary"
+                }`}
+              >
+                <span aria-hidden="true">←</span> Voltar
+              </button>
               <p
-                className={`font-bold text-primary/75 ${big ? "text-2xl" : "text-xs"}`}
+                className={`text-right font-bold text-primary/75 ${big ? "text-2xl" : "text-xs"}`}
               >
                 {productType === "acai" ? "Açaí" : "Milk shake"} · Passo{" "}
                 {stepIndex + 1} de {steps.length}
               </p>
-              <ol className="flex flex-wrap gap-2">
+            </div>
+
+            <div>
+              <ol className={`flex flex-wrap gap-2 ${big ? "justify-center" : ""}`}>
                 {steps.map((item, index) => (
                   <li key={item.id}>
                     <button
@@ -837,7 +840,7 @@ function GuidedMenu({
             </div>
           </div>
 
-          <div className={big ? "mb-6 mt-6" : "mb-5 mt-5"}>
+          <div className={big ? "mb-6 mt-6 text-center" : "mb-5 mt-5"}>
             <h2
               className={`font-black leading-tight text-primary ${
                 big ? "text-5xl" : "text-2xl"
@@ -1101,11 +1104,21 @@ function OptionTile({
 }
 
 // Barra fixa embaixo com o resumo e o botão de colocar no carrinho.
+// No totem fica centralizada e esconde o carrinho flutuante enquanto aparece,
+// para nada ficar por cima do botão.
 function ConfirmBar({ big, summary, detail, total, disabled, onConfirm }) {
+  useEffect(() => {
+    if (!big) return undefined;
+    document.body.classList.add("totem-confirm-bar-open");
+    return () => document.body.classList.remove("totem-confirm-bar-open");
+  }, [big]);
+
   return (
     <div
-      className={`sticky bottom-0 z-[60] mt-6 flex flex-wrap items-center justify-between gap-4 border-t-2 border-primary/10 bg-white/95 backdrop-blur ${
-        big ? "-mx-5 px-5 py-5 pr-32 sm:-mx-8 sm:px-8 sm:pr-36" : "-mx-4 px-4 py-3 sm:-mx-6 sm:px-6"
+      className={`sticky bottom-0 z-[60] mt-6 flex border-t-2 border-primary/10 bg-white/95 backdrop-blur ${
+        big
+          ? "-mx-5 flex-col items-center gap-4 px-5 py-5 text-center sm:-mx-8 sm:px-8"
+          : "-mx-4 flex-wrap items-center justify-between gap-4 px-4 py-3 sm:-mx-6 sm:px-6"
       }`}
     >
       <div className="min-w-0">
@@ -1118,7 +1131,9 @@ function ConfirmBar({ big, summary, detail, total, disabled, onConfirm }) {
           </p>
         )}
       </div>
-      <div className="flex items-center gap-5">
+      <div
+        className={`flex items-center gap-5 ${big ? "w-full max-w-3xl justify-center" : ""}`}
+      >
         <p className={`font-black text-secondary ${big ? "text-4xl" : "text-xl"}`}>
           {total}
         </p>
@@ -1127,7 +1142,7 @@ function ConfirmBar({ big, summary, detail, total, disabled, onConfirm }) {
           disabled={disabled}
           onClick={onConfirm}
           className={`rounded-2xl bg-secondary font-black text-white shadow-card transition active:scale-95 hover:bg-primary disabled:cursor-not-allowed disabled:bg-primary/25 ${
-            big ? "px-10 py-6 text-3xl" : "px-5 py-3 text-sm"
+            big ? "flex-1 px-8 py-6 text-3xl" : "px-5 py-3 text-sm"
           }`}
         >
           Colocar no carrinho

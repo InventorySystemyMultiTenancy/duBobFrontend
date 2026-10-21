@@ -37,6 +37,11 @@ html {
   cursor: progress;
 }
 
+/* Totem: a barra "Colocar no carrinho" fica centralizada sem o carrinho flutuante por cima. */
+body.totem-confirm-bar-open [data-totem-cart] {
+  display: none;
+}
+
 body.install-prompt-open {
   padding-bottom: 6rem;
 }
