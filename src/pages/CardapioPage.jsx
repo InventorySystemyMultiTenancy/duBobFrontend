@@ -13,6 +13,11 @@ import acai1 from "/acai1.png";
 
 import PageHeader from "../components/PageHeader.jsx";
 import TotemSideMenu from "../components/TotemSideMenu.jsx";
+import {
+  spokenList,
+  spokenSize,
+  useTotemVoice,
+} from "../lib/totemVoice.js";
 const fmt = (value) =>
   Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -496,6 +501,7 @@ function GuidedMenu({
   const [selectedAcaiSize, setSelectedAcaiSize] = useState(null);
   const [selectedAcaiFlavor, setSelectedAcaiFlavor] = useState("");
   const [selectedComplements, setSelectedComplements] = useState([]);
+  const [justAdded, setJustAdded] = useState(false);
   const isTotemProductIntro = isTotemMode && !productType;
 
   const selectedLine =
@@ -539,6 +545,7 @@ function GuidedMenu({
   };
 
   const startProduct = (type) => {
+    setJustAdded(false);
     setProductType(type);
     resetSelections();
     setStep(PRODUCT_STEPS[type][0].id);
@@ -564,6 +571,7 @@ function GuidedMenu({
 
   // Depois de colocar no carrinho, recomeça na escolha do produto.
   const finishItem = () => {
+    setJustAdded(true);
     setProductType(null);
     resetSelections();
     scrollTop();
@@ -696,6 +704,26 @@ function GuidedMenu({
   const extraComplements = selectedComplements.length > 4;
   const acaiTotal = (selectedAcaiSize?.price ?? 0) + (extraComplements ? 5 : 0);
   const big = isTotemMode;
+
+  // Voz do totem (só fala se o admin ligou a voz deste totem).
+  const voicePrompt = !isTotemMode
+    ? ""
+    : !productType
+      ? justAdded
+        ? "Pronto, está no carrinho. Quer pedir mais alguma coisa? Milk shake ou açaí?"
+        : "Você quer milk shake ou açaí?"
+      : productType === "milkshake"
+        ? step === "linha"
+          ? `Qual linha de milk shake? ${spokenList(milkshakeLines.map((line) => line.title))}.`
+          : step === "tamanho"
+            ? `Qual o tamanho? ${selectedLine.sizes.map(spokenSize).join(". ")}.`
+            : "Agora escolha o sabor e toque em colocar no carrinho."
+        : step === "tamanho"
+          ? `Qual o tamanho do copo? ${acaiOptions.sizes.map(spokenSize).join(". ")}.`
+          : step === "sabor"
+            ? `Qual o sabor do açaí? ${spokenList(acaiOptions.flavors.map((flavor) => flavor.name))}.`
+            : "Escolha os complementos. Quatro estão inclusos. Depois toque em colocar no carrinho.";
+  useTotemVoice(voicePrompt);
 
   return (
     <section

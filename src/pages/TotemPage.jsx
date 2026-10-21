@@ -15,6 +15,7 @@ import {
   TOTEM_SLUG_KEY,
   shouldForceExitTotem,
 } from "../lib/totemMode.js";
+import { setTotemVoiceEnabled } from "../lib/totemVoice.js";
 const IDLE_TIME_MS = 60_000;
 const WARNING_TIME = 15;
 const ACTIVITY_EVENTS = [
@@ -128,6 +129,7 @@ function TotemPage() {
           localStorage.setItem(TOTEM_ID_KEY, currentTotem.id);
           localStorage.setItem(TOTEM_SLUG_KEY, currentTotem.slug);
           localStorage.setItem(TOTEM_NAME_KEY, currentTotem.name);
+          setTotemVoiceEnabled(Boolean(currentTotem.voiceEnabled));
         })
         .catch(() => {
           if (!ignore) {

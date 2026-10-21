@@ -43,6 +43,7 @@ export function clearTotemMode() {
   localStorage.removeItem(TOTEM_ID_KEY);
   localStorage.removeItem(TOTEM_SLUG_KEY);
   localStorage.removeItem(TOTEM_NAME_KEY);
+  localStorage.removeItem("pc_totem_voice");
   localStorage.removeItem("pc_token");
   localStorage.removeItem("pc_user");
   sessionStorage.removeItem(TOTEM_FULLSCREEN_REQUESTED_KEY);

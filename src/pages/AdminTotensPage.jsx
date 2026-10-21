@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 
 import PageHeader from "../components/PageHeader.jsx";
-const EMPTY_FORM = { name: "", number: "", terminalId: "" };
+const EMPTY_FORM = { name: "", number: "", terminalId: "", voiceEnabled: false };
 
 function TotemModal({ totem, onClose }) {
   const queryClient = useQueryClient();
@@ -16,6 +16,7 @@ function TotemModal({ totem, onClose }) {
           name: totem.name,
           number: String(totem.number),
           terminalId: totem.terminalId ?? "",
+          voiceEnabled: Boolean(totem.voiceEnabled),
         }
       : EMPTY_FORM,
   );
@@ -51,6 +52,7 @@ function TotemModal({ totem, onClose }) {
     const payload = {
       name: form.name.trim(),
       number,
+      voiceEnabled: form.voiceEnabled,
     };
     if (form.terminalId.trim()) payload.terminalId = form.terminalId.trim();
     else if (isEdit) payload.terminalId = null;
@@ -114,6 +116,29 @@ function TotemModal({ totem, onClose }) {
             />
           </div>
 
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-200 p-3">
+            <input
+              type="checkbox"
+              checked={form.voiceEnabled}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  voiceEnabled: event.target.checked,
+                }))
+              }
+              className="mt-0.5 h-5 w-5 accent-secondary"
+            />
+            <span>
+              <span className="block text-sm font-semibold text-gray-800">
+                Voz do totem
+              </span>
+              <span className="block text-[11px] text-gray-500">
+                O totem fala as perguntas do pedido (ex.: "Você quer milk shake
+                ou açaí?") e lê os tamanhos e preços.
+              </span>
+            </span>
+          </label>
+
           <div className="flex gap-3 pt-1">
             <button
               type="submit"
@@ -162,6 +187,20 @@ function TotemCard({ totem, onEdit }) {
     onError: (error) => {
       toast.error(
         error?.response?.data?.error?.message || "Erro ao alterar totem.",
+      );
+    },
+  });
+
+  const voiceMutation = useMutation({
+    mutationFn: () =>
+      api.put(`/totens/${totem.id}`, { voiceEnabled: !totem.voiceEnabled }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-totens"] });
+      toast.success(totem.voiceEnabled ? "Voz desligada." : "Voz ligada.");
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.error?.message || "Erro ao alterar a voz.",
       );
     },
   });
@@ -232,6 +271,18 @@ function TotemCard({ totem, onEdit }) {
           className="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400 disabled:opacity-50"
         >
           {totem.isActive ? "Desativar" : "Ativar"}
+        </button>
+        <button
+          type="button"
+          onClick={() => voiceMutation.mutate()}
+          disabled={voiceMutation.isPending}
+          className={`rounded-full border px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${
+            totem.voiceEnabled
+              ? "border-secondary/40 bg-secondary/10 text-secondary"
+              : "border-gray-200 text-gray-600 hover:border-gray-400"
+          }`}
+        >
+          {totem.voiceEnabled ? "🔊 Voz ligada" : "🔇 Voz desligada"}
         </button>
         <button
           type="button"

@@ -15,6 +15,7 @@ import {
   TOTEM_NAME_KEY,
   TOTEM_SLUG_KEY,
 } from "../lib/totemMode.js";
+import { useTotemVoice } from "../lib/totemVoice.js";
 
 import PageHeader from "../components/PageHeader.jsx";
 const POLL_INTERVAL_MS = 4000;
@@ -81,6 +82,17 @@ function CheckoutPage() {
     setTotemPaymentPending(true);
     return () => setTotemPaymentPending(false);
   }, [isTotemMode, waitingOrderId]);
+
+  // Voz do totem (só fala se o admin ligou a voz deste totem).
+  useTotemVoice(
+    !isTotemMode
+      ? ""
+      : paidTotemOrder
+        ? "Pagamento aprovado! Seu pedido foi enviado para a cozinha. Guarde o número que está na tela."
+        : waitingOrderId
+          ? "Agora faça o pagamento na maquininha."
+          : "Confira seu pedido e toque em pagar.",
+  );
 
   // Address
   const [cep, setCep] = useState("");
