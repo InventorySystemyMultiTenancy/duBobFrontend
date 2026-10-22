@@ -2,53 +2,129 @@ import { useEffect } from "react";
 import { TOTEM_MODE_KEY } from "./totemMode.js";
 
 /**
- * Voz do totem: fala as perguntas do pedido com a síntese de voz do navegador.
+ * Voz do totem: fala as perguntas do pedido.
+ * - No Fully Kiosk usa a fala do próprio Fully (motor de voz do Android, onde
+ *   dá para instalar/escolher a voz). Precisa de "Enable JavaScript Interface"
+ *   ligado nas configurações do Fully — o WebView não tem a fala do navegador.
+ * - Fora dele usa a síntese de voz do navegador, preferindo vozes naturais.
  * Só funciona no modo totem e quando o admin liga "Voz do totem" no cadastro
  * do totem (TotemPage grava a opção ao carregar o totem).
  */
 export const TOTEM_VOICE_KEY = "pc_totem_voice";
 
 const SIZE_LETTERS = { P: "pê", M: "eme", G: "gê", MG: "eme gê" };
+const FULLY_LOCALE = "pt_BR";
+const FULLY_ENGINE = "com.google.android.tts";
 
 export function setTotemVoiceEnabled(enabled) {
   localStorage.setItem(TOTEM_VOICE_KEY, enabled ? "true" : "false");
 }
 
-function isVoiceOn() {
+function fullyApi() {
+  const fully = typeof window !== "undefined" ? window.fully : undefined;
+  return fully && typeof fully.textToSpeech === "function" ? fully : null;
+}
+
+function hasBrowserSpeech() {
   return (
     typeof window !== "undefined" &&
-    "speechSynthesis" in window &&
+    Boolean(window.speechSynthesis) &&
+    typeof window.SpeechSynthesisUtterance === "function"
+  );
+}
+
+function isVoiceOn() {
+  return (
+    (fullyApi() || hasBrowserSpeech()) &&
     localStorage.getItem(TOTEM_MODE_KEY) === "true" &&
     localStorage.getItem(TOTEM_VOICE_KEY) === "true"
   );
 }
 
+// Vozes naturais/neurais soam bem mais simpáticas que as padrão.
+const FRIENDLY_VOICE = /natural|neural|online|francisca|thalita|luciana|google/i;
+
 function pickVoice() {
   const voices = window.speechSynthesis.getVoices();
+  const ptBR = voices.filter((voice) => /^pt[-_]BR$/i.test(voice.lang));
   return (
-    voices.find((voice) => voice.lang === "pt-BR" && /google/i.test(voice.name)) ||
-    voices.find((voice) => voice.lang === "pt-BR") ||
-    voices.find((voice) => voice.lang?.startsWith("pt")) ||
+    ptBR.find((voice) => FRIENDLY_VOICE.test(voice.name)) ||
+    ptBR[0] ||
+    voices.find((voice) => voice.lang?.toLowerCase().startsWith("pt")) ||
     null
   );
 }
 
+function speakWithFully(fully, text) {
+  try {
+    fully.stopTextToSpeech?.();
+    fully.textToSpeech(text, FULLY_LOCALE, FULLY_ENGINE);
+  } catch {
+    // versões antigas do Fully aceitam só o texto
+    try {
+      fully.textToSpeech(text);
+    } catch {
+      // sem voz disponível: segue sem falar
+    }
+  }
+}
+
 export function speakTotem(text) {
   if (!text || !isVoiceOn()) return;
-  const synth = window.speechSynthesis;
-  synth.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "pt-BR";
-  utterance.rate = 0.95;
-  const voice = pickVoice();
-  if (voice) utterance.voice = voice;
-  synth.speak(utterance);
+
+  const fully = fullyApi();
+  if (fully) {
+    speakWithFully(fully, text);
+    return;
+  }
+
+  // A voz nunca pode derrubar o totem: qualquer erro aqui só deixa de falar.
+  try {
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "pt-BR";
+    utterance.rate = 1;
+    utterance.pitch = 1.1;
+    try {
+      const voice = pickVoice();
+      if (voice) utterance.voice = voice;
+    } catch {
+      // fica com a voz padrão em português
+    }
+    synth.speak(utterance);
+  } catch {
+    // navegador sem fala funcionando
+  }
 }
 
 export function stopTotemSpeech() {
-  if (typeof window !== "undefined" && "speechSynthesis" in window) {
-    window.speechSynthesis.cancel();
+  const fully = fullyApi();
+  if (fully) {
+    try {
+      fully.stopTextToSpeech?.();
+    } catch {
+      // ignora
+    }
+    return;
   }
+  try {
+    if (hasBrowserSpeech()) window.speechSynthesis.cancel();
+  } catch {
+    // ignora
+  }
+}
+
+// O Chrome carrega a lista de vozes depois; pede de novo para já ter a voz boa.
+try {
+  if (hasBrowserSpeech()) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.addEventListener?.("voiceschanged", () =>
+      window.speechSynthesis.getVoices(),
+    );
+  }
+} catch {
+  // ignora
 }
 
 // Fala o texto sempre que ele mudar; para de falar ao sair da tela.
