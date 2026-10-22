@@ -5,7 +5,23 @@ import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 
 import PageHeader from "../components/PageHeader.jsx";
-const EMPTY_FORM = { name: "", number: "", terminalId: "", voiceEnabled: false };
+const EMPTY_FORM = {
+  name: "",
+  number: "",
+  terminalId: "",
+  sumupOperatorId: "",
+  voiceEnabled: false,
+};
+
+// Maquininhas SumUp criadas em Admin → Pagamentos.
+function useSumUpOperators() {
+  return useQuery({
+    queryKey: ["admin-sumup-operators"],
+    queryFn: async () =>
+      (await api.get("/admin/settings/payment/sumup/operators")).data?.data ?? [],
+    retry: false,
+  });
+}
 
 function TotemModal({ totem, onClose }) {
   const queryClient = useQueryClient();
@@ -16,6 +32,7 @@ function TotemModal({ totem, onClose }) {
           name: totem.name,
           number: String(totem.number),
           terminalId: totem.terminalId ?? "",
+          sumupOperatorId: totem.sumupOperatorId ?? "",
           voiceEnabled: Boolean(totem.voiceEnabled),
         }
       : EMPTY_FORM,
@@ -23,6 +40,7 @@ function TotemModal({ totem, onClose }) {
 
   const set = (field) => (event) =>
     setForm((current) => ({ ...current, [field]: event.target.value }));
+  const { data: sumupOperators = [] } = useSumUpOperators();
 
   const mutation = useMutation({
     mutationFn: async (payload) => {
@@ -56,6 +74,8 @@ function TotemModal({ totem, onClose }) {
     };
     if (form.terminalId.trim()) payload.terminalId = form.terminalId.trim();
     else if (isEdit) payload.terminalId = null;
+    if (form.sumupOperatorId) payload.sumupOperatorId = form.sumupOperatorId;
+    else if (isEdit) payload.sumupOperatorId = null;
 
     mutation.mutate(payload);
   };
@@ -104,7 +124,7 @@ function TotemModal({ totem, onClose }) {
 
           <div>
             <label className="mb-1 block text-xs font-semibold text-gray-600">
-              ID da maquininha
+              ID da maquininha (Mercado Pago)
             </label>
             <input
               type="text"
@@ -114,6 +134,29 @@ function TotemModal({ totem, onClose }) {
               onChange={set("terminalId")}
               className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 font-mono text-sm focus:border-secondary focus:outline-none"
             />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">
+              Maquininha SumUp
+            </label>
+            <select
+              value={form.sumupOperatorId}
+              onChange={set("sumupOperatorId")}
+              className="w-full rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
+            >
+              <option value="">Nenhuma</option>
+              {sumupOperators.map((operator) => (
+                <option key={operator.id} value={operator.id}>
+                  {operator.name}
+                  {operator.readerId ? " · cobrança direto na maquininha" : ""}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[10px] text-gray-400">
+              Usada quando o banco da maquininha é a SumUp. As maquininhas são
+              criadas em Admin → Pagamentos.
+            </p>
           </div>
 
           <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-200 p-3">
@@ -163,6 +206,10 @@ function TotemModal({ totem, onClose }) {
 
 function TotemCard({ totem, onEdit }) {
   const queryClient = useQueryClient();
+  const { data: sumupOperators = [] } = useSumUpOperators();
+  const sumupOperator = sumupOperators.find(
+    (operator) => operator.id === totem.sumupOperatorId,
+  );
   const url = `${window.location.origin}/${totem.slug}`;
 
   const deleteMutation = useMutation({
@@ -239,13 +286,20 @@ function TotemCard({ totem, onEdit }) {
           </p>
           {totem.terminalId ? (
             <p className="mt-1 font-mono text-[10px] text-gray-400">
-              Maquininha: {totem.terminalId}
+              Mercado Pago: {totem.terminalId}
             </p>
-          ) : (
+          ) : null}
+          {totem.sumupOperatorId ? (
+            <p className="mt-1 text-[10px] text-gray-400">
+              SumUp: {sumupOperator?.name ?? "maquininha removida"}
+              {sumupOperator?.readerId ? " · cobrança direto na maquininha" : ""}
+            </p>
+          ) : null}
+          {!totem.terminalId && !totem.sumupOperatorId ? (
             <p className="mt-1 text-[10px] text-amber-500">
               Sem maquininha vinculada
             </p>
-          )}
+          ) : null}
         </div>
         <button
           type="button"
