@@ -1,5 +1,6 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { QRCodeSVG } from "qrcode.react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
@@ -51,6 +52,42 @@ const mapItemToApi = (item) => {
   }
 };
 
+// Pix da SumUp: QR code e copia-e-cola mostrados na tela de espera.
+function PixChargeBox({ charge }) {
+  const copy = async () => {
+    await navigator.clipboard.writeText(charge.qrCode);
+    toast.success("Código Pix copiado.");
+  };
+
+  return (
+    <div className="mt-4 rounded-2xl border border-primary/10 bg-gray-50 p-4">
+      <p className="text-sm text-smoke">
+        Pague {currency(charge.amount)} com o Pix abaixo:
+      </p>
+      {charge.qrCodeImageUrl ? (
+        <img
+          src={charge.qrCodeImageUrl}
+          alt="QR code Pix"
+          className="mx-auto mt-3 h-52 w-52 rounded-xl bg-white p-2"
+        />
+      ) : charge.qrCode ? (
+        <div className="mx-auto mt-3 w-fit rounded-xl bg-white p-3">
+          <QRCodeSVG value={charge.qrCode} size={192} />
+        </div>
+      ) : null}
+      {charge.qrCode ? (
+        <button
+          type="button"
+          onClick={copy}
+          className="mt-3 w-full rounded-full bg-secondary py-3 text-sm font-semibold text-white hover:opacity-90"
+        >
+          Copiar código Pix
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 function CheckoutPage() {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
@@ -69,6 +106,10 @@ function CheckoutPage() {
   const [paidTotemOrder, setPaidTotemOrder] = useState(null);
   // SumUp: o valor é digitado na própria maquininha (mode "manual").
   const [manualCharge, setManualCharge] = useState(null);
+  // SumUp online: Pix com QR na tela ou cartão na página da SumUp.
+  const [sumupMethod, setSumupMethod] = useState("PIX");
+  const [pixCharge, setPixCharge] = useState(null);
+  const [onlineWindow, setOnlineWindow] = useState(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const pollRef = useRef(null);
 
@@ -275,6 +316,22 @@ function CheckoutPage() {
     },
   });
 
+  // Banco do pagamento online escolhido em Admin → Pagamentos.
+  const { data: onlineProvider = "MERCADO_PAGO" } = useQuery({
+    queryKey: ["online-payment-provider"],
+    queryFn: async () =>
+      (await api.get("/payments/online-provider")).data?.data?.provider ??
+      "MERCADO_PAGO",
+    enabled: isAuthenticated && !isTotemMode,
+    staleTime: 60 * 1000,
+  });
+  const usesSumUpOnline = !isTotemMode && onlineProvider === "SUMUP";
+
+  const sumupOnlineMutation = useMutation({
+    mutationFn: async ({ orderId, method }) =>
+      (await api.post("/payments/sumup/online", { orderId, method })).data?.data,
+  });
+
   const preferenceMutation = useMutation({
     mutationFn: async (orderId) => {
       const response = await api.post("/payments/preference", { orderId });
@@ -317,6 +374,26 @@ function CheckoutPage() {
 
   const handleOnlineCheckout = async () => {
     try {
+      if (usesSumUpOnline) {
+        const order = await createOrderMutation.mutateAsync(
+          sumupMethod === "PIX" ? "PIX" : "CREDITO",
+        );
+        const charge = await sumupOnlineMutation.mutateAsync({
+          orderId: order.id,
+          method: sumupMethod,
+        });
+        if (sumupMethod === "PIX") {
+          setPixCharge(charge);
+          setOnlineWindow(null);
+        } else {
+          setPixCharge(null);
+          setOnlineWindow("SUMUP");
+          window.open(charge.url, "_blank", "noopener,noreferrer");
+        }
+        setWaitingOrderId(order.id);
+        return;
+      }
+
       const order = await createOrderMutation.mutateAsync("PIX");
       const pref = await preferenceMutation.mutateAsync(order.id);
       if (isTotemMode) {
@@ -324,6 +401,8 @@ function CheckoutPage() {
         return;
       }
       window.open(pref.initPoint, "_blank", "noopener,noreferrer");
+      setPixCharge(null);
+      setOnlineWindow("MERCADO_PAGO");
       setWaitingOrderId(order.id);
     } catch (err) {
       const data = err?.response?.data;
@@ -382,6 +461,7 @@ function CheckoutPage() {
   const isLoading =
     createOrderMutation.isPending ||
     preferenceMutation.isPending ||
+    sumupOnlineMutation.isPending ||
     terminalMutation.isPending;
 
   const canConfirm =
@@ -481,14 +561,18 @@ function CheckoutPage() {
               mostra o numero do pedido.
             </p>
           ) : null}
-          <p
-            className={`mt-2 text-sm text-smoke ${isTotemMode ? "hidden" : ""}`}
-          >
-            {t(
-              "CHECKOUT_WAITING_DESC",
-              "A página do Mercado Pago foi aberta em outra aba. Conclua o pagamento por lá e aguarde a confirmação aqui.",
-            )}
-          </p>
+          {!isTotemMode && pixCharge ? (
+            <PixChargeBox charge={pixCharge} />
+          ) : !isTotemMode ? (
+            <p className="mt-2 text-sm text-smoke">
+              {onlineWindow === "SUMUP"
+                ? "A página de pagamento da SumUp foi aberta em outra aba. Conclua o pagamento por lá e aguarde a confirmação aqui."
+                : t(
+                    "CHECKOUT_WAITING_DESC",
+                    "A página do Mercado Pago foi aberta em outra aba. Conclua o pagamento por lá e aguarde a confirmação aqui.",
+                  )}
+            </p>
+          ) : null}
           <p className="mt-4 rounded-xl bg-gray-50 px-4 py-2 font-mono text-xs text-smoke">
             Pedido: #{waitingOrderId.slice(-8).toUpperCase()}
           </p>
@@ -948,7 +1032,38 @@ function CheckoutPage() {
                 </button>
               </div>
 
-              {paymentMode === "online" ? (
+              {paymentMode === "online" && usesSumUpOnline ? (
+                <div className="mt-3 rounded-2xl border border-primary/10 bg-gray-50 p-4">
+                  <span className="inline-flex items-center rounded-full bg-gray-900 px-3 py-1 text-xs font-extrabold text-white">
+                    SumUp
+                  </span>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {[
+                      ["PIX", "Pix", "QR code aqui na tela"],
+                      ["CARTAO", "Cartão", "Crédito ou débito"],
+                    ].map(([id, label, hint]) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => setSumupMethod(id)}
+                        className={`rounded-2xl border p-3 text-left transition ${
+                          sumupMethod === id
+                            ? "border-secondary bg-white ring-2 ring-secondary/30"
+                            : "border-gray-200 bg-white hover:border-gray-400"
+                        }`}
+                      >
+                        <span className="block text-sm font-bold text-primary">
+                          {label}
+                        </span>
+                        <span className="block text-[11px] text-smoke">{hint}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-xs text-smoke">
+                    ✅ Preparo inicia automaticamente após confirmação
+                  </p>
+                </div>
+              ) : paymentMode === "online" ? (
                 <div className="mt-3 rounded-2xl border border-primary/10 bg-gray-50 p-4">
                   <span className="inline-flex items-center rounded-full bg-[#009EE3] px-3 py-1 text-xs font-extrabold text-white">
                     Mercado Pago
@@ -983,7 +1098,11 @@ function CheckoutPage() {
             >
               {isLoading
                 ? "Processando..."
-                : paymentMode === "online"
+                : paymentMode === "online" && usesSumUpOnline
+                  ? sumupMethod === "PIX"
+                    ? "Gerar Pix →"
+                    : "Pagar com cartão →"
+                  : paymentMode === "online"
                   ? "Pagar com Mercado Pago →"
                   : "Confirmar Pedido →"}
             </button>

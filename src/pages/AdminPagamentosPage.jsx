@@ -11,21 +11,47 @@ const PROVIDERS = [
     name: "Mercado Pago",
     logo: "MP",
     logoClass: "bg-sky-500/15 text-sky-600",
-    description: "Maquininha Point, Pix na mesa e checkout online.",
   },
   {
     id: "SUMUP",
     name: "SumUp",
     logo: "SU",
     logoClass: "bg-gray-900 text-white",
-    description: "Maquininha SumUp, cada uma logada com um usuário próprio.",
+  },
+];
+
+// Cada canal tem o seu banco: dá para usar SumUp na loja e Mercado Pago no
+// delivery, ou o contrário.
+const CHANNELS = [
+  {
+    key: "terminalProvider",
+    title: "Maquininha — totem, mesa e caixa",
+    descriptions: {
+      MERCADO_PAGO: "Cobrança enviada para a maquininha Point.",
+      SUMUP:
+        "Valor digitado na maquininha SumUp; o sistema confirma pela venda feita com o usuário dela.",
+    },
+    confirm: (name) =>
+      `Trocar as maquininhas (totem, mesa e caixa) para ${name}?\n\nConfira se o "ID da maquininha" de cada mesa e totem é de uma maquininha ${name}.`,
+    success: (name) => `Agora as maquininhas cobram pelo ${name}.`,
+  },
+  {
+    key: "onlineProvider",
+    title: "Pagamento online — delivery",
+    descriptions: {
+      MERCADO_PAGO: "Página do Mercado Pago com Pix, crédito e débito.",
+      SUMUP:
+        "Pix com QR code na própria tela e cartão na página da SumUp. O Pix online precisa estar ativo na conta SumUp.",
+    },
+    confirm: (name) => `Trocar o pagamento online do delivery para ${name}?`,
+    success: (name) => `Agora o delivery cobra pelo ${name}.`,
   },
 ];
 
 const errorMessage = (error, fallback) =>
   error?.response?.data?.error?.message || fallback;
 
-function ProviderCard({ provider, active, configured, onSelect, disabled }) {
+function ProviderCard({ provider, description, active, configured, onSelect, disabled }) {
   return (
     <button
       type="button"
@@ -61,7 +87,7 @@ function ProviderCard({ provider, active, configured, onSelect, disabled }) {
           )}
         </span>
         <span className="mt-0.5 block text-xs text-gray-500">
-          {provider.description}
+          {description}
         </span>
       </span>
     </button>
@@ -365,36 +391,60 @@ function SumUpOperators() {
   );
 }
 
-function AdminPagamentosPage() {
+function ChannelSection({ channel, settings }) {
   const queryClient = useQueryClient();
+  const current = settings[channel.key];
+
+  const mutation = useMutation({
+    mutationFn: async (provider) =>
+      (await api.put("/admin/settings/payment", { [channel.key]: provider })).data,
+    onSuccess: (_data, provider) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-payment-settings"] });
+      const name = PROVIDERS.find((item) => item.id === provider)?.name;
+      toast.success(channel.success(name));
+    },
+    onError: (error) =>
+      toast.error(errorMessage(error, "Erro ao trocar o banco.")),
+  });
+
+  const select = (provider) => {
+    if (provider.id === current) return;
+    if (window.confirm(channel.confirm(provider.name))) mutation.mutate(provider.id);
+  };
+
+  const isConfigured = (id) =>
+    id === "SUMUP" ? settings.sumup.configured : settings.mercadoPago.configured;
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        {channel.title}
+      </h2>
+      {PROVIDERS.map((provider) => (
+        <ProviderCard
+          key={provider.id}
+          provider={provider}
+          description={channel.descriptions[provider.id]}
+          active={current === provider.id}
+          configured={isConfigured(provider.id)}
+          disabled={mutation.isPending}
+          onSelect={() => select(provider)}
+        />
+      ))}
+    </section>
+  );
+}
+
+function AdminPagamentosPage() {
   const { data: settings, isLoading, isError } = useQuery({
     queryKey: ["admin-payment-settings"],
     queryFn: async () =>
       (await api.get("/admin/settings/payment")).data?.data ?? null,
   });
 
-  const providerMutation = useMutation({
-    mutationFn: async (provider) =>
-      (await api.put("/admin/settings/payment", { provider })).data,
-    onSuccess: (_data, provider) => {
-      queryClient.invalidateQueries({ queryKey: ["admin-payment-settings"] });
-      const name = PROVIDERS.find((item) => item.id === provider)?.name;
-      toast.success(`Agora as maquininhas cobram pelo ${name}.`);
-    },
-    onError: (error) =>
-      toast.error(errorMessage(error, "Erro ao trocar o banco.")),
-  });
-
-  const selectProvider = (provider) => {
-    if (provider.id === settings?.provider) return;
-    const ok = window.confirm(
-      `Trocar as maquininhas para ${provider.name}?\n\nConfira se o "ID da maquininha" de cada mesa e totem é de uma maquininha ${provider.name}.`,
-    );
-    if (ok) providerMutation.mutate(provider.id);
-  };
-
-  const isConfigured = (id) =>
-    id === "SUMUP" ? settings?.sumup?.configured : settings?.mercadoPago?.configured;
+  const usesMercadoPago =
+    settings?.terminalProvider === "MERCADO_PAGO" ||
+    settings?.onlineProvider === "MERCADO_PAGO";
 
   return (
     <main className="min-h-screen text-gray-900">
@@ -402,7 +452,7 @@ function AdminPagamentosPage() {
         backTo="/admin"
         backLabel="Painel Admin"
         title="Pagamentos"
-        subtitle="Escolha qual banco cobra nas maquininhas das mesas e totens."
+        subtitle="Escolha o banco da maquininha e o banco do pagamento online."
       />
       <div className="ui-page max-w-2xl space-y-5">
         {isLoading ? (
@@ -418,33 +468,19 @@ function AdminPagamentosPage() {
 
         {settings ? (
           <>
-            <section className="space-y-3">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Banco em uso
-              </h2>
-              {PROVIDERS.map((provider) => (
-                <ProviderCard
-                  key={provider.id}
-                  provider={provider}
-                  active={settings.provider === provider.id}
-                  configured={isConfigured(provider.id)}
-                  disabled={providerMutation.isPending}
-                  onSelect={() => selectProvider(provider)}
-                />
-              ))}
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
-                <p className="font-semibold">O que muda ao trocar</p>
-                <p className="mt-1">
-                  A troca vale para a cobrança na maquininha (mesa e totem). O
-                  Pix pelo QR code na mesa e o pagamento online do delivery
-                  continuam pelo Mercado Pago. Na SumUp o valor é digitado na
-                  própria maquininha e o sistema confirma pela venda feita com o
-                  usuário dela.
-                </p>
-              </div>
-            </section>
+            {CHANNELS.map((channel) => (
+              <ChannelSection key={channel.key} channel={channel} settings={settings} />
+            ))}
 
-            {settings.provider === "MERCADO_PAGO" ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
+              <p className="font-semibold">Fica sempre no Mercado Pago</p>
+              <p className="mt-1">
+                O Pix pelo QR code no tablet da mesa continua no Mercado Pago,
+                qualquer que seja o banco escolhido acima.
+              </p>
+            </div>
+
+            {usesMercadoPago ? (
               <div className="ui-card p-5">
                 <h2 className="font-semibold text-gray-900">Mercado Pago</h2>
                 <p className="mt-0.5 text-xs text-gray-500">
