@@ -892,7 +892,7 @@ function GuidedMenu({
           <div
             className={
               big
-                ? "grid flex-1 grid-cols-[minmax(0,1fr)_13rem] gap-4 sm:grid-cols-[minmax(0,1fr)_16rem] lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-6"
+                ? "grid grid-cols-[minmax(0,1fr)_13rem] gap-4 sm:grid-cols-[minmax(0,1fr)_16rem] lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-6 landscape:flex-1 portrait:my-auto"
                 : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"
             }
           >
@@ -1043,8 +1043,10 @@ function GuidedMenu({
 // ficam 4 lado a lado com a tela deitada; nomes longos continuam 2x2.
 const fewOptionsGrid = (big, shortLabels = false) =>
   big
-    ? `grid flex-1 auto-rows-fr grid-cols-2 gap-4 sm:gap-5 ${
-        shortLabels ? "landscape:grid-cols-4" : ""
+    ? `grid grid-cols-2 gap-4 sm:gap-5 landscape:flex-1 landscape:auto-rows-fr ${
+        shortLabels
+          ? "landscape:grid-cols-4"
+          : "max-[899px]:portrait:grid-cols-1" // nomes longos em tela em pé estreita
       }`
     : "grid gap-3 sm:grid-cols-2 xl:grid-cols-4";
 
@@ -1071,13 +1073,23 @@ function OptionTile({
       disabled={disabled}
       onClick={onClick}
       aria-pressed={selected}
-      className={`relative flex flex-col overflow-hidden text-left transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${
+      className={`relative flex flex-col overflow-hidden transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${
+        fill ? "" : "text-left"
+      } ${
         big ? "rounded-3xl border-4" : "rounded-lg border-2"
       } ${
         selected
           ? "border-secondary bg-secondary/10"
           : "border-primary/10 bg-accent/50 hover:border-secondary/50"
-      } ${fill ? "h-full" : ""}`}
+      } ${
+        fill
+          ? `items-center justify-center text-center landscape:h-full ${
+              String(title).length <= 3
+                ? "portrait:aspect-[4/5]"
+                : "portrait:min-h-36 min-[900px]:portrait:aspect-[4/5]"
+            }`
+          : ""
+      }`}
     >
       {selected && (
         <span
@@ -1102,8 +1114,14 @@ function OptionTile({
         className={`flex flex-col ${
           image ? "" : "flex-1 justify-center"
         } ${
-          fill && !image ? "items-center text-center" : ""
-        } ${big ? "gap-1 px-6 py-6" : "gap-0.5 px-4 py-3"} ${
+          fill ? "w-full items-center text-center" : ""
+        } ${
+          big
+            ? fill
+              ? "gap-1 px-3 py-4 min-[900px]:px-6 min-[900px]:py-6"
+              : "gap-1 px-6 py-6"
+            : "gap-0.5 px-4 py-3"
+        } ${
           big && !fill && !image ? "min-h-32" : ""
         } ${selected && !fill ? (big ? "pr-20" : "pr-12") : ""}`}
       >
@@ -1112,7 +1130,7 @@ function OptionTile({
             !big
               ? "text-base"
               : fill && String(title).length <= 3
-                ? "text-6xl landscape:text-5xl" // P, M, G, MG
+                ? "whitespace-nowrap text-5xl min-[900px]:text-6xl landscape:text-5xl" // P, M, G, MG
                 : fill
                   ? "text-3xl sm:text-4xl landscape:text-3xl"
                   : "text-2xl sm:text-3xl"
@@ -1123,7 +1141,7 @@ function OptionTile({
         {detail && (
           <span
             className={`font-bold text-primary/70 ${
-              big ? (fill ? "text-2xl" : "text-xl") : "text-xs"
+              big ? (fill ? "text-xl min-[900px]:text-2xl" : "text-xl") : "text-xs"
             }`}
           >
             {detail}
@@ -1132,7 +1150,7 @@ function OptionTile({
         {price && (
           <span
             className={`font-black text-secondary ${
-              big ? (fill ? "mt-2 text-3xl" : "text-2xl") : "text-sm"
+              big ? (fill ? "mt-2 whitespace-nowrap text-2xl min-[900px]:text-3xl" : "text-2xl") : "text-sm"
             }`}
           >
             {price}
