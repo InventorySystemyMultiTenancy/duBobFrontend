@@ -318,6 +318,25 @@ function AdminPanelPage() {
           </Link>
         )}
 
+        {isAdmin && (
+          <Link
+            to="/admin/pagamentos"
+            className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-2xl">
+              💳
+            </span>
+            <div>
+              <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
+                Pagamentos
+              </h2>
+              <p className="mt-0.5 text-xs text-smoke">
+                Escolher o banco das maquininhas (Mercado Pago, SumUp)
+              </p>
+            </div>
+          </Link>
+        )}
+
         <Link
           to="/admin/gastos"
           className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
