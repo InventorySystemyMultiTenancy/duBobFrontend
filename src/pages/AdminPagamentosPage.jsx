@@ -18,7 +18,7 @@ const PROVIDERS = [
     name: "SumUp",
     logo: "SU",
     logoClass: "bg-gray-900 text-white",
-    description: "Maquininha SumUp Solo conectada pela Cloud API.",
+    description: "Maquininha SumUp, cada uma logada com um usuário próprio.",
   },
 ];
 
@@ -77,7 +77,7 @@ function SumUpCredentials({ sumup }) {
       (await api.put("/admin/settings/payment", { sumupApiKey })).data,
     onSuccess: (_data, sumupApiKey) => {
       queryClient.invalidateQueries({ queryKey: ["admin-payment-settings"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-sumup-readers"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-sumup-operators"] });
       setApiKey("");
       toast.success(sumupApiKey ? "API key da SumUp salva." : "API key removida.");
     },
@@ -151,171 +151,216 @@ function SumUpCredentials({ sumup }) {
   );
 }
 
-function SumUpReaders() {
-  const queryClient = useQueryClient();
-  const [pairing, setPairing] = useState({ pairingCode: "", name: "" });
-
-  const {
-    data: readers = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useQuery({
-    queryKey: ["admin-sumup-readers"],
-    queryFn: async () =>
-      (await api.get("/admin/settings/payment/sumup/readers")).data?.data ?? [],
-    retry: false,
-  });
-
-  const pairMutation = useMutation({
-    mutationFn: async (payload) =>
-      (await api.post("/admin/settings/payment/sumup/readers", payload)).data,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-sumup-readers"] });
-      setPairing({ pairingCode: "", name: "" });
-      toast.success("Maquininha pareada. Confirme no aparelho se ele pedir.");
-    },
-    onError: (err) => toast.error(errorMessage(err, "Erro ao parear a maquininha.")),
-  });
-
-  const handlePair = (event) => {
-    event.preventDefault();
-    if (!pairing.pairingCode.trim()) {
-      return toast.error("Informe o código que aparece na maquininha.");
-    }
-    pairMutation.mutate({
-      pairingCode: pairing.pairingCode.trim(),
-      name: pairing.name.trim(),
-    });
+function LoginBox({ login, onClose }) {
+  const copy = async (value, label) => {
+    await navigator.clipboard.writeText(value);
+    toast.success(`${label} copiado.`);
   };
 
-  const copyId = async (id) => {
-    await navigator.clipboard.writeText(id);
-    toast.success("ID copiado. Cole no cadastro da mesa ou do totem.");
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+        <h2 className="font-display text-xl text-gray-900">
+          Login da maquininha {login.name}
+        </h2>
+        <p className="mt-1 text-xs text-gray-500">
+          Na maquininha SumUp, saia da conta atual e entre com este usuário.
+          Cada maquininha precisa de um usuário diferente.
+        </p>
+        <div className="mt-4 space-y-2">
+          {[
+            ["Usuário", login.email],
+            ["Senha", login.password],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              className="flex items-center justify-between gap-3 rounded-2xl bg-gray-50 p-3"
+            >
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase text-gray-400">
+                  {label}
+                </p>
+                <p className="break-all font-mono text-sm text-gray-900">{value}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => copy(value, label)}
+                className="shrink-0 rounded-full bg-gold/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-gold/20"
+              >
+                Copiar
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-4 w-full rounded-full border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:border-gray-400"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SumUpOperators() {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState("");
+  const [login, setLogin] = useState(null);
+
+  const {
+    data: operators = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["admin-sumup-operators"],
+    queryFn: async () =>
+      (await api.get("/admin/settings/payment/sumup/operators")).data?.data ?? [],
+  });
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ["admin-sumup-operators"] });
+
+  const createMutation = useMutation({
+    mutationFn: async (payload) =>
+      (await api.post("/admin/settings/payment/sumup/operators", payload)).data
+        ?.data,
+    onSuccess: (operator) => {
+      invalidate();
+      setName("");
+      setLogin(operator);
+    },
+    onError: (err) => toast.error(errorMessage(err, "Erro ao criar a maquininha.")),
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: async (operator) => {
+      const response = await api.get(
+        `/admin/settings/payment/sumup/operators/${operator.id}/login`,
+      );
+      return { name: operator.name, ...response.data?.data };
+    },
+    onSuccess: setLogin,
+    onError: (err) => toast.error(errorMessage(err, "Erro ao buscar o login.")),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (operator) =>
+      api.delete(`/admin/settings/payment/sumup/operators/${operator.id}`),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Maquininha removida.");
+    },
+    onError: (err) => toast.error(errorMessage(err, "Erro ao remover.")),
+  });
+
+  const handleCreate = (event) => {
+    event.preventDefault();
+    if (!name.trim()) return toast.error("Dê um nome para a maquininha.");
+    createMutation.mutate({ name: name.trim() });
+  };
+
+  const handleDelete = (operator) => {
+    const ok = window.confirm(
+      `Remover "${operator.name}"? O usuário continua na conta SumUp.`,
+    );
+    if (ok) deleteMutation.mutate(operator);
+  };
+
+  const copyEmail = async (email) => {
+    await navigator.clipboard.writeText(email);
+    toast.success("Usuário copiado. Cole no “ID da maquininha” da mesa ou do totem.");
   };
 
   return (
     <div className="ui-card p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="font-semibold text-gray-900">Maquininhas SumUp</h2>
-          <p className="mt-0.5 text-xs text-gray-500">
-            Use o ID da maquininha no campo “ID da maquininha” de cada mesa e
-            totem.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className="shrink-0 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400 disabled:opacity-50"
-        >
-          {isFetching ? "Atualizando..." : "Atualizar"}
-        </button>
-      </div>
+      <h2 className="font-semibold text-gray-900">Maquininhas SumUp</h2>
+      <p className="mt-0.5 text-xs text-gray-500">
+        Cada maquininha fica logada com um usuário SumUp próprio. É por ele que
+        o sistema sabe de qual maquininha veio cada venda (cartão ou Pix). Cole
+        o usuário no campo “ID da maquininha” da mesa ou do totem.
+      </p>
 
       {isLoading ? (
         <p className="mt-4 text-sm text-gray-400">Carregando maquininhas...</p>
       ) : null}
       {isError ? (
-        <p className="mt-4 text-sm text-red-400">
-          {errorMessage(error, "Falha ao consultar a SumUp.")}
-        </p>
+        <p className="mt-4 text-sm text-red-400">Falha ao carregar maquininhas.</p>
       ) : null}
-      {!isLoading && !isError && !readers.length ? (
+      {!isLoading && !isError && !operators.length ? (
         <div className="mt-4 rounded-2xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
-          Nenhuma maquininha pareada ainda.
+          Nenhuma maquininha criada ainda.
         </div>
       ) : null}
 
       <div className="mt-4 space-y-2">
-        {readers.map((reader) => (
-          <div
-            key={reader.id}
-            className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 p-3"
-          >
-            <div className="min-w-0">
-              <p className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                <span
-                  className={`h-2 w-2 shrink-0 rounded-full ${
-                    reader.connection?.online ? "bg-green-500" : "bg-gray-300"
-                  }`}
-                  title={reader.connection?.status}
-                />
-                {reader.name || "Maquininha"}
-                {reader.status && reader.status !== "paired" ? (
-                  <span className="text-[10px] font-normal text-amber-600">
-                    {reader.status}
-                  </span>
-                ) : null}
-              </p>
-              <p className="mt-0.5 break-all font-mono text-[11px] text-gray-500">
-                {reader.id}
-              </p>
-              {reader.deviceIdentifier ? (
-                <p className="font-mono text-[10px] text-gray-400">
-                  Serial: {reader.deviceIdentifier}
-                </p>
-              ) : null}
+        {operators.map((operator) => (
+          <div key={operator.id} className="rounded-2xl border border-gray-200 p-3">
+            <p className="text-sm font-semibold text-gray-900">{operator.name}</p>
+            <p className="mt-0.5 break-all font-mono text-[11px] text-gray-500">
+              {operator.email}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => copyEmail(operator.email)}
+                className="rounded-full bg-gold/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-gold/20"
+              >
+                Copiar usuário
+              </button>
+              <button
+                type="button"
+                onClick={() => loginMutation.mutate(operator)}
+                disabled={loginMutation.isPending}
+                className="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400 disabled:opacity-50"
+              >
+                Ver login
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(operator)}
+                disabled={deleteMutation.isPending}
+                className="rounded-full border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-400 hover:border-red-300 hover:text-red-600 disabled:opacity-50"
+              >
+                Remover
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => copyId(reader.id)}
-              className="shrink-0 rounded-full bg-gold/10 px-3 py-2 text-xs font-semibold text-primary hover:bg-gold/20"
-            >
-              Copiar ID
-            </button>
           </div>
         ))}
       </div>
 
       <form
-        onSubmit={handlePair}
+        onSubmit={handleCreate}
         className="mt-5 space-y-3 rounded-2xl border border-gray-200 bg-gray-50 p-4"
       >
         <div>
-          <p className="text-sm font-semibold text-gray-800">
-            Parear nova maquininha
-          </p>
+          <p className="text-sm font-semibold text-gray-800">Nova maquininha</p>
           <p className="mt-0.5 text-[11px] text-gray-500">
-            Na maquininha: Menu → Conexões → conecte no Wi-Fi → API → Conectar.
-            Digite aqui o código que aparecer (vale por 5 minutos).
+            O sistema cria o usuário na sua conta SumUp e mostra o login para
+            entrar na maquininha. A API key precisa da permissão members.write.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
             type="text"
-            placeholder="Código de pareamento"
-            value={pairing.pairingCode}
-            onChange={(event) =>
-              setPairing((current) => ({
-                ...current,
-                pairingCode: event.target.value.toUpperCase(),
-              }))
-            }
-            className="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-white px-3 py-2.5 font-mono text-sm uppercase focus:border-secondary focus:outline-none"
-          />
-          <input
-            type="text"
             maxLength={60}
             placeholder="Nome (ex: Totem 1)"
-            value={pairing.name}
-            onChange={(event) =>
-              setPairing((current) => ({ ...current, name: event.target.value }))
-            }
+            value={name}
+            onChange={(event) => setName(event.target.value)}
             className="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
           />
           <button
             type="submit"
-            disabled={pairMutation.isPending}
+            disabled={createMutation.isPending}
             className="rounded-full bg-secondary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
-            {pairMutation.isPending ? "Pareando..." : "Parear"}
+            {createMutation.isPending ? "Criando..." : "Criar maquininha"}
           </button>
         </div>
       </form>
+
+      {login ? <LoginBox login={login} onClose={() => setLogin(null)} /> : null}
     </div>
   );
 }
@@ -392,7 +437,9 @@ function AdminPagamentosPage() {
                 <p className="mt-1">
                   A troca vale para a cobrança na maquininha (mesa e totem). O
                   Pix pelo QR code na mesa e o pagamento online do delivery
-                  continuam pelo Mercado Pago.
+                  continuam pelo Mercado Pago. Na SumUp o valor é digitado na
+                  própria maquininha e o sistema confirma pela venda feita com o
+                  usuário dela.
                 </p>
               </div>
             </section>
@@ -413,7 +460,7 @@ function AdminPagamentosPage() {
             ) : null}
 
             <SumUpCredentials sumup={settings.sumup} />
-            {settings.sumup.configured ? <SumUpReaders /> : null}
+            {settings.sumup.configured ? <SumUpOperators /> : null}
           </>
         ) : null}
       </div>

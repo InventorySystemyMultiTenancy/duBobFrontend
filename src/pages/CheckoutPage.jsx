@@ -67,6 +67,8 @@ function CheckoutPage() {
     isTotemMode ? getTotemPendingOrder() : null,
   );
   const [paidTotemOrder, setPaidTotemOrder] = useState(null);
+  // SumUp: o valor é digitado na própria maquininha (mode "manual").
+  const [manualCharge, setManualCharge] = useState(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const pollRef = useRef(null);
 
@@ -90,7 +92,9 @@ function CheckoutPage() {
       : paidTotemOrder
         ? "Pagamento aprovado! Seu pedido foi enviado para a cozinha. Guarde o número que está na tela."
         : waitingOrderId
-          ? "Agora faça o pagamento na maquininha."
+          ? manualCharge
+            ? "Agora digite o valor na maquininha e faça o pagamento."
+            : "Agora faça o pagamento na maquininha."
           : "Confira seu pedido e toque em pagar.",
   );
 
@@ -340,7 +344,8 @@ function CheckoutPage() {
   const handleTotemTerminalCheckout = async () => {
     try {
       const order = await createOrderMutation.mutateAsync("MAQUININHA_TOTEM");
-      await terminalMutation.mutateAsync(order.id);
+      const charge = await terminalMutation.mutateAsync(order.id);
+      setManualCharge(charge?.mode === "manual" ? charge : null);
       setWaitingOrderId(order.id);
     } catch (err) {
       const data = err?.response?.data;
@@ -459,12 +464,23 @@ function CheckoutPage() {
               ? "Aguardando pagamento na maquininha"
               : t("CHECKOUT_WAITING_TITLE", "Aguardando pagamento")}
           </h1>
-          {isTotemMode && (
+          {isTotemMode && manualCharge ? (
+            <div className="mt-4 rounded-2xl border border-secondary/30 bg-secondary/5 p-4">
+              <p className="text-sm text-smoke">Digite na maquininha:</p>
+              <p className="mt-1 text-4xl font-black text-secondary">
+                {currency(manualCharge.amount)}
+              </p>
+              <p className="mt-2 text-xs text-smoke">
+                Depois passe o cartão ou pague com Pix. Assim que aprovar, esta
+                tela mostra o numero do pedido.
+              </p>
+            </div>
+          ) : isTotemMode ? (
             <p className="mt-2 text-sm text-smoke">
               Finalize o pagamento na maquininha. Assim que aprovar, esta tela
               mostra o numero do pedido.
             </p>
-          )}
+          ) : null}
           <p
             className={`mt-2 text-sm text-smoke ${isTotemMode ? "hidden" : ""}`}
           >

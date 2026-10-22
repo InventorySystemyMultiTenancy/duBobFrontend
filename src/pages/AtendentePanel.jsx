@@ -153,9 +153,14 @@ function TerminalChargeModal({ order, onClose }) {
   const approvedRef = useRef(false);
 
   const terminalMutation = useMutation({
-    mutationFn: () =>
-      api.post("/mesa/payments/terminal", { orderId: order.id }),
-    onSuccess: () => toast.success("Cobrança enviada para a maquininha."),
+    mutationFn: async () =>
+      (await api.post("/mesa/payments/terminal", { orderId: order.id })).data
+        ?.data,
+    onSuccess: (charge) => {
+      if (charge?.mode !== "manual") {
+        toast.success("Cobrança enviada para a maquininha.");
+      }
+    },
     onError: (err) =>
       toast.error(
         err?.response?.data?.error?.message ||
@@ -220,6 +225,12 @@ function TerminalChargeModal({ order, onClose }) {
           </p>
         ) : (
           <div className="py-5">
+            {terminalMutation.data?.mode === "manual" ? (
+              <p className="mb-2 text-sm font-semibold text-gray-800">
+                Digite {currency(terminalMutation.data.amount)} na maquininha{" "}
+                {terminalMutation.data.terminalName}.
+              </p>
+            ) : null}
             <p className="text-sm text-gray-600">
               Aguardando confirmacao do pagamento na maquininha.
             </p>

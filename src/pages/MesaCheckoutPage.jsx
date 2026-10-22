@@ -142,11 +142,15 @@ function TerminalScreen({ orderId, total, onClose }) {
   const [approved, setApproved] = useState(false);
 
   const terminalMutation = useMutation({
-    mutationFn: () => api.post("/mesa/payments/terminal", { orderId }),
-    onSuccess: () =>
-      toast.success(
-        t("MESA_TERMINAL_SENT", "Cobrança enviada para a maquininha!"),
-      ),
+    mutationFn: async () =>
+      (await api.post("/mesa/payments/terminal", { orderId })).data?.data,
+    onSuccess: (charge) => {
+      if (charge?.mode !== "manual") {
+        toast.success(
+          t("MESA_TERMINAL_SENT", "Cobrança enviada para a maquininha!"),
+        );
+      }
+    },
     onError: (err) =>
       toast.error(
         err?.response?.data?.error?.message ??
@@ -196,12 +200,22 @@ function TerminalScreen({ orderId, total, onClose }) {
               : t("MESA_TERMINAL_SEND_BUTTON", "Enviar para maquininha")}
           </button>
         ) : (
-          <p className="text-sm text-green-600 font-semibold animate-pulse py-2">
-            {t(
-              "MESA_TERMINAL_WAITING",
-              "Aguardando pagamento na maquininha...",
-            )}
-          </p>
+          <div className="py-2">
+            {terminalMutation.data?.mode === "manual" ? (
+              <p className="mb-2 text-sm text-gray-600">
+                {t(
+                  "MESA_TERMINAL_TYPE_AMOUNT",
+                  "Digite {{amount}} na maquininha e pague.",
+                ).replace("{{amount}}", currency(terminalMutation.data.amount))}
+              </p>
+            ) : null}
+            <p className="text-sm text-green-600 font-semibold animate-pulse">
+              {t(
+                "MESA_TERMINAL_WAITING",
+                "Aguardando pagamento na maquininha...",
+              )}
+            </p>
+          </div>
         )}
 
         <button
