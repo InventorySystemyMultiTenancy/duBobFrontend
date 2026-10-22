@@ -232,6 +232,129 @@ function LoginBox({ login, onClose }) {
 
 // Pareamento do reader: com ele o totem/caixa manda a cobrança direto para a
 // tela da maquininha; sem ele o cliente digita o valor nela.
+// Readers conectados à conta SumUp (Cloud API).
+function useAccountReaders(enabled = true) {
+  return useQuery({
+    queryKey: ["admin-sumup-readers"],
+    queryFn: async () =>
+      (await api.get("/admin/settings/payment/sumup/readers")).data?.data ?? [],
+    enabled,
+    retry: false,
+  });
+}
+
+// Lista o que está pareado na conta e permite esquecer uma maquininha
+// (por exemplo, a que "conecta sozinha" sem mostrar código).
+function SumUpAccountReaders() {
+  const queryClient = useQueryClient();
+  const { data: operators = [] } = useQuery({
+    queryKey: ["admin-sumup-operators"],
+    queryFn: async () =>
+      (await api.get("/admin/settings/payment/sumup/operators")).data?.data ?? [],
+  });
+  const { data: readers = [], isLoading, isError, error, refetch, isFetching } =
+    useAccountReaders();
+
+  const forgetMutation = useMutation({
+    mutationFn: (readerId) =>
+      api.delete(`/admin/settings/payment/sumup/readers/${readerId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-sumup-readers"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-sumup-operators"] });
+      toast.success(
+        "Esquecida na conta. Agora no aparelho: Menu → Conexões → API → Desconectar.",
+        { duration: 8000 },
+      );
+    },
+    onError: (err) => toast.error(errorMessage(err, "Erro ao esquecer a maquininha.")),
+  });
+
+  const handleForget = (reader) => {
+    const ok = window.confirm(
+      `Esquecer "${reader.name || reader.id}" na conta SumUp?\n\nDepois desconecte no aparelho: Menu → Conexões → API → Desconectar.`,
+    );
+    if (ok) forgetMutation.mutate(reader.id);
+  };
+
+  return (
+    <div className="ui-card p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="font-semibold text-gray-900">
+            Maquininhas conectadas na conta
+          </h2>
+          <p className="mt-0.5 text-xs text-gray-500">
+            Tudo que está pareado na Cloud API desta conta SumUp. Se a
+            maquininha conecta sem mostrar código e não aparece aqui, ela está
+            pareada em outra conta SumUp: esqueça por lá e desconecte no
+            aparelho.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="shrink-0 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400 disabled:opacity-50"
+        >
+          {isFetching ? "Atualizando..." : "Atualizar"}
+        </button>
+      </div>
+
+      {isLoading ? (
+        <p className="mt-4 text-sm text-gray-400">Consultando a SumUp...</p>
+      ) : null}
+      {isError ? (
+        <p className="mt-4 text-sm text-red-400">
+          {errorMessage(error, "Falha ao consultar a SumUp.")}
+        </p>
+      ) : null}
+      {!isLoading && !isError && !readers.length ? (
+        <div className="mt-4 rounded-2xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
+          Nenhuma maquininha pareada nesta conta.
+        </div>
+      ) : null}
+
+      <div className="mt-4 space-y-2">
+        {readers.map((reader) => {
+          const linked = operators.find((item) => item.readerId === reader.id);
+          return (
+            <div
+              key={reader.id}
+              className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 p-3"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900">
+                  {reader.name || "Maquininha"}
+                  {reader.status ? (
+                    <span className="ml-2 text-[10px] font-normal text-gray-400">
+                      {reader.status}
+                    </span>
+                  ) : null}
+                </p>
+                <p className="mt-0.5 break-all font-mono text-[11px] text-gray-500">
+                  {reader.id}
+                  {reader.serial ? ` · serial ${reader.serial}` : ""}
+                </p>
+                <p className="text-[11px] text-gray-500">
+                  {linked ? `Usada por: ${linked.name}` : "Não vinculada a nenhuma maquininha"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleForget(reader)}
+                disabled={forgetMutation.isPending}
+                className="shrink-0 rounded-full border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-400 hover:border-red-300 hover:text-red-600 disabled:opacity-50"
+              >
+                Esquecer
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ReaderPairing({ operator }) {
   const queryClient = useQueryClient();
   const [code, setCode] = useState("");
@@ -245,8 +368,10 @@ function ReaderPairing({ operator }) {
     toast.success(message);
   };
 
+  const { data: accountReaders = [] } = useAccountReaders(open);
+
   const pairMutation = useMutation({
-    mutationFn: (pairingCode) => api.post(url, { pairingCode }),
+    mutationFn: (payload) => api.post(url, payload),
     onSuccess: () => onDone("Maquininha pareada. A cobrança agora vai direto para ela."),
     onError: (err) => toast.error(errorMessage(err, "Erro ao parear a maquininha.")),
   });
@@ -260,7 +385,7 @@ function ReaderPairing({ operator }) {
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!code.trim()) return toast.error("Digite o código que aparece na maquininha.");
-    pairMutation.mutate(code.trim());
+    pairMutation.mutate({ pairingCode: code.trim() });
   };
 
   if (operator.readerId && !open) {
@@ -314,9 +439,36 @@ function ReaderPairing({ operator }) {
 
   return (
     <form onSubmit={handleSubmit} className="mt-3 space-y-2 rounded-xl bg-gray-50 p-3">
+      {accountReaders.length ? (
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold text-gray-700">
+            Já está conectada à conta? Escolha:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {accountReaders.map((reader) => (
+              <button
+                key={reader.id}
+                type="button"
+                disabled={pairMutation.isPending}
+                onClick={() => pairMutation.mutate({ readerId: reader.id })}
+                className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-left text-[11px] font-semibold text-gray-700 hover:border-secondary disabled:opacity-50"
+              >
+                {reader.name || "Maquininha"}
+                {reader.serial ? (
+                  <span className="ml-1 font-mono font-normal text-gray-400">
+                    {reader.serial}
+                  </span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <p className="text-[11px] text-gray-600">
-        Na maquininha, logada com o usuário acima: Menu → Conexões → conecte no
-        Wi-Fi → API → Conectar. Digite o código que aparecer (vale 5 minutos).
+        Ou pareie uma nova: com a maquininha deslogada, Menu → Conexões →
+        conecte no Wi-Fi → API → Conectar. Digite o código que aparecer (vale 5
+        minutos). Se ela conectar sem mostrar código, já está pareada em alguma
+        conta: veja em “Maquininhas conectadas na conta” abaixo.
       </p>
       <div className="flex gap-2">
         <input
@@ -614,6 +766,7 @@ function AdminPagamentosPage() {
 
             <SumUpCredentials sumup={settings.sumup} />
             {settings.sumup.configured ? <SumUpOperators /> : null}
+            {settings.sumup.configured ? <SumUpAccountReaders /> : null}
           </>
         ) : null}
       </div>
