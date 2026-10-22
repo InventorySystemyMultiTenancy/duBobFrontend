@@ -598,16 +598,12 @@ function GuidedMenu({
     scrollTop();
   };
 
-  // O sabor só marca a escolha; quem coloca no carrinho é o botão da barra de baixo,
-  // para um toque sem querer não adicionar nada.
+  // Tocar no sabor já coloca o milk shake no carrinho.
   const pickMilkshakeFlavor = (flavor) => {
     setSelectedFlavor(flavor.name);
-  };
-
-  const addMilkshake = () => {
     onAddMilkshake({
       line: selectedLine,
-      flavor: selectedFlavor,
+      flavor: flavor.name,
       size: selectedMilkshakeSize,
     });
     finishItem();
@@ -694,7 +690,7 @@ function GuidedMenu({
         ? "Toque em uma opção."
         : step === "tamanho"
           ? `${selectedLine.title}. Toque no tamanho.`
-          : `${selectedLine.title}, ${sizeHint(selectedMilkshakeSize)}. Toque no sabor e confirme embaixo.`
+          : `${selectedLine.title}, ${sizeHint(selectedMilkshakeSize)}. Toque no sabor para colocar no carrinho.`
       : step === "tamanho"
         ? "Toque no tamanho."
         : step === "sabor"
@@ -717,7 +713,7 @@ function GuidedMenu({
           ? `Qual linha de milk shake? ${spokenList(milkshakeLines.map((line) => line.title))}.`
           : step === "tamanho"
             ? `Qual o tamanho? ${selectedLine.sizes.map(spokenSize).join(". ")}.`
-            : "Agora escolha o sabor e toque em colocar no carrinho."
+            : "Agora toque no sabor para colocar no carrinho."
         : step === "tamanho"
           ? `Qual o tamanho do copo? ${acaiOptions.sizes.map(spokenSize).join(". ")}.`
           : step === "sabor"
@@ -899,32 +895,19 @@ function GuidedMenu({
           )}
 
           {productType === "milkshake" && step === "sabor" && (
-            <>
-              <div className={manyOptionsGrid(big)}>
-                {selectedLine.flavors.map((flavor) => (
-                  <OptionTile
-                    key={flavor.id}
-                    big={big}
-                    title={flavor.name}
-                    image={flavor.imageUrl || (big ? "" : MilkShake1)}
-                    selected={selectedFlavor === flavor.name}
-                    disabled={!isProductReady}
-                    onClick={() => pickMilkshakeFlavor(flavor)}
-                  />
-                ))}
-              </div>
-              <ConfirmBar
-                big={big}
-                summary={
-                  selectedFlavor
-                    ? `${selectedLine.title} · ${sizeHint(selectedMilkshakeSize)} · ${selectedFlavor}`
-                    : "Toque em um sabor acima"
-                }
-                total={fmt(selectedMilkshakeSize?.price ?? 0)}
-                disabled={!isProductReady || !selectedFlavor}
-                onConfirm={addMilkshake}
-              />
-            </>
+            <div className={manyOptionsGrid(big)}>
+              {selectedLine.flavors.map((flavor) => (
+                <OptionTile
+                  key={flavor.id}
+                  big={big}
+                  title={flavor.name}
+                  image={flavor.imageUrl || (big ? "" : MilkShake1)}
+                  selected={selectedFlavor === flavor.name}
+                  disabled={!isProductReady}
+                  onClick={() => pickMilkshakeFlavor(flavor)}
+                />
+              ))}
+            </div>
           )}
 
           {productType === "acai" && step === "tamanho" && (
