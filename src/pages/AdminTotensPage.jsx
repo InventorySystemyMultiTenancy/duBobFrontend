@@ -10,6 +10,7 @@ const EMPTY_FORM = {
   number: "",
   terminalId: "",
   sumupOperatorId: "",
+  stoneSerialNumber: "",
   voiceEnabled: false,
 };
 
@@ -33,6 +34,7 @@ function TotemModal({ totem, onClose }) {
           number: String(totem.number),
           terminalId: totem.terminalId ?? "",
           sumupOperatorId: totem.sumupOperatorId ?? "",
+          stoneSerialNumber: totem.stoneSerialNumber ?? "",
           voiceEnabled: Boolean(totem.voiceEnabled),
         }
       : EMPTY_FORM,
@@ -76,6 +78,8 @@ function TotemModal({ totem, onClose }) {
     else if (isEdit) payload.terminalId = null;
     if (form.sumupOperatorId) payload.sumupOperatorId = form.sumupOperatorId;
     else if (isEdit) payload.sumupOperatorId = null;
+    if (form.stoneSerialNumber.trim()) payload.stoneSerialNumber = form.stoneSerialNumber.trim();
+    else if (isEdit) payload.stoneSerialNumber = null;
 
     mutation.mutate(payload);
   };
@@ -156,6 +160,24 @@ function TotemModal({ totem, onClose }) {
             <p className="mt-1 text-[10px] text-gray-400">
               Usada quando o banco da maquininha é a SumUp. As maquininhas são
               criadas em Admin → Pagamentos.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">
+              Número de série da maquininha Stone
+            </label>
+            <input
+              type="text"
+              maxLength={100}
+              placeholder="Ex: 6C123456"
+              value={form.stoneSerialNumber}
+              onChange={set("stoneSerialNumber")}
+              className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 font-mono text-sm focus:border-secondary focus:outline-none"
+            />
+            <p className="mt-1 text-[10px] text-gray-400">
+              Usado quando o banco da maquininha é a Stone. Fica na etiqueta
+              atrás da maquininha.
             </p>
           </div>
 
@@ -295,7 +317,12 @@ function TotemCard({ totem, onEdit }) {
               {sumupOperator?.readerId ? " · cobrança direto na maquininha" : ""}
             </p>
           ) : null}
-          {!totem.terminalId && !totem.sumupOperatorId ? (
+          {totem.stoneSerialNumber ? (
+            <p className="mt-1 font-mono text-[10px] text-gray-400">
+              Stone: {totem.stoneSerialNumber}
+            </p>
+          ) : null}
+          {!totem.terminalId && !totem.sumupOperatorId && !totem.stoneSerialNumber ? (
             <p className="mt-1 text-[10px] text-amber-500">
               Sem maquininha vinculada
             </p>

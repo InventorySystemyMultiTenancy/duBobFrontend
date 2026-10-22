@@ -18,6 +18,12 @@ const PROVIDERS = [
     logo: "SU",
     logoClass: "bg-gray-900 text-white",
   },
+  {
+    id: "STONE",
+    name: "Stone",
+    logo: "ST",
+    logoClass: "bg-emerald-500/15 text-emerald-700",
+  },
 ];
 
 // Cada canal tem o seu banco: dá para usar SumUp na loja e Mercado Pago no
@@ -26,7 +32,10 @@ const CHANNELS = [
   {
     key: "terminalProvider",
     title: "Maquininha — totem, mesa e caixa",
+    providers: ["MERCADO_PAGO", "SUMUP", "STONE"],
     descriptions: {
+      STONE:
+        "Pedido enviado para a maquininha Stone pelo número de série. O sistema confirma consultando o pedido na Stone.",
       MERCADO_PAGO: "Cobrança enviada para a maquininha Point.",
       SUMUP:
         "Cobrança enviada para a maquininha SumUp pareada (ou valor digitado nela). O sistema confirma consultando a venda, sem webhook.",
@@ -38,6 +47,7 @@ const CHANNELS = [
   {
     key: "onlineProvider",
     title: "Pagamento online — delivery",
+    providers: ["MERCADO_PAGO", "SUMUP"],
     descriptions: {
       MERCADO_PAGO: "Página do Mercado Pago com Pix, crédito e débito.",
       SUMUP:
@@ -91,6 +101,112 @@ function ProviderCard({ provider, description, active, configured, onSelect, dis
         </span>
       </span>
     </button>
+  );
+}
+
+const STONE_PAYMENT_TYPES = [
+  { value: "", label: "Cliente escolhe na maquininha" },
+  { value: "debit", label: "Débito" },
+  { value: "credit", label: "Crédito à vista" },
+  { value: "pix", label: "Pix (app da maquininha 6.4+)" },
+  { value: "voucher", label: "Voucher" },
+];
+
+function StoneCredentials({ stone }) {
+  const queryClient = useQueryClient();
+  const [secretKey, setSecretKey] = useState("");
+  const [referer, setReferer] = useState(stone.serviceRefererName ?? "");
+
+  const mutation = useMutation({
+    mutationFn: async (payload) =>
+      (await api.put("/admin/settings/payment", payload)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-payment-settings"] });
+      setSecretKey("");
+      toast.success("Configuração da Stone salva.");
+    },
+    onError: (error) =>
+      toast.error(errorMessage(error, "Erro ao salvar a configuração da Stone.")),
+  });
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const payload = { stoneServiceRefererName: referer.trim() };
+    if (secretKey.trim()) payload.stoneSecretKey = secretKey.trim();
+    else if (!stone.configured) return toast.error("Cole a Secret Key da Stone.");
+    mutation.mutate(payload);
+  };
+
+  return (
+    <div className="ui-card p-5">
+      <h2 className="font-semibold text-gray-900">Stone (Stone Connect)</h2>
+      <p className="mt-0.5 text-xs text-gray-500">
+        A Secret Key fica no Partner Hub da Stone (Integração → Setup → Connect
+        Stone) ou no Dashboard Pagar.me (Desenvolvimento → Chaves). O
+        ServiceRefererName é o identificador de parceiro que a Stone envia no
+        cadastro de parceria. Na mesa e no totem, o “ID da maquininha” é o
+        número de série da maquininha Stone.
+      </p>
+
+      {stone.configured ? (
+        <div className="mt-3 rounded-2xl bg-gray-50 p-3 text-xs">
+          <span className="text-gray-500">Secret Key: </span>
+          <span className="font-mono">{stone.secretKeyMasked}</span>
+          {stone.source === "env" ? (
+            <span className="ml-2 text-amber-600">(do .env: STONE_SECRET_KEY)</span>
+          ) : null}
+        </div>
+      ) : null}
+
+      <form onSubmit={handleSubmit} className="mt-4 space-y-2">
+        <input
+          type="password"
+          autoComplete="off"
+          placeholder={stone.configured ? "Trocar Secret Key (sk_...)" : "Secret Key (sk_...)"}
+          value={secretKey}
+          onChange={(event) => setSecretKey(event.target.value)}
+          className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 font-mono text-sm focus:border-secondary focus:outline-none"
+        />
+        <input
+          type="text"
+          autoComplete="off"
+          placeholder="ServiceRefererName (identificador de parceiro)"
+          value={referer}
+          onChange={(event) => setReferer(event.target.value)}
+          className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 font-mono text-sm focus:border-secondary focus:outline-none"
+        />
+        <button
+          type="submit"
+          disabled={mutation.isPending}
+          className="rounded-full bg-secondary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+        >
+          {mutation.isPending ? "Validando..." : "Salvar Stone"}
+        </button>
+      </form>
+
+      <label className="mt-4 block">
+        <span className="mb-1 block text-xs font-semibold text-gray-600">
+          Forma de pagamento na maquininha
+        </span>
+        <select
+          value={stone.paymentType ?? ""}
+          disabled={mutation.isPending}
+          onChange={(event) => mutation.mutate({ stonePaymentType: event.target.value })}
+          className="w-full rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
+        >
+          {STONE_PAYMENT_TYPES.map((type) => (
+            <option key={type.value} value={type.value}>
+              {type.label}
+            </option>
+          ))}
+        </select>
+        <span className="mt-1 block text-[11px] text-gray-500">
+          Com uma forma escolhida, a maquininha já abre a tela de pagamento. Em
+          “Cliente escolhe”, o pedido aparece na lista da maquininha e o
+          cliente toca nele para pagar.
+        </span>
+      </label>
+    </div>
   );
 }
 
@@ -682,14 +798,18 @@ function ChannelSection({ channel, settings }) {
   };
 
   const isConfigured = (id) =>
-    id === "SUMUP" ? settings.sumup.configured : settings.mercadoPago.configured;
+    ({
+      MERCADO_PAGO: settings.mercadoPago.configured,
+      SUMUP: settings.sumup.configured,
+      STONE: settings.stone?.configured,
+    })[id];
 
   return (
     <section className="space-y-3">
       <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
         {channel.title}
       </h2>
-      {PROVIDERS.map((provider) => (
+      {PROVIDERS.filter((provider) => channel.providers.includes(provider.id)).map((provider) => (
         <ProviderCard
           key={provider.id}
           provider={provider}
@@ -764,6 +884,7 @@ function AdminPagamentosPage() {
               </div>
             ) : null}
 
+            {settings.stone ? <StoneCredentials stone={settings.stone} /> : null}
             <SumUpCredentials sumup={settings.sumup} />
             {settings.sumup.configured ? <SumUpOperators /> : null}
             {settings.sumup.configured ? <SumUpAccountReaders /> : null}
