@@ -699,6 +699,35 @@ function GuidedMenu({
 
   const extraComplements = selectedComplements.length > 4;
   const acaiTotal = (selectedAcaiSize?.price ?? 0) + (extraComplements ? 5 : 0);
+
+  // Resumo à direita: o que já foi escolhido em cada etapa.
+  const summaryRows =
+    productType === "acai"
+      ? [
+          { label: "Produto", value: "Açaí" },
+          { label: "Copo", value: sizeHint(selectedAcaiSize), active: step === "tamanho" },
+          { label: "Sabor", value: selectedAcaiFlavor, active: step === "sabor" },
+        ]
+      : [
+          { label: "Produto", value: "Milk shake" },
+          {
+            label: "Linha",
+            value: selectedLineId ? selectedLine.title : "",
+            active: step === "linha",
+          },
+          {
+            label: "Tamanho",
+            value: sizeHint(selectedMilkshakeSize),
+            active: step === "tamanho",
+          },
+          { label: "Sabor", value: selectedFlavor, active: step === "sabor" },
+        ];
+  const summaryTotal =
+    productType === "acai"
+      ? selectedAcaiSize
+        ? acaiTotal
+        : null
+      : (selectedMilkshakeSize?.price ?? null);
   const big = isTotemMode;
 
   // Voz do totem (só fala se o admin ligou a voz deste totem).
@@ -859,131 +888,150 @@ function GuidedMenu({
             </p>
           )}
 
-          {productType === "milkshake" && step === "linha" && (
-            <div className={fewOptionsGrid(big)}>
-              {milkshakeLines.map((line) => (
-                <OptionTile
-                  key={line.id}
-                  big={big}
-                  fill
-                  title={line.title}
-                  detail={`${line.flavors.length} sabores`}
-                  price={`a partir de ${fmt(Math.min(...line.sizes.map((size) => size.price)))}`}
-                  selected={selectedLineId === line.id}
-                  onClick={() => pickLine(line.id)}
-                />
-              ))}
-            </div>
-          )}
+          {/* Opções à esquerda; à direita, o resumo do que já foi escolhido. */}
+          <div
+            className={
+              big
+                ? "grid flex-1 grid-cols-[minmax(0,1fr)_13rem] gap-4 sm:grid-cols-[minmax(0,1fr)_16rem] lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-6"
+                : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"
+            }
+          >
+            <div className="flex min-w-0 flex-col">
+              {productType === "milkshake" && step === "linha" && (
+                <div className={fewOptionsGrid(big)}>
+                  {milkshakeLines.map((line) => (
+                    <OptionTile
+                      key={line.id}
+                      big={big}
+                      fill
+                      title={line.title}
+                      detail={`${line.flavors.length} sabores`}
+                      price={`a partir de ${fmt(Math.min(...line.sizes.map((size) => size.price)))}`}
+                      selected={selectedLineId === line.id}
+                      onClick={() => pickLine(line.id)}
+                    />
+                  ))}
+                </div>
+              )}
 
-          {productType === "milkshake" && step === "tamanho" && (
-            <div className={fewOptionsGrid(big)}>
-              {selectedLine.sizes.map((size) => (
-                <OptionTile
-                  key={size.id}
-                  big={big}
-                  fill
-                  title={size.label}
-                  detail={size.ml}
-                  price={fmt(size.price)}
-                  selected={selectedMilkshakeSize?.id === size.id}
-                  disabled={!isProductReady}
-                  onClick={() => pickMilkshakeSize(size)}
-                />
-              ))}
-            </div>
-          )}
+              {productType === "milkshake" && step === "tamanho" && (
+                <div className={fewOptionsGrid(big, true)}>
+                  {selectedLine.sizes.map((size) => (
+                    <OptionTile
+                      key={size.id}
+                      big={big}
+                      fill
+                      title={size.label}
+                      detail={size.ml}
+                      price={fmt(size.price)}
+                      selected={selectedMilkshakeSize?.id === size.id}
+                      disabled={!isProductReady}
+                      onClick={() => pickMilkshakeSize(size)}
+                    />
+                  ))}
+                </div>
+              )}
 
-          {productType === "milkshake" && step === "sabor" && (
-            <div className={manyOptionsGrid(big)}>
-              {selectedLine.flavors.map((flavor) => (
-                <OptionTile
-                  key={flavor.id}
-                  big={big}
-                  title={flavor.name}
-                  image={flavor.imageUrl || (big ? "" : MilkShake1)}
-                  selected={selectedFlavor === flavor.name}
-                  disabled={!isProductReady}
-                  onClick={() => pickMilkshakeFlavor(flavor)}
-                />
-              ))}
-            </div>
-          )}
+              {productType === "milkshake" && step === "sabor" && (
+                <div className={manyOptionsGrid(big)}>
+                  {selectedLine.flavors.map((flavor) => (
+                    <OptionTile
+                      key={flavor.id}
+                      big={big}
+                      title={flavor.name}
+                      image={flavor.imageUrl || (big ? "" : MilkShake1)}
+                      selected={selectedFlavor === flavor.name}
+                      disabled={!isProductReady}
+                      onClick={() => pickMilkshakeFlavor(flavor)}
+                    />
+                  ))}
+                </div>
+              )}
 
-          {productType === "acai" && step === "tamanho" && (
-            <div className={fewOptionsGrid(big)}>
-              {acaiOptions.sizes.map((size) => (
-                <OptionTile
-                  key={size.id}
-                  big={big}
-                  fill
-                  title={size.label}
-                  detail={size.ml}
-                  price={fmt(size.price)}
-                  selected={selectedAcaiSize?.id === size.id}
-                  onClick={() => pickAcaiSize(size)}
-                />
-              ))}
-            </div>
-          )}
+              {productType === "acai" && step === "tamanho" && (
+                <div className={fewOptionsGrid(big, true)}>
+                  {acaiOptions.sizes.map((size) => (
+                    <OptionTile
+                      key={size.id}
+                      big={big}
+                      fill
+                      title={size.label}
+                      detail={size.ml}
+                      price={fmt(size.price)}
+                      selected={selectedAcaiSize?.id === size.id}
+                      onClick={() => pickAcaiSize(size)}
+                    />
+                  ))}
+                </div>
+              )}
 
-          {productType === "acai" && step === "sabor" && (
-            <div
-              className={
-                acaiOptions.flavors.length <= 4
-                  ? fewOptionsGrid(big)
-                  : manyOptionsGrid(big)
-              }
-            >
-              {acaiOptions.flavors.map((flavor) => (
-                <OptionTile
-                  key={flavor.id}
-                  big={big}
-                  fill={acaiOptions.flavors.length <= 4}
-                  title={flavor.name}
-                  image={flavor.imageUrl || (big ? "" : acai1)}
-                  selected={selectedAcaiFlavor === flavor.name}
-                  onClick={() => pickAcaiFlavor(flavor)}
-                />
-              ))}
+              {productType === "acai" && step === "sabor" && (
+                <div
+                  className={
+                    acaiOptions.flavors.length <= 4
+                      ? fewOptionsGrid(big)
+                      : manyOptionsGrid(big)
+                  }
+                >
+                  {acaiOptions.flavors.map((flavor) => (
+                    <OptionTile
+                      key={flavor.id}
+                      big={big}
+                      fill={acaiOptions.flavors.length <= 4}
+                      title={flavor.name}
+                      image={flavor.imageUrl || (big ? "" : acai1)}
+                      selected={selectedAcaiFlavor === flavor.name}
+                      onClick={() => pickAcaiFlavor(flavor)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {productType === "acai" && step === "complementos" && (
+                <div className={manyOptionsGrid(big)}>
+                  {acaiOptions.complements.map((complement) => {
+                    const selected = selectedComplements.some(
+                      (item) => item.name === complement.name,
+                    );
+                    return (
+                      <OptionTile
+                        key={complement.id}
+                        big={big}
+                        title={complement.name}
+                        image={complement.imageUrl || (big ? "" : acai1)}
+                        selected={selected}
+                        disabled={!selected && selectedComplements.length >= 8}
+                        onClick={() => toggleComplement(complement)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
+
+            <OrderSummary
+              big={big}
+              rows={summaryRows}
+              complements={productType === "acai" ? selectedComplements : null}
+              total={summaryTotal}
+            />
+          </div>
 
           {productType === "acai" && step === "complementos" && (
-            <>
-              <div className={manyOptionsGrid(big)}>
-                {acaiOptions.complements.map((complement) => {
-                  const selected = selectedComplements.some(
-                    (item) => item.name === complement.name,
-                  );
-                  return (
-                    <OptionTile
-                      key={complement.id}
-                      big={big}
-                      title={complement.name}
-                      image={complement.imageUrl || (big ? "" : acai1)}
-                      selected={selected}
-                      disabled={!selected && selectedComplements.length >= 8}
-                      onClick={() => toggleComplement(complement)}
-                    />
-                  );
-                })}
-              </div>
-              <ConfirmBar
-                big={big}
-                summary={
-                  selectedComplements.length
-                    ? `${selectedComplements.length} de 8 escolhidos${
-                        extraComplements ? " (inclui + R$ 5,00)" : ""
-                      }`
-                    : "Escolha pelo menos 1 complemento"
-                }
-                detail={`Copo ${sizeHint(selectedAcaiSize)} · ${selectedAcaiFlavor}`}
-                total={fmt(acaiTotal)}
-                disabled={!isProductReady || selectedComplements.length === 0}
-                onConfirm={addAcai}
-              />
-            </>
+            <ConfirmBar
+              big={big}
+              summary={
+                selectedComplements.length
+                  ? `${selectedComplements.length} de 8 escolhidos${
+                      extraComplements ? " (inclui + R$ 5,00)" : ""
+                    }`
+                  : "Escolha pelo menos 1 complemento"
+              }
+              detail={`Copo ${sizeHint(selectedAcaiSize)} · ${selectedAcaiFlavor}`}
+              total={fmt(acaiTotal)}
+              disabled={!isProductReady || selectedComplements.length === 0}
+              onConfirm={addAcai}
+            />
           )}
         </div>
       )}
@@ -991,16 +1039,19 @@ function GuidedMenu({
   );
 }
 
-// Até 4 opções: ocupam o resto da tela (2x2 em pé, 4 lado a lado deitada).
-const fewOptionsGrid = (big) =>
+// Até 4 opções: ocupam o resto da tela em 2x2. Rótulos curtos (P, M, G, MG)
+// ficam 4 lado a lado com a tela deitada; nomes longos continuam 2x2.
+const fewOptionsGrid = (big, shortLabels = false) =>
   big
-    ? "grid flex-1 auto-rows-fr grid-cols-2 gap-4 sm:gap-5 landscape:grid-cols-4"
+    ? `grid flex-1 auto-rows-fr grid-cols-2 gap-4 sm:gap-5 ${
+        shortLabels ? "landscape:grid-cols-4" : ""
+      }`
     : "grid gap-3 sm:grid-cols-2 xl:grid-cols-4";
 
 // Listas longas (sabores, complementos): cartões grandes com rolagem da página.
 const manyOptionsGrid = (big) =>
   big
-    ? "grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3"
+    ? "grid content-start grid-cols-1 gap-4 sm:gap-5 min-[900px]:grid-cols-2 xl:grid-cols-3"
     : "grid gap-3 sm:grid-cols-2 xl:grid-cols-3";
 
 function OptionTile({
@@ -1054,11 +1105,17 @@ function OptionTile({
           fill && !image ? "items-center text-center" : ""
         } ${big ? "gap-1 px-6 py-6" : "gap-0.5 px-4 py-3"} ${
           big && !fill && !image ? "min-h-32" : ""
-        }`}
+        } ${selected && !fill ? (big ? "pr-20" : "pr-12") : ""}`}
       >
         <span
-          className={`font-black leading-tight text-primary ${
-            big ? (fill ? "text-5xl sm:text-6xl landscape:text-5xl" : "text-3xl") : "text-base"
+          className={`max-w-full break-words font-black leading-tight text-primary ${
+            !big
+              ? "text-base"
+              : fill && String(title).length <= 3
+                ? "text-6xl landscape:text-5xl" // P, M, G, MG
+                : fill
+                  ? "text-3xl sm:text-4xl landscape:text-3xl"
+                  : "text-2xl sm:text-3xl"
           }`}
         >
           {title}
@@ -1066,7 +1123,7 @@ function OptionTile({
         {detail && (
           <span
             className={`font-bold text-primary/70 ${
-              big ? (fill ? "text-3xl" : "text-xl") : "text-xs"
+              big ? (fill ? "text-2xl" : "text-xl") : "text-xs"
             }`}
           >
             {detail}
@@ -1075,7 +1132,7 @@ function OptionTile({
         {price && (
           <span
             className={`font-black text-secondary ${
-              big ? (fill ? "mt-2 text-4xl" : "text-2xl") : "text-sm"
+              big ? (fill ? "mt-2 text-3xl" : "text-2xl") : "text-sm"
             }`}
           >
             {price}
@@ -1083,6 +1140,90 @@ function OptionTile({
         )}
       </span>
     </button>
+  );
+}
+
+// Coluna da direita: o que o cliente já escolheu (complementos numerados).
+function OrderSummary({ big, rows, complements, total }) {
+  const included = 4;
+  const slots = complements
+    ? Math.max(included, Math.min(8, complements.length))
+    : 0;
+
+  return (
+    <aside
+      className={`h-fit self-start rounded-3xl border-2 border-primary/10 bg-accent/60 ${
+        big ? "sticky top-28 p-4 sm:p-5" : "sticky top-24 hidden p-4 lg:block"
+      }`}
+    >
+      <p
+        className={`font-black uppercase tracking-[0.2em] text-secondary ${
+          big ? "text-base" : "text-xs"
+        }`}
+      >
+        Seu pedido
+      </p>
+      <dl className={big ? "mt-3 space-y-3" : "mt-3 space-y-2"}>
+        {rows.map((row) => (
+          <div
+            key={row.label}
+            className={`rounded-2xl px-3 py-2 ${row.active ? "bg-white ring-2 ring-secondary" : ""}`}
+          >
+            <dt className={`font-bold text-primary/60 ${big ? "text-base" : "text-xs"}`}>
+              {row.label}
+            </dt>
+            <dd
+              className={`break-words font-black ${big ? "text-xl" : "text-sm"} ${
+                row.value ? "text-primary" : "text-primary/30"
+              }`}
+            >
+              {row.value || "—"}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      {complements && (
+        <div className={big ? "mt-3 px-3" : "mt-2 px-3"}>
+          <p className={`font-bold text-primary/60 ${big ? "text-base" : "text-xs"}`}>
+            Complementos ({complements.length}/8)
+          </p>
+          <ol className={big ? "mt-1 space-y-1" : "mt-1 space-y-0.5"}>
+            {Array.from({ length: slots }, (_, index) => {
+              const item = complements[index];
+              return (
+                <li
+                  key={index}
+                  className={`flex gap-2 break-words ${big ? "text-lg" : "text-sm"}`}
+                >
+                  <span className="font-black text-secondary">{index + 1}:</span>
+                  <span className={item ? "font-bold text-primary" : "text-primary/30"}>
+                    {item ? item.name : "—"}
+                    {item && index >= included ? (
+                      <span className="ml-1 text-xs font-black text-secondary">+</span>
+                    ) : null}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+          {complements.length > included && (
+            <p className={`mt-1 font-bold text-secondary ${big ? "text-sm" : "text-xs"}`}>
+              + R$ 5,00 pelos extras
+            </p>
+          )}
+        </div>
+      )}
+
+      {total != null && (
+        <div className="mt-4 border-t-2 border-primary/10 px-3 pt-3">
+          <p className={`font-bold text-primary/60 ${big ? "text-base" : "text-xs"}`}>Total</p>
+          <p className={`font-black text-secondary ${big ? "text-3xl" : "text-xl"}`}>
+            {fmt(total)}
+          </p>
+        </div>
+      )}
+    </aside>
   );
 }
 
