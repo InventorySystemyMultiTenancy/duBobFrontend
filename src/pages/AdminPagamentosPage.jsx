@@ -29,7 +29,7 @@ const CHANNELS = [
     descriptions: {
       MERCADO_PAGO: "Cobrança enviada para a maquininha Point.",
       SUMUP:
-        "Valor digitado na maquininha SumUp; o sistema confirma pela venda feita com o usuário dela.",
+        "Cobrança enviada para a maquininha SumUp pareada (ou valor digitado nela). O sistema confirma consultando a venda, sem webhook.",
     },
     confirm: (name) =>
       `Trocar as maquininhas (totem, mesa e caixa) para ${name}?\n\nConfira se o "ID da maquininha" de cada mesa e totem é de uma maquininha ${name}.`,
@@ -230,6 +230,122 @@ function LoginBox({ login, onClose }) {
   );
 }
 
+// Pareamento do reader: com ele o totem/caixa manda a cobrança direto para a
+// tela da maquininha; sem ele o cliente digita o valor nela.
+function ReaderPairing({ operator }) {
+  const queryClient = useQueryClient();
+  const [code, setCode] = useState("");
+  const [open, setOpen] = useState(false);
+  const url = `/admin/settings/payment/sumup/operators/${operator.id}/reader`;
+
+  const onDone = (message) => {
+    queryClient.invalidateQueries({ queryKey: ["admin-sumup-operators"] });
+    setCode("");
+    setOpen(false);
+    toast.success(message);
+  };
+
+  const pairMutation = useMutation({
+    mutationFn: (pairingCode) => api.post(url, { pairingCode }),
+    onSuccess: () => onDone("Maquininha pareada. A cobrança agora vai direto para ela."),
+    onError: (err) => toast.error(errorMessage(err, "Erro ao parear a maquininha.")),
+  });
+
+  const unpairMutation = useMutation({
+    mutationFn: () => api.delete(url),
+    onSuccess: () => onDone("Pareamento removido."),
+    onError: (err) => toast.error(errorMessage(err, "Erro ao remover o pareamento.")),
+  });
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    if (!code.trim()) return toast.error("Digite o código que aparece na maquininha.");
+    pairMutation.mutate(code.trim());
+  };
+
+  if (operator.readerId && !open) {
+    return (
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-green-50 px-3 py-2">
+        <p className="text-[11px] text-green-700">
+          ✓ Cobrança enviada direto para a maquininha
+          <span className="ml-1 font-mono text-green-600/70">{operator.readerId}</span>
+        </p>
+        <span className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="text-[11px] font-semibold text-green-700 underline"
+          >
+            Parear de novo
+          </button>
+          <button
+            type="button"
+            disabled={unpairMutation.isPending}
+            onClick={() => {
+              if (window.confirm("Remover o pareamento? O cliente passará a digitar o valor na maquininha.")) {
+                unpairMutation.mutate();
+              }
+            }}
+            className="text-[11px] font-semibold text-red-400 underline disabled:opacity-50"
+          >
+            Remover
+          </button>
+        </span>
+      </div>
+    );
+  }
+
+  if (!open) {
+    return (
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-amber-50 px-3 py-2">
+        <p className="text-[11px] text-amber-700">
+          Sem pareamento: o cliente digita o valor na maquininha.
+        </p>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="text-[11px] font-semibold text-amber-800 underline"
+        >
+          Parear para enviar a cobrança
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-3 space-y-2 rounded-xl bg-gray-50 p-3">
+      <p className="text-[11px] text-gray-600">
+        Na maquininha, logada com o usuário acima: Menu → Conexões → conecte no
+        Wi-Fi → API → Conectar. Digite o código que aparecer (vale 5 minutos).
+      </p>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          autoFocus
+          placeholder="Código de pareamento"
+          value={code}
+          onChange={(event) => setCode(event.target.value.toUpperCase())}
+          className="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-white px-3 py-2 font-mono text-sm uppercase focus:border-secondary focus:outline-none"
+        />
+        <button
+          type="submit"
+          disabled={pairMutation.isPending}
+          className="rounded-full bg-secondary px-4 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+        >
+          {pairMutation.isPending ? "Pareando..." : "Parear"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="rounded-full border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 hover:border-gray-400"
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function SumUpOperators() {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
@@ -352,6 +468,7 @@ function SumUpOperators() {
                 Remover
               </button>
             </div>
+            <ReaderPairing operator={operator} />
           </div>
         ))}
       </div>
