@@ -127,6 +127,29 @@ const formatTime = (iso) =>
     timeZone: "America/Sao_Paulo",
   });
 
+const formatDayMonth = (value) =>
+  new Date(value).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  });
+
+// Pedido de outro dia mostra a data junto, senão "17:40" parece de hoje
+const formatOrderTime = (iso, now) =>
+  formatDayMonth(iso) === formatDayMonth(now)
+    ? formatTime(iso)
+    : `${formatDayMonth(iso)} ${formatTime(iso)}`;
+
+function formatElapsed(minutes) {
+  if (minutes < 60) return `${minutes} min`;
+  if (minutes < 24 * 60) {
+    const rest = minutes % 60;
+    return rest ? `${Math.floor(minutes / 60)}h ${rest}min` : `${minutes / 60}h`;
+  }
+  const days = Math.floor(minutes / (24 * 60));
+  return days === 1 ? "1 dia" : `${days} dias`;
+}
+
 function getTotemLabel(order) {
   const match = String(order?.notes || "").match(/Totem\s*(\d+)/i);
   return match ? `Totem ${match[1]}` : "Totem";
@@ -392,7 +415,7 @@ function OrderCard({
               largeMode ? "text-3xl" : "text-2xl"
             }`}
           >
-            {formatTime(order.createdAt)}
+            {formatOrderTime(order.createdAt, now)}
           </p>
           <p className="mt-1 text-xs font-bold tracking-wide text-text-muted">
             {orderCode}
@@ -407,7 +430,10 @@ function OrderCard({
             ✨ {t("KITCHEN_NEW_ORDER", "Novo pedido")}
           </span>
         )}
-        <span className={`${chip} ${typeChip.cls}`}>{typeChip.label}</span>
+        {/* No totem o título já diz "Totem N" */}
+        {!isTotemOrder(order) && (
+          <span className={`${chip} ${typeChip.cls}`}>{typeChip.label}</span>
+        )}
         {eta && !eta.isFinal && (
           <span
             className={`${chip} ${
@@ -418,7 +444,7 @@ function OrderCard({
                   : "bg-accent text-primary"
             }`}
           >
-            ⏱ {eta.elapsedMinutes} min
+            ⏱ {formatElapsed(eta.elapsedMinutes)}
           </span>
         )}
         {isPaymentPending && !onConfirmPayment && (
@@ -1169,7 +1195,7 @@ function KitchenPage() {
   }, [stageCounts]);
 
   const visibleColumnKeys = isPreparationOnlyKitchen
-    ? ["PREPARANDO"]
+    ? ["RECEBIDO", "PREPARANDO"]
     : isDeliveryKitchenUser
       ? // Pedido que saiu para entrega fica só com o motoboy e o admin
         ["RECEBIDO", "PREPARANDO", "PRONTO", "RETIRADA_PRONTA"]
@@ -1192,6 +1218,8 @@ function KitchenPage() {
   const showStageSummary = !isPreparationOnlyKitchen;
   // Poucas colunas (ex.: cozinha delivery): cards grandes ocupando a tela toda
   const largeBoard = visibleColumns.length <= 4;
+  // Só 2 colunas (cozinha do totem): em tela larga cabem 2 cards lado a lado
+  const twoUpColumns = visibleColumns.length <= 2;
   const showWaiterCalls = !isKitchenUser;
   const showHeaderDetails = !isPreparationOnlyKitchen;
   const kitchenPreparationOrders = useMemo(() => {
@@ -1202,6 +1230,155 @@ function KitchenPage() {
       ...getColumnOrders("PREPARANDO"),
     ].sort((a, b) => compareOrdersByUrgency(a, b, currentNow));
   }, [currentNow, getColumnOrders, isPreparationOnlyKitchen]);
+
+  // Quadro por etapa (mesmo layout da cozinha delivery e do totem)
+  const board = (
+    <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:scroll-px-6 sm:px-6">
+      {visibleColumns.map((col) => {
+        const isVirtual = col.virtual;
+        const stageOrders = getColumnOrders(col.key).sort((a, b) =>
+          compareOrdersByUrgency(a, b, currentNow),
+        );
+        const canDropHere = draggedOrder?.dropColumnKey === col.key;
+        const isDropActive = activeDropStage === col.key && canDropHere;
+
+        return (
+          <section
+            key={col.key}
+            onDragOver={(event) => {
+              if (!canDropHere) return;
+              event.preventDefault();
+              setActiveDropStage(col.key);
+            }}
+            onDragLeave={() => {
+              if (activeDropStage === col.key) setActiveDropStage(null);
+            }}
+            onDrop={() => {
+              if (!draggedOrder || draggedOrder.dropColumnKey !== col.key) {
+                handleDragEnd();
+                return;
+              }
+              advance({
+                orderId: draggedOrder.id,
+                status: draggedOrder.nextStatus,
+              });
+              handleDragEnd();
+            }}
+            id={`kitchen-col-${col.key}`}
+            className={`flex w-[88vw] max-w-[28rem] shrink-0 snap-start flex-col rounded-3xl bg-white/60 p-3 ring-1 transition-all duration-200 sm:w-auto sm:max-w-none sm:flex-1 ${
+              largeBoard ? "sm:min-w-[24rem]" : "sm:min-w-[22rem]"
+            } ${
+              isDropActive
+                ? "bg-gold/20 ring-2 ring-gold"
+                : canDropHere
+                  ? "ring-2 ring-dashed ring-gold/50"
+                  : "ring-primary/5"
+            }`}
+          >
+            <div className="mb-3 flex items-center justify-between px-1">
+              <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-primary">
+                <span
+                  className={`h-3 w-3 rounded-full ${COLUMN_DOT[col.key] ?? "bg-gray-400"}`}
+                  aria-hidden="true"
+                />
+                {t(`KITCHEN_COLUMN_${col.key}`, col.label)}
+              </h2>
+              <span className="rounded-full bg-primary px-2.5 py-0.5 font-display text-sm font-bold text-white">
+                {stageOrders.length}
+              </span>
+            </div>
+
+            {isDropActive ? (
+              <div className="mb-3 rounded-2xl border border-secondary/50 bg-gold/10 px-3 py-2 text-center text-xs font-semibold text-primary">
+                {t(
+                  "KITCHEN_DROP_TO_STAGE",
+                  "Solte aqui para mover para {{stage}}",
+                ).replace(
+                  "{{stage}}",
+                  t(`KITCHEN_COLUMN_${col.key}`, col.label),
+                )}
+              </div>
+            ) : null}
+
+            <div
+              className={
+                twoUpColumns
+                  ? "grid items-start gap-3 2xl:grid-cols-2"
+                  : "space-y-3"
+              }
+            >
+              {stageOrders.length === 0 ? (
+                <div className="rounded-2xl border-2 border-dashed border-primary/10 p-6 text-center text-sm font-semibold text-text-muted">
+                  {t("KITCHEN_NO_ORDER", "Nenhum pedido")}
+                </div>
+              ) : (
+                stageOrders.map((order) => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    now={currentNow}
+                    products={products}
+                    isFresh={freshOrderIds.includes(order.id)}
+                    dragging={draggedOrder?.id === order.id}
+                    advancing={
+                      isPending && advancingVars?.orderId === order.id
+                    }
+                    onDragStart={isVirtual ? () => {} : handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    onAdvance={(orderId, status) =>
+                      advance({ orderId, status })
+                    }
+                    onConfirmPayment={
+                      isVirtual && col.key === "AGUARDANDO_PAGAMENTO"
+                        ? handleConfirmPayment
+                        : undefined
+                    }
+                    onPayLater={
+                      isVirtual && col.key === "AGUARDANDO_PAGAMENTO"
+                        ? (orderId) =>
+                            setPaymentStatus({
+                              orderId,
+                              paymentStatus: "PENDENTE",
+                              payLater: true,
+                            })
+                        : undefined
+                    }
+                    confirmingPayment={
+                      isPaymentPending && paymentVars?.orderId === order.id
+                    }
+                    // A cozinha do totem só prepara; cancelar fica com o caixa
+                    onCancel={isPreparationOnlyKitchen ? undefined : cancelOrder}
+                    cancelling={isCancelling && cancelVars === order.id}
+                    motoboys={motoboys}
+                    onAssignMotoboy={
+                      !order.isPickup && !order.mesaId
+                        ? (orderId, motoboyId) =>
+                            assignMotoboy({ orderId, motoboyId })
+                        : undefined
+                    }
+                    assigningMotoboy={
+                      isAssigning && assignVars?.orderId === order.id
+                    }
+                    onConfirmDelivery={
+                      !order.isPickup && !order.mesaId
+                        ? (orderId, code) =>
+                            confirmDelivery({ orderId, code })
+                        : undefined
+                    }
+                    confirmingDelivery={
+                      isConfirmingDelivery &&
+                      deliveryConfirmVars?.orderId === order.id
+                    }
+                    largeMode={largeBoard}
+                  />
+                ))
+              )}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
 
   if (isPreparationOnlyKitchen) {
     return (
@@ -1221,8 +1398,8 @@ function KitchenPage() {
                 <p className="text-xs font-bold text-gold">
                   {kitchenPreparationOrders.length}{" "}
                   {kitchenPreparationOrders.length === 1
-                    ? "pedido em preparo"
-                    : "pedidos em preparo"}
+                    ? "pedido na cozinha"
+                    : "pedidos na cozinha"}
                 </p>
               </div>
             </div>
@@ -1259,25 +1436,7 @@ function KitchenPage() {
                 </div>
               </div>
             ) : (
-              <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
-                {kitchenPreparationOrders.map((order) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    now={currentNow}
-                    products={products}
-                    isFresh={freshOrderIds.includes(order.id)}
-                    dragging={false}
-                    advancing={isPending && advancingVars?.orderId === order.id}
-                    onDragStart={() => {}}
-                    onDragEnd={() => {}}
-                    onAdvance={(orderId, status) =>
-                      advance({ orderId, status })
-                    }
-                    largeMode
-                  />
-                ))}
-              </div>
+              board
             )}
           </>
         )}
@@ -1505,147 +1664,7 @@ function KitchenPage() {
         </p>
       )}
 
-      {/* Kanban columns */}
-      {!isLoading && !isError && (
-        <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:scroll-px-6 sm:px-6">
-          {visibleColumns.map((col) => {
-            const isVirtual = col.virtual;
-            const stageOrders = getColumnOrders(col.key).sort((a, b) =>
-              compareOrdersByUrgency(a, b, currentNow),
-            );
-            const canDropHere = draggedOrder?.dropColumnKey === col.key;
-            const isDropActive = activeDropStage === col.key && canDropHere;
-
-            return (
-              <section
-                key={col.key}
-                onDragOver={(event) => {
-                  if (!canDropHere) return;
-                  event.preventDefault();
-                  setActiveDropStage(col.key);
-                }}
-                onDragLeave={() => {
-                  if (activeDropStage === col.key) setActiveDropStage(null);
-                }}
-                onDrop={() => {
-                  if (!draggedOrder || draggedOrder.dropColumnKey !== col.key) {
-                    handleDragEnd();
-                    return;
-                  }
-                  advance({
-                    orderId: draggedOrder.id,
-                    status: draggedOrder.nextStatus,
-                  });
-                  handleDragEnd();
-                }}
-                id={`kitchen-col-${col.key}`}
-                className={`flex w-[88vw] max-w-[28rem] shrink-0 snap-start flex-col rounded-3xl bg-white/60 p-3 ring-1 transition-all duration-200 sm:w-auto sm:max-w-none sm:flex-1 ${
-                  largeBoard ? "sm:min-w-[24rem]" : "sm:min-w-[22rem]"
-                } ${
-                  isDropActive
-                    ? "bg-gold/20 ring-2 ring-gold"
-                    : canDropHere
-                      ? "ring-2 ring-dashed ring-gold/50"
-                      : "ring-primary/5"
-                }`}
-              >
-                <div className="mb-3 flex items-center justify-between px-1">
-                  <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-primary">
-                    <span
-                      className={`h-3 w-3 rounded-full ${COLUMN_DOT[col.key] ?? "bg-gray-400"}`}
-                      aria-hidden="true"
-                    />
-                    {t(`KITCHEN_COLUMN_${col.key}`, col.label)}
-                  </h2>
-                  <span className="rounded-full bg-primary px-2.5 py-0.5 font-display text-sm font-bold text-white">
-                    {stageOrders.length}
-                  </span>
-                </div>
-
-                {isDropActive ? (
-                  <div className="mb-3 rounded-2xl border border-secondary/50 bg-gold/10 px-3 py-2 text-center text-xs font-semibold text-primary">
-                    {t(
-                      "KITCHEN_DROP_TO_STAGE",
-                      "Solte aqui para mover para {{stage}}",
-                    ).replace(
-                      "{{stage}}",
-                      t(`KITCHEN_COLUMN_${col.key}`, col.label),
-                    )}
-                  </div>
-                ) : null}
-
-                <div className="space-y-3">
-                  {stageOrders.length === 0 ? (
-                    <div className="rounded-2xl border-2 border-dashed border-primary/10 p-6 text-center text-sm font-semibold text-text-muted">
-                      {t("KITCHEN_NO_ORDER", "Nenhum pedido")}
-                    </div>
-                  ) : (
-                    stageOrders.map((order) => (
-                      <OrderCard
-                        key={order.id}
-                        order={order}
-                        now={currentNow}
-                        products={products}
-                        isFresh={freshOrderIds.includes(order.id)}
-                        dragging={draggedOrder?.id === order.id}
-                        advancing={
-                          isPending && advancingVars?.orderId === order.id
-                        }
-                        onDragStart={isVirtual ? () => {} : handleDragStart}
-                        onDragEnd={handleDragEnd}
-                        onAdvance={(orderId, status) =>
-                          advance({ orderId, status })
-                        }
-                        onConfirmPayment={
-                          isVirtual && col.key === "AGUARDANDO_PAGAMENTO"
-                            ? handleConfirmPayment
-                            : undefined
-                        }
-                        onPayLater={
-                          isVirtual && col.key === "AGUARDANDO_PAGAMENTO"
-                            ? (orderId) =>
-                                setPaymentStatus({
-                                  orderId,
-                                  paymentStatus: "PENDENTE",
-                                  payLater: true,
-                                })
-                            : undefined
-                        }
-                        confirmingPayment={
-                          isPaymentPending && paymentVars?.orderId === order.id
-                        }
-                        onCancel={cancelOrder}
-                        cancelling={isCancelling && cancelVars === order.id}
-                        motoboys={motoboys}
-                        onAssignMotoboy={
-                          !order.isPickup && !order.mesaId
-                            ? (orderId, motoboyId) =>
-                                assignMotoboy({ orderId, motoboyId })
-                            : undefined
-                        }
-                        assigningMotoboy={
-                          isAssigning && assignVars?.orderId === order.id
-                        }
-                        onConfirmDelivery={
-                          !order.isPickup && !order.mesaId
-                            ? (orderId, code) =>
-                                confirmDelivery({ orderId, code })
-                            : undefined
-                        }
-                        confirmingDelivery={
-                          isConfirmingDelivery &&
-                          deliveryConfirmVars?.orderId === order.id
-                        }
-                        largeMode={largeBoard}
-                      />
-                    ))
-                  )}
-                </div>
-              </section>
-            );
-          })}
-        </div>
-      )}
+      {!isLoading && !isError && board}
 
       {!isLoading && !isError && orders.length === 0 && (
         <p className="mt-10 text-center text-smoke">
