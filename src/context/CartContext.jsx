@@ -99,6 +99,8 @@ export function CartProvider({ children }) {
   const [cartScope, setCartScope] = useState("default");
   const [items, setItems] = useState(() => loadCartFromStorage(userId));
   const [isCartOpen, setIsCartOpen] = useState(false);
+  // "Voltar" do carrinho: desfaz o item que acabou de entrar e reabre a etapa
+  const [backAction, setBackAction] = useState(null);
   // De qual chave do localStorage vieram os itens em memória. Evita gravar o
   // carrinho de um usuário na chave de outro durante a troca (ex.: no login).
   const loadedKeyRef = useRef(scopedStorageKey(userId, "default"));
@@ -222,7 +224,12 @@ export function CartProvider({ children }) {
       setCartScope,
       isCartOpen,
       openCart: () => setIsCartOpen(true),
-      closeCart: () => setIsCartOpen(false),
+      closeCart: () => {
+        setIsCartOpen(false);
+        setBackAction(null);
+      },
+      backAction,
+      setBackAction,
       addItem,
       addItems,
       updateItem,
@@ -238,7 +245,7 @@ export function CartProvider({ children }) {
         total: currency(total),
       },
     }),
-    [items, cartScope, isCartOpen, subtotal, freight, total, clearCart],
+    [items, cartScope, isCartOpen, backAction, subtotal, freight, total, clearCart],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

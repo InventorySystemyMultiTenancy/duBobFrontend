@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import CartDrawer from "../components/CartDrawer.jsx";
@@ -372,6 +372,7 @@ function CardapioPage() {
       },
     });
     openCart();
+    return [product.id, line.id, flavor, size.id].join("|");
   };
 
   const milkshakeLines = buildMilkshakeLines(products);
@@ -402,16 +403,17 @@ function CardapioPage() {
       ...(extraComplements ? [ACAI_EXTRA_COMPLEMENTS_ADDON] : []),
       ...premium.map((item) => ({ id: item.id, nome: item.name, price: item.price })),
     ];
+    const key = [
+      product.id,
+      "acai",
+      flavor,
+      size.id,
+      complementNames.join("."),
+      premium.map((item) => item.name).join("."),
+    ].join("|");
 
     addItem({
-      key: [
-        product.id,
-        "acai",
-        flavor,
-        size.id,
-        complementNames.join("."),
-        premium.map((item) => item.name).join("."),
-      ].join("|"),
+      key,
       id: product.id,
       nome: `Acai ${flavor} ${size.label} (${size.ml})`,
       price: size.price,
@@ -427,6 +429,7 @@ function CardapioPage() {
       },
     });
     openCart();
+    return key;
   };
 
   return (
@@ -520,6 +523,8 @@ function GuidedMenu({
   const [selectedComplements, setSelectedComplements] = useState([]);
   const [selectedPremium, setSelectedPremium] = useState([]);
   const [justAdded, setJustAdded] = useState(false);
+  const { items: cartItems, updateQuantity, removeItem, closeCart, setBackAction } =
+    useCart();
   const isTotemProductIntro = isTotemMode && !productType;
 
   const selectedLine =
@@ -596,13 +601,42 @@ function GuidedMenu({
     scrollTop();
   };
 
-  // Depois de colocar no carrinho, recomeça na escolha do produto.
-  const finishItem = () => {
+  // Depois de colocar no carrinho, recomeça na escolha do produto. O "Voltar"
+  // do carrinho tira esse item e reabre a etapa com o que estava escolhido.
+  const finishItem = (itemKey, restore) => {
     setJustAdded(true);
     setProductType(null);
     resetSelections();
     scrollTop();
+    if (itemKey) setBackAction({ run: () => undoLastItem({ itemKey, restore }) });
   };
+
+  const cartItemsRef = useRef(cartItems);
+  useEffect(() => {
+    cartItemsRef.current = cartItems;
+  }, [cartItems]);
+
+  const undoLastItem = useCallback(
+    ({ itemKey, restore }) => {
+      const item = cartItemsRef.current.find((entry) => entry.key === itemKey);
+      // Mesmo item já estava no carrinho: só tira a unidade que acabou de entrar
+      if (item?.quantity > 1) updateQuantity(itemKey, item.quantity - 1);
+      else removeItem(itemKey);
+      setJustAdded(false);
+      setProductType(restore.type);
+      setStep(restore.step);
+      setSelectedLineId(restore.lineId ?? null);
+      setSelectedMilkshakeSize(restore.milkshakeSize ?? null);
+      setSelectedFlavor("");
+      setSelectedAcaiSize(restore.acaiSize ?? null);
+      setSelectedAcaiFlavor(restore.acaiFlavor ?? "");
+      setSelectedComplements(restore.complements ?? []);
+      setSelectedPremium(restore.premium ?? []);
+      closeCart();
+      scrollTop();
+    },
+    [closeCart, removeItem, updateQuantity],
+  );
 
   const pickLine = (lineId) => {
     if (productType !== "milkshake") {
@@ -628,12 +662,17 @@ function GuidedMenu({
   // Tocar no sabor já coloca o milk shake no carrinho.
   const pickMilkshakeFlavor = (flavor) => {
     setSelectedFlavor(flavor.name);
-    onAddMilkshake({
+    const itemKey = onAddMilkshake({
       line: selectedLine,
       flavor: flavor.name,
       size: selectedMilkshakeSize,
     });
-    finishItem();
+    finishItem(itemKey, {
+      type: "milkshake",
+      step: "sabor",
+      lineId: selectedLineId,
+      milkshakeSize: selectedMilkshakeSize,
+    });
   };
 
   const pickAcaiSize = (size) => {
@@ -649,13 +688,20 @@ function GuidedMenu({
   };
 
   const addAcai = () => {
-    onAddAcai({
+    const itemKey = onAddAcai({
       size: selectedAcaiSize,
       flavor: selectedAcaiFlavor,
       complements: selectedComplements,
       premium: selectedPremium,
     });
-    finishItem();
+    finishItem(itemKey, {
+      type: "acai",
+      step: "complementos",
+      acaiSize: selectedAcaiSize,
+      acaiFlavor: selectedAcaiFlavor,
+      complements: selectedComplements,
+      premium: selectedPremium,
+    });
   };
 
   const sizeHint = (size) => (size ? `${size.label} - ${size.ml}` : "");

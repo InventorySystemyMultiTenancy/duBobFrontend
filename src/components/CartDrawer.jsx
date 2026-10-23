@@ -27,6 +27,7 @@ function CartDrawer() {
     removeItem,
     formatted,
     total,
+    backAction,
   } = useCart();
 
   // Mesmo cache do cardápio: os complementos do milk shake vêm dos produtos
@@ -109,7 +110,18 @@ function CartDrawer() {
             aria-hidden="true"
           />
           <div className="relative flex items-center justify-between gap-4">
-            <div>
+            {backAction && (
+              <button
+                type="button"
+                onClick={backAction.run}
+                className={`shrink-0 rounded-full bg-white font-black text-primary shadow-lg transition hover:bg-gold focus:outline-none focus-visible:ring-4 focus-visible:ring-white/30 ${
+                  isTotemMode ? "px-6 py-4 text-xl" : "px-4 py-2 text-sm"
+                }`}
+              >
+                ← Voltar
+              </button>
+            )}
+            <div className="min-w-0 flex-1">
               <h3 className="font-display text-2xl font-bold">
                 {t("CART_TITLE", "Seu carrinho")}
               </h3>
