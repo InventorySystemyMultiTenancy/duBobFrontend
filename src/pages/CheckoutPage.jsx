@@ -20,6 +20,7 @@ import { useTotemVoice } from "../lib/totemVoice.js";
 
 import PageHeader from "../components/PageHeader.jsx";
 const POLL_INTERVAL_MS = 4000;
+const TOTEM_DONE_SECONDS = 20;
 
 const currency = (v) =>
   Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -111,7 +112,32 @@ function CheckoutPage() {
   const [pixCharge, setPixCharge] = useState(null);
   const [onlineWindow, setOnlineWindow] = useState(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [doneSecondsLeft, setDoneSecondsLeft] = useState(TOTEM_DONE_SECONDS);
   const pollRef = useRef(null);
+
+  const finishedRef = useRef(false);
+  const finishTotemOrder = useCallback(() => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    logout();
+    clearCart();
+    navigate(currentTotemPath, { replace: true });
+  }, [logout, clearCart, navigate, currentTotemPath]);
+
+  // Pedido pago no totem: a tela de confirmação volta sozinha para o início
+  useEffect(() => {
+    if (!isTotemMode || !paidTotemOrder) return undefined;
+    setDoneSecondsLeft(TOTEM_DONE_SECONDS);
+    const intervalId = setInterval(
+      () => setDoneSecondsLeft((current) => Math.max(0, current - 1)),
+      1000,
+    );
+    return () => clearInterval(intervalId);
+  }, [isTotemMode, paidTotemOrder]);
+
+  useEffect(() => {
+    if (paidTotemOrder && doneSecondsLeft === 0) finishTotemOrder();
+  }, [paidTotemOrder, doneSecondsLeft, finishTotemOrder]);
 
   // Esperando a maquininha: o timeout do totem não pode voltar para o início,
   // e o pedido fica salvo até aprovar, recusar ou cancelar.
@@ -498,15 +524,14 @@ function CheckoutPage() {
           </p>
           <button
             type="button"
-            onClick={() => {
-              logout();
-              clearCart();
-              navigate(currentTotemPath, { replace: true });
-            }}
+            onClick={finishTotemOrder}
             className="mt-8 rounded-full bg-secondary px-10 py-5 text-xl font-black uppercase tracking-wide text-white transition hover:bg-primary"
           >
             Novo atendimento
           </button>
+          <p className="mt-4 text-base font-bold text-text-muted">
+            Voltando ao início em {doneSecondsLeft}s
+          </p>
         </section>
       </main>
     );

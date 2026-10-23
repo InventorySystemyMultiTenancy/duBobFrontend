@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -192,7 +193,11 @@ export function CartProvider({ children }) {
     setItems((prev) => prev.filter((item) => item.key !== key));
   };
 
-  const clearCart = () => setItems([]);
+  // Estável e sem re-render se já está vazio: páginas chamam isto em efeitos
+  const clearCart = useCallback(
+    () => setItems((prev) => (prev.length ? [] : prev)),
+    [],
+  );
 
   const subtotal = useMemo(
     () =>
@@ -233,7 +238,7 @@ export function CartProvider({ children }) {
         total: currency(total),
       },
     }),
-    [items, cartScope, isCartOpen, subtotal, freight, total],
+    [items, cartScope, isCartOpen, subtotal, freight, total, clearCart],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

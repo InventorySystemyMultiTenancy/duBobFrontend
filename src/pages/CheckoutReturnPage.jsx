@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import StatusLayout from "../components/StatusLayout.jsx";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 import { TOTEM_SLUG_KEY } from "../lib/totemMode.js";
+
+const TOTEM_DONE_SECONDS = 20;
 
 function CheckoutReturnPage() {
   const [searchParams] = useSearchParams();
@@ -13,6 +15,7 @@ function CheckoutReturnPage() {
   const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
   const totemSlug = localStorage.getItem(TOTEM_SLUG_KEY);
   const totemPath = totemSlug ? `/${totemSlug}` : "/totem";
+  const navigate = useNavigate();
 
   const status = searchParams.get("status"); // approved | failure | pending | null
   const orderId = searchParams.get("external_reference");
@@ -39,6 +42,28 @@ function CheckoutReturnPage() {
       }
     }
   }, [isApproved, clearCart, orderId, paymentId, t]);
+
+  // Totem: depois do pagamento a tela volta sozinha para o início
+  const autoReturn = isTotemMode && (isApproved || isPending);
+  const [secondsLeft, setSecondsLeft] = useState(TOTEM_DONE_SECONDS);
+  useEffect(() => {
+    if (!autoReturn) return undefined;
+    const intervalId = setInterval(
+      () => setSecondsLeft((current) => Math.max(0, current - 1)),
+      1000,
+    );
+    return () => clearInterval(intervalId);
+  }, [autoReturn]);
+
+  useEffect(() => {
+    if (autoReturn && secondsLeft === 0) navigate(totemPath, { replace: true });
+  }, [autoReturn, secondsLeft, navigate, totemPath]);
+
+  const autoReturnNote = autoReturn ? (
+    <p className="mt-3 text-sm font-bold text-smoke">
+      Voltando ao início em {secondsLeft}s
+    </p>
+  ) : null;
 
   return (
     <StatusLayout>
@@ -69,6 +94,7 @@ function CheckoutReturnPage() {
                 ? "Novo atendimento"
                 : t("CHECKOUT_RETURN_SUCCESS_BUTTON", "Acompanhar meu pedido")}
             </Link>
+            {autoReturnNote}
           </>
         ) : isPending ? (
           <>
@@ -90,6 +116,7 @@ function CheckoutReturnPage() {
                 ? "Voltar ao inicio"
                 : t("CHECKOUT_RETURN_PENDING_BUTTON", "Ver meus pedidos")}
             </Link>
+            {autoReturnNote}
           </>
         ) : (
           <>
