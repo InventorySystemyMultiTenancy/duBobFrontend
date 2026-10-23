@@ -14,6 +14,10 @@ import acai1 from "/acai1.png";
 import PageHeader from "../components/PageHeader.jsx";
 import TotemSideMenu from "../components/TotemSideMenu.jsx";
 import {
+  ACAI_PREMIUM_CATEGORY,
+  paidComplementOptions,
+} from "../lib/paidComplements.js";
+import {
   spokenList,
   spokenSize,
   useTotemVoice,
@@ -206,6 +210,7 @@ const CONFIG_CATEGORY_KEYWORDS = [
   "complemento acai",
   "complementos acai",
   "adicionais acai",
+  "complemento milkshake",
 ];
 
 const normalizeText = (value) =>
@@ -287,10 +292,14 @@ function buildAcaiOptions(products) {
       : ACAI_SIZES,
     flavors: productOptionsByCategory(products, "sabor acai", ACAI_FLAVORS),
     complements: productOptionsByCategory(
-      products,
+      products.filter(
+        (product) => !normalizeText(product.category).includes("premium"),
+      ),
       "complemento acai",
       ACAI_COMPLEMENTS,
     ),
+    // Premium não entra nos 4 inclusos: cada um soma o próprio preço
+    premiumComplements: paidComplementOptions(products, ACAI_PREMIUM_CATEGORY),
   };
 }
 
@@ -368,7 +377,7 @@ function CardapioPage() {
   const milkshakeLines = buildMilkshakeLines(products);
   const acaiOptions = buildAcaiOptions(products);
 
-  const handleAcaiAdd = ({ size, flavor, complements }) => {
+  const handleAcaiAdd = ({ size, flavor, complements, premium = [] }) => {
     const product =
       products.find((p) => p.id === "db_acai_copo") ||
       products.find((p) => p.id === "db_acai_tradicional") ||
@@ -389,12 +398,20 @@ function CardapioPage() {
       `Tamanho: ${size.label} ${size.ml}`,
       `Complementos: ${complementNames.join(", ") || "nenhum"}`,
     ].join(" | ");
-    const extraAddon = extraComplements ? [ACAI_EXTRA_COMPLEMENTS_ADDON] : [];
+    const extraAddon = [
+      ...(extraComplements ? [ACAI_EXTRA_COMPLEMENTS_ADDON] : []),
+      ...premium.map((item) => ({ id: item.id, nome: item.name, price: item.price })),
+    ];
 
     addItem({
-      key: [product.id, "acai", flavor, size.id, complementNames.join(".")].join(
-        "|",
-      ),
+      key: [
+        product.id,
+        "acai",
+        flavor,
+        size.id,
+        complementNames.join("."),
+        premium.map((item) => item.name).join("."),
+      ].join("|"),
       id: product.id,
       nome: `Acai ${flavor} ${size.label} (${size.ml})`,
       price: size.price,
@@ -501,6 +518,7 @@ function GuidedMenu({
   const [selectedAcaiSize, setSelectedAcaiSize] = useState(null);
   const [selectedAcaiFlavor, setSelectedAcaiFlavor] = useState("");
   const [selectedComplements, setSelectedComplements] = useState([]);
+  const [selectedPremium, setSelectedPremium] = useState([]);
   const [justAdded, setJustAdded] = useState(false);
   const isTotemProductIntro = isTotemMode && !productType;
 
@@ -521,6 +539,14 @@ function GuidedMenu({
     });
   };
 
+  const togglePremium = (complement) => {
+    setSelectedPremium((prev) =>
+      prev.some((item) => item.id === complement.id)
+        ? prev.filter((item) => item.id !== complement.id)
+        : [...prev, complement],
+    );
+  };
+
   const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   const resetSelections = () => {
@@ -530,6 +556,7 @@ function GuidedMenu({
     setSelectedAcaiSize(null);
     setSelectedAcaiFlavor("");
     setSelectedComplements([]);
+    setSelectedPremium([]);
   };
 
   // Só deixa ir para uma etapa se as anteriores já foram escolhidas.
@@ -626,6 +653,7 @@ function GuidedMenu({
       size: selectedAcaiSize,
       flavor: selectedAcaiFlavor,
       complements: selectedComplements,
+      premium: selectedPremium,
     });
     finishItem();
   };
@@ -695,10 +723,17 @@ function GuidedMenu({
         ? "Toque no tamanho."
         : step === "sabor"
           ? `Copo ${sizeHint(selectedAcaiSize)}. Toque no sabor.`
-          : "Toque para marcar ou desmarcar. 4 estão inclusos; do 5º ao 8º custa R$ 5,00 a mais.";
+          : `Toque para marcar ou desmarcar. 4 estão inclusos; do 5º ao 8º custa R$ 5,00 a mais.${
+              acaiOptions.premiumComplements.length
+                ? " Premium é cobrado à parte."
+                : ""
+            }`;
 
   const extraComplements = selectedComplements.length > 4;
-  const acaiTotal = (selectedAcaiSize?.price ?? 0) + (extraComplements ? 5 : 0);
+  const premiumTotal = selectedPremium.reduce((sum, item) => sum + item.price, 0);
+  const acaiTotal =
+    (selectedAcaiSize?.price ?? 0) + (extraComplements ? 5 : 0) + premiumTotal;
+  const complementsChosen = selectedComplements.length + selectedPremium.length;
 
   // Resumo à direita: o que já foi escolhido em cada etapa.
   const summaryRows =
@@ -1007,12 +1042,45 @@ function GuidedMenu({
                   })}
                 </div>
               )}
+
+              {productType === "acai" &&
+                step === "complementos" &&
+                acaiOptions.premiumComplements.length > 0 && (
+                  <div className={big ? "mt-8" : "mt-6"}>
+                    <h3
+                      className={`font-black text-primary ${big ? "text-3xl" : "text-xl"}`}
+                    >
+                      ⭐ Complementos premium
+                    </h3>
+                    <p
+                      className={`mb-4 font-bold text-text-muted ${big ? "text-xl" : "text-sm"}`}
+                    >
+                      Não entram nos 4 inclusos: cada um é cobrado à parte.
+                    </p>
+                    <div className={manyOptionsGrid(big)}>
+                      {acaiOptions.premiumComplements.map((complement) => (
+                        <OptionTile
+                          key={complement.id}
+                          big={big}
+                          title={complement.name}
+                          price={`+ ${fmt(complement.price)}`}
+                          image={complement.imageUrl || (big ? "" : acai1)}
+                          selected={selectedPremium.some(
+                            (item) => item.id === complement.id,
+                          )}
+                          onClick={() => togglePremium(complement)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
             </div>
 
             <OrderSummary
               big={big}
               rows={summaryRows}
               complements={productType === "acai" ? selectedComplements : null}
+              premium={productType === "acai" ? selectedPremium : null}
               total={summaryTotal}
             />
           </div>
@@ -1021,15 +1089,19 @@ function GuidedMenu({
             <ConfirmBar
               big={big}
               summary={
-                selectedComplements.length
+                complementsChosen
                   ? `${selectedComplements.length} de 8 escolhidos${
                       extraComplements ? " (inclui + R$ 5,00)" : ""
+                    }${
+                      selectedPremium.length
+                        ? ` + ${selectedPremium.length} premium`
+                        : ""
                     }`
                   : "Escolha pelo menos 1 complemento"
               }
               detail={`Copo ${sizeHint(selectedAcaiSize)} · ${selectedAcaiFlavor}`}
               total={fmt(acaiTotal)}
-              disabled={!isProductReady || selectedComplements.length === 0}
+              disabled={!isProductReady || complementsChosen === 0}
               onConfirm={addAcai}
             />
           )}
@@ -1162,7 +1234,7 @@ function OptionTile({
 }
 
 // Coluna da direita: o que o cliente já escolheu (complementos numerados).
-function OrderSummary({ big, rows, complements, total }) {
+function OrderSummary({ big, rows, complements, premium, total }) {
   const included = 4;
   const slots = complements
     ? Math.max(included, Math.min(8, complements.length))
@@ -1229,6 +1301,19 @@ function OrderSummary({ big, rows, complements, total }) {
             <p className={`mt-1 font-bold text-secondary ${big ? "text-sm" : "text-xs"}`}>
               + R$ 5,00 pelos extras
             </p>
+          )}
+          {premium?.length > 0 && (
+            <ul className={big ? "mt-2 space-y-1" : "mt-1 space-y-0.5"}>
+              {premium.map((item) => (
+                <li
+                  key={item.id}
+                  className={`flex justify-between gap-2 font-bold text-primary ${big ? "text-lg" : "text-sm"}`}
+                >
+                  <span className="break-words">⭐ {item.name}</span>
+                  <span className="shrink-0 text-secondary">+ {fmt(item.price)}</span>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       )}

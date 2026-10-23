@@ -27,6 +27,9 @@ import {
 const currency = (v) =>
   Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+// Mesas, atendimento e comandas fora do painel por enquanto
+const SHOW_MESAS_E_COMANDAS = false;
+
 function AdminPanelPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -370,38 +373,42 @@ function AdminPanelPage() {
             </p>
           </div>
         </Link>
-        <Link
-          to="/atendente"
-          className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-2xl">
-            🧾
-          </span>
-          <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
-              Atendimento
-            </h2>
-            <p className="mt-0.5 text-xs text-smoke">
-              Mapa de mesas, lançar pedidos e chamados de garçom
-            </p>
-          </div>
-        </Link>
-        <Link
-          to="/comandas"
-          className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-2xl">
-            🎫
-          </span>
-          <div>
-            <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
-              Comandas
-            </h2>
-            <p className="mt-0.5 text-xs text-smoke">
-              Abrir comandas, lançar pedidos e dar baixa
-            </p>
-          </div>
-        </Link>
+        {SHOW_MESAS_E_COMANDAS && (
+          <>
+          <Link
+            to="/atendente"
+            className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-2xl">
+              🧾
+            </span>
+            <div>
+              <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
+                Atendimento
+              </h2>
+              <p className="mt-0.5 text-xs text-smoke">
+                Mapa de mesas, lançar pedidos e chamados de garçom
+              </p>
+            </div>
+          </Link>
+          <Link
+            to="/comandas"
+            className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-2xl">
+              🎫
+            </span>
+            <div>
+              <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
+                Comandas
+              </h2>
+              <p className="mt-0.5 text-xs text-smoke">
+                Abrir comandas, lançar pedidos e dar baixa
+              </p>
+            </div>
+          </Link>
+          </>
+        )}
         <Link
           to="/cozinha-delivery"
           className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
@@ -452,22 +459,24 @@ function AdminPanelPage() {
         </Link>
         {isAdmin && (
           <>
-            <Link
-              to="/admin/mesas"
-              className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
-            >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-500/15 text-2xl">
-                🪑
-              </span>
-              <div>
-                <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
-                  Mesas
-                </h2>
-                <p className="mt-0.5 text-xs text-smoke">
-                  Cadastrar mesas e gerar o QR Code de pedido
-                </p>
-              </div>
-            </Link>
+            {SHOW_MESAS_E_COMANDAS && (
+              <Link
+                to="/admin/mesas"
+                className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-500/15 text-2xl">
+                  🪑
+                </span>
+                <div>
+                  <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
+                    Mesas
+                  </h2>
+                  <p className="mt-0.5 text-xs text-smoke">
+                    Cadastrar mesas e gerar o QR Code de pedido
+                  </p>
+                </div>
+              </Link>
+            )}
             <Link
               to="/admin/cardapio-mesa"
               className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"

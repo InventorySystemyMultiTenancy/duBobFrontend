@@ -1,9 +1,16 @@
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 import CartProductCard from "./CartProductCard.jsx";
+import { api } from "../lib/api.js";
+import {
+  MILKSHAKE_COMPLEMENT_CATEGORY,
+  isMilkshakeCartItem,
+  paidComplementOptions,
+} from "../lib/paidComplements.js";
 
 function CartDrawer() {
   const navigate = useNavigate();
@@ -21,6 +28,18 @@ function CartDrawer() {
     formatted,
     total,
   } = useCart();
+
+  // Mesmo cache do cardápio: os complementos do milk shake vêm dos produtos
+  const { data: products = [] } = useQuery({
+    queryKey: ["products"],
+    queryFn: async () => (await api.get("/products")).data?.data ?? [],
+    staleTime: 5 * 60 * 1000,
+    enabled: isCartOpen,
+  });
+  const milkshakeComplements = paidComplementOptions(
+    products,
+    MILKSHAKE_COMPLEMENT_CATEGORY,
+  );
 
   const itemCount = items.reduce(
     (sum, item) => sum + Number(item.quantity || 1),
@@ -76,7 +95,7 @@ function CartDrawer() {
       />
 
       <aside
-        className={`fixed right-0 top-0 z-[100] flex h-[100dvh] w-full max-w-md transform flex-col bg-white text-text-main shadow-2xl transition-transform duration-300 ease-in-out sm:rounded-l-[2rem] ${
+        className={`fixed right-0 top-0 z-[100] flex h-[100dvh] w-full ${isTotemMode ? "max-w-2xl" : "max-w-md"} transform flex-col bg-white text-text-main shadow-2xl transition-transform duration-300 ease-in-out sm:rounded-l-[2rem] ${
           isCartOpen ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
@@ -146,6 +165,20 @@ function CartDrawer() {
                   onRemove={() => removeItem(item.key)}
                   onObservationChange={(observation) =>
                     updateItem(item.key, { observation })
+                  }
+                  big={isTotemMode}
+                  complementOptions={
+                    isMilkshakeCartItem(item) ? milkshakeComplements : []
+                  }
+                  onAddonsChange={(addons) =>
+                    updateItem(item.key, (current) => ({
+                      ...current,
+                      addons,
+                      payload: {
+                        ...current.payload,
+                        addonIds: addons.map((addon) => addon.id),
+                      },
+                    }))
                   }
                 />
               ))}

@@ -726,6 +726,16 @@ function CheckoutPage() {
                               {item.observation || item.description}
                             </p>
                           )}
+                          {item.addons?.length > 0 && (
+                            <p className="mt-1 text-sm font-bold text-secondary">
+                              {item.addons
+                                .map(
+                                  (addon) =>
+                                    `+ ${addon.nome || addon.name} (${currency(addon.price)})`,
+                                )
+                                .join("  ")}
+                            </p>
+                          )}
                         </div>
                         <span className="rounded-xl bg-secondary px-3 py-1 text-lg font-black text-white">
                           x{item.quantity}

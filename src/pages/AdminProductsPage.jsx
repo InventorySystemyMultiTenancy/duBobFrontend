@@ -114,6 +114,26 @@ const GUIDED_ADMIN_SECTIONS = [
       sizes: [{ ...emptySize(), label: "Config", price: "0" }],
     },
   },
+  {
+    id: "acai_complementos_premium",
+    label: "Complementos premium",
+    description:
+      "Complementos premium do acai: nao entram nos 4 inclusos, sao cobrados pelo preco de cada um.",
+    preset: {
+      category: "complemento acai premium",
+      sizes: [{ ...emptySize(), size: "PEQUENA", label: "Adicional", price: "3" }],
+    },
+  },
+  {
+    id: "milkshake_complementos",
+    label: "Complementos milk shake",
+    description:
+      "Turbine o milk shake: aparecem no carrinho embaixo do milk shake e somam o preco de cada um.",
+    preset: {
+      category: "complemento milkshake",
+      sizes: [{ ...emptySize(), size: "PEQUENA", label: "Adicional", price: "3" }],
+    },
+  },
 ];
 
 const DEFAULT_SECTION_IMPORTS = {
@@ -255,6 +275,15 @@ const normalizeText = (value) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
+// Complementos cobrados à parte: o valor do tamanho é o preço do adicional.
+function isPaidComplementCategory(category) {
+  const normalized = normalizeText(category);
+  return (
+    normalized.includes("complemento milkshake") ||
+    normalized.includes("complemento acai premium")
+  );
+}
+
 function isConfigCategory(category) {
   const normalized = normalizeText(category);
   return (
@@ -290,8 +319,17 @@ function productMatchesAdminSection(product, sectionId) {
       category.includes("sabores do acai")
     );
   }
+  if (sectionId === "acai_complementos_premium") {
+    return category.includes("complemento acai premium");
+  }
   if (sectionId === "acai_complementos") {
-    return category.includes("complemento acai") || category.includes("adicionais acai");
+    return (
+      (category.includes("complemento acai") || category.includes("adicionais acai")) &&
+      !category.includes("premium")
+    );
+  }
+  if (sectionId === "milkshake_complementos") {
+    return category.includes("complemento milkshake");
   }
   return true;
 }
@@ -638,7 +676,9 @@ function ProductModal({
                   Tamanhos e valores
                 </p>
                 <p className="mt-1 text-xs text-smoke">
-                  {isConfigCategory(form.category)
+                  {isPaidComplementCategory(form.category)
+                    ? "Valor cobrado a mais por este complemento."
+                    : isConfigCategory(form.category)
                     ? "Item tecnico do fluxo: pode ficar com valor zero."
                     : "Crie, edite ou remova os tamanhos que aparecem no cardapio."}
                 </p>
@@ -788,7 +828,9 @@ function ProductCard({ product, onEdit }) {
   const productDescription = product.description
     ? tProductField(t, product.id, "DESC", product.description)
     : null;
-  const configItem = isConfigCategory(product.category);
+  const configItem =
+    isConfigCategory(product.category) &&
+    !isPaidComplementCategory(product.category);
   const translatedCategory = product.category
     ? t(normalizeCategoryKey(product.category), product.category)
     : null;
