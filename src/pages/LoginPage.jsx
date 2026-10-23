@@ -5,7 +5,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
-import { getRoleHome } from "../lib/roleHome.js";
+import { getPostLoginPath } from "../lib/roleHome.js";
 
 const INPUT_CLS =
   "ui-input py-4";
@@ -32,11 +32,7 @@ function LoginPage() {
   const handlePostAuth = (data) => {
     login(data);
     toast.success(tab === "login" ? "Login realizado!" : "Conta criada!");
-    if (redirectTo) {
-      navigate(redirectTo);
-      return;
-    }
-    navigate(getRoleHome(data.user));
+    navigate(getPostLoginPath(data.user, redirectTo));
   };
 
   const loginMutation = useMutation({

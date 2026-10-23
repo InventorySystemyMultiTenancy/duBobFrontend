@@ -21,3 +21,25 @@ export function getRoleHome(user) {
   }
   return ROLE_HOME[user?.role] ?? "/";
 }
+
+const STAFF_HOMES = [
+  ...new Set(
+    Object.entries(ROLE_HOME)
+      .filter(([role]) => role !== "CLIENTE")
+      .map(([, home]) => home),
+  ),
+];
+
+// Para onde ir depois do login. O "?redirect=" é de quem estava logado antes
+// (ex.: cozinha saiu e o admin entrou): painel de outro perfil não vale.
+export function getPostLoginPath(user, redirectTo) {
+  const home = getRoleHome(user);
+  if (!redirectTo) return home;
+  const path = redirectTo.split(/[?#]/)[0];
+  const otherPanel = STAFF_HOMES.some(
+    (staffHome) =>
+      staffHome !== home &&
+      (path === staffHome || path.startsWith(`${staffHome}/`)),
+  );
+  return otherPanel ? home : redirectTo;
+}
