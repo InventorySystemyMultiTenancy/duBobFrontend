@@ -696,7 +696,10 @@ function KitchenPage() {
   const isDeliveryKitchenUser = user?.role === "COZINHA_DELIVERY";
   const location = useLocation();
   const isKitchenUser = isNormalKitchenUser || isDeliveryKitchenUser;
-  const isPreparationOnlyKitchen = isNormalKitchenUser;
+  // Admin abrindo a cozinha normal vê o mesmo que a cozinha: só o preparo
+  const isAdminOnKitchen =
+    user?.role === "ADMIN" && location.pathname === "/cozinha";
+  const isPreparationOnlyKitchen = isNormalKitchenUser || isAdminOnKitchen;
   const canLoadMotoboys = [
     "ADMIN",
     "FUNCIONARIO",
@@ -935,7 +938,7 @@ function KitchenPage() {
         ? orders.filter((o) => o.assignedMotoboyId === user.id)
         : isDeliveryKitchenUser
           ? orders.filter(isDeliveryOrPickupOrder)
-          : isNormalKitchenUser
+          : isPreparationOnlyKitchen
             ? orders.filter(isLocalKitchenOrder)
             : orders;
 
@@ -946,7 +949,7 @@ function KitchenPage() {
         items: getKitchenItems(order),
       }))
       .filter(hasKitchenItems);
-  }, [isDeliveryKitchenUser, isNormalKitchenUser, orders, user]);
+  }, [isDeliveryKitchenUser, isPreparationOnlyKitchen, orders, user]);
 
   const {
     mutate: assignMotoboy,
@@ -1305,10 +1308,10 @@ function KitchenPage() {
               </span>
               <button
                 type="button"
-                onClick={logout}
+                onClick={isAdminOnKitchen ? handleGoBack : logout}
                 className="ui-btn ui-btn-sm ui-btn-on-dark"
               >
-                Sair
+                {isAdminOnKitchen ? t("BTN_BACK", "Voltar") : "Sair"}
               </button>
             </div>
           </div>
