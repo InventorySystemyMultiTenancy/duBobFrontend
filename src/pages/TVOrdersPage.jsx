@@ -2,20 +2,28 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api.js";
 
-const VISIBLE_STATUSES = ["PREPARANDO", "PRONTO"];
+// Retirada (totem/balcão) pronta pula o PRONTO e fica em SAIU_PARA_ENTREGA
+// esperando o cliente: na TV ela também aparece como pronta.
+function getTvStatus(order) {
+  if (order.status === "PREPARANDO") return "PREPARANDO";
+  if (order.status === "PRONTO") return "PRONTO";
+  if (order.status === "SAIU_PARA_ENTREGA" && order.isPickup) return "PRONTO";
+  return null;
+}
+
+// Mais que isso não cabe nem em TV grande; o resto fica para a próxima atualização
+const MAX_TILES = 40;
 
 const STATUS_CONFIG = {
   PREPARANDO: {
     title: "Preparando",
     subtitle: "Seu pedido está em preparo",
-    badge: "bg-gold text-primary",
     panel: "border-secondary/50 bg-white",
     text: "text-primary",
   },
   PRONTO: {
     title: "Pronto",
     subtitle: "Pode retirar no balcão",
-    badge: "bg-secondary text-white",
     panel: "border-secondary/35 bg-white",
     text: "text-secondary",
   },
@@ -36,32 +44,21 @@ function getOrderDetail(order) {
 }
 
 function OrderTile({ order }) {
-  const config = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.PREPARANDO;
+  const config = STATUS_CONFIG[getTvStatus(order)] ?? STATUS_CONFIG.PREPARANDO;
 
   return (
     <article
-      className={`flex min-h-36 flex-col justify-between rounded-3xl border p-6 shadow-card ${config.panel}`}
+      className={`flex flex-col justify-center rounded-3xl border px-6 py-5 shadow-card ${config.panel}`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-sm font-black uppercase tracking-[0.22em] text-smoke">
-            {getOrderDetail(order)}
-          </p>
-          <h2
-            className={`mt-2 break-words font-display text-4xl font-black leading-none sm:text-5xl ${config.text}`}
-          >
-            {getOrderCode(order)}
-          </h2>
-        </div>
-        <span
-          className={`shrink-0 rounded-full px-4 py-2 text-sm font-black uppercase tracking-widest ${config.badge}`}
-        >
-          {config.title}
-        </span>
-      </div>
-      <p className="mt-5 text-xl font-bold text-smoke">
-        {config.subtitle}
+      {/* O status já está no título da coluna: o nome usa a largura toda */}
+      <p className="text-sm font-black uppercase tracking-[0.22em] text-smoke">
+        {getOrderDetail(order)}
       </p>
+      <h2
+        className={`mt-2 break-words font-display text-4xl font-black leading-none ${config.text}`}
+      >
+        {getOrderCode(order)}
+      </h2>
     </article>
   );
 }
@@ -85,13 +82,14 @@ function StatusColumn({ status, orders }) {
         </span>
       </div>
 
-      <div className="grid min-h-0 flex-1 auto-rows-min gap-4 overflow-hidden">
+      {/* TV larga: cada status vira várias colunas de pedidos */}
+      <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] content-start gap-4 overflow-hidden">
         {orders.length ? (
-          orders.slice(0, 8).map((order) => (
+          orders.slice(0, MAX_TILES).map((order) => (
             <OrderTile key={order.id} order={order} />
           ))
         ) : (
-          <div className="flex min-h-36 items-center justify-center rounded-3xl border-2 border-dashed border-white/20 text-xl font-semibold text-white/60">
+          <div className="col-span-full flex min-h-36 items-center justify-center rounded-3xl border-2 border-dashed border-white/20 text-xl font-semibold text-white/60">
             Nenhum pedido agora
           </div>
         )}
@@ -114,15 +112,17 @@ export default function TVOrdersPage() {
   const visibleOrders = useMemo(
     () =>
       orders
-        .filter((order) => VISIBLE_STATUSES.includes(order.status))
+        .filter((order) => getTvStatus(order))
         .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
     [orders],
   );
 
   const preparing = visibleOrders.filter(
-    (order) => order.status === "PREPARANDO",
+    (order) => getTvStatus(order) === "PREPARANDO",
   );
-  const ready = visibleOrders.filter((order) => order.status === "PRONTO");
+  const ready = visibleOrders.filter(
+    (order) => getTvStatus(order) === "PRONTO",
+  );
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-primary px-4 py-5 text-white sm:px-8 sm:py-7">
