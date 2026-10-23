@@ -15,7 +15,41 @@ const currency = (value) =>
     currency: "BRL",
   });
 
+function isTotemOrder(order) {
+  return (
+    order.paymentMethod === "MAQUININHA_TOTEM" ||
+    String(order.notes || "").includes("Pedido feito no Totem")
+  );
+}
+
+const PAYMENT_METHOD_LABEL = {
+  DINHEIRO: "💵 Paga em dinheiro",
+  PRESENCIAL: "💵 Paga na entrega",
+  MAQUININHA_TOTEM: "💳 Maquininha do totem",
+  PIX: "Pix online",
+};
+
+// Entrega/retirada/totem só vão para a cozinha depois de pagos
+function canReleaseToKitchen(order) {
+  return (
+    !order.mesaId &&
+    !order.comandaId &&
+    order.paymentMethod !== "PAGAR_DEPOIS" &&
+    (order.status === "RECEBIDO" || order.status === "PREPARANDO")
+  );
+}
+
 function getOrigin(order) {
+  if (isTotemOrder(order)) {
+    const totem = String(order.notes || "").match(/Totem\s*(\d+)/i);
+    return {
+      type: "Totem",
+      title: totem ? `Totem ${totem[1]}` : "Totem",
+      subtitle: order.user?.name ?? "Cliente",
+      tone: "bg-indigo-50 text-indigo-800 border-indigo-200",
+    };
+  }
+
   if (order.comanda) {
     return {
       type: "Comanda",
@@ -68,8 +102,10 @@ function formatTime(value) {
   });
 }
 
-function PendingOrderCard({ order, onPay, disabled }) {
+function PendingOrderCard({ order, onPay, onRelease, disabled }) {
   const origin = getOrigin(order);
+  const methodLabel = PAYMENT_METHOD_LABEL[order.paymentMethod];
+  const waitingKitchen = canReleaseToKitchen(order);
 
   return (
     <article className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5">
@@ -84,6 +120,11 @@ function PendingOrderCard({ order, onPay, disabled }) {
             <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600">
               #{order.id.slice(-6).toUpperCase()}
             </span>
+            {methodLabel && (
+              <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-800">
+                {methodLabel}
+              </span>
+            )}
           </div>
           <h2 className="mt-3 text-2xl font-black text-primary">
             {origin.title}
@@ -121,7 +162,13 @@ function PendingOrderCard({ order, onPay, disabled }) {
         ))}
       </ul>
 
-      {order.notes ? (
+      {waitingKitchen && (
+        <p className="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+          ⏳ Ainda não foi para a cozinha: só vai depois do pagamento.
+        </p>
+      )}
+
+      {order.notes && !isTotemOrder(order) ? (
         <p className="mt-4 rounded-2xl bg-red-600 px-4 py-3 text-sm font-black uppercase text-white">
           Obs: {order.notes}
         </p>
@@ -135,6 +182,17 @@ function PendingOrderCard({ order, onPay, disabled }) {
       >
         Dar baixa / pago
       </button>
+      {/* Totem paga no caixa antes; "paga depois" é para entrega */}
+      {waitingKitchen && onRelease && !isTotemOrder(order) && (
+        <button
+          type="button"
+          onClick={() => onRelease(order)}
+          disabled={disabled}
+          className="mt-2 w-full rounded-full border-2 border-amber-400 bg-amber-50 px-4 py-3 text-sm font-black uppercase text-amber-900 transition hover:bg-amber-100 disabled:opacity-50"
+        >
+          Liberar p/ cozinha (paga depois)
+        </button>
+      )}
     </article>
   );
 }
@@ -166,6 +224,26 @@ export default function CaixaPage() {
         error?.response?.data?.error?.message ?? "Erro ao baixar pagamento.",
       ),
   });
+
+  // Entrega que paga na porta: libera o preparo e o pagamento fica em aberto
+  const releaseToKitchen = useMutation({
+    mutationFn: async ({ orderId }) =>
+      api.patch(`/orders/${orderId}/payment-status`, {
+        paymentStatus: "PENDENTE",
+        payLater: true,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["caixa-pending-payments"] });
+      queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
+      toast.success("Pedido liberado para a cozinha.");
+    },
+    onError: (error) =>
+      toast.error(
+        error?.response?.data?.error?.message ?? "Erro ao liberar pedido.",
+      ),
+  });
+  // A API só deixa admin e funcionário mudar o pagamento para "pagar depois"
+  const canRelease = ["ADMIN", "FUNCIONARIO"].includes(user?.role);
 
   const totals = useMemo(() => {
     const pendingTotal = orders.reduce(
@@ -203,7 +281,15 @@ export default function CaixaPage() {
     }
   };
 
-  const filters = ["TODOS", "Mesa", "Comanda", "Entrega", "Retirada", "Pedido"];
+  const filters = [
+    "TODOS",
+    "Totem",
+    "Mesa",
+    "Comanda",
+    "Entrega",
+    "Retirada",
+    "Pedido",
+  ];
 
   return (
     <main className="min-h-screen text-gray-900">
@@ -278,7 +364,7 @@ export default function CaixaPage() {
               Sem pagamentos pendentes
             </p>
             <p className="mt-2 text-sm text-gray-500">
-              Quando tiver mesa, comanda, entrega ou retirada em aberto, vai
+              Quando tiver totem, mesa, comanda, entrega ou retirada em aberto, vai
               aparecer aqui.
             </p>
           </div>
@@ -289,7 +375,12 @@ export default function CaixaPage() {
                 key={order.id}
                 order={order}
                 onPay={handlePay}
-                disabled={markPaid.isPending}
+                onRelease={
+                  canRelease
+                    ? (o) => releaseToKitchen.mutate({ orderId: o.id })
+                    : undefined
+                }
+                disabled={markPaid.isPending || releaseToKitchen.isPending}
               />
             ))}
           </section>

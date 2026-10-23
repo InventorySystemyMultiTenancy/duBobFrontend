@@ -4,7 +4,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
-import { askPaymentMethod } from "../lib/paymentMethodPrompt.js";
 import {
   getDesktopNotificationsEnabled,
   requestDesktopNotificationPermission,
@@ -31,12 +30,6 @@ const SOUND_STORAGE_KEY = "pc_kitchen_sound_enabled";
 const NEW_ORDER_HIGHLIGHT_MS = 20000;
 
 const COLUMNS = [
-  {
-    key: "AGUARDANDO_PAGAMENTO",
-    label: "Aguardando Pagamento",
-    virtual: true,
-    color: "border-amber-500/40 bg-amber-500/10",
-  },
   {
     key: "RECEBIDO",
     label: "Recebido",
@@ -76,7 +69,6 @@ const COLUMNS = [
 ];
 
 const COLUMN_DOT = {
-  AGUARDANDO_PAGAMENTO: "bg-amber-500",
   RECEBIDO: "bg-blue-500",
   PREPARANDO: "bg-yellow-400",
   PRONTO: "bg-secondary",
@@ -217,10 +209,15 @@ function isTotemOrder(order) {
   );
 }
 
-function isTotemWaitingPayment(order) {
+// Pagamento pendente vai para o caixa; a cozinha só vê depois de pago.
+// Mesa, comanda e "pagar depois" acertam no fim, então já entram no preparo.
+function isAwaitingPayment(order) {
   return (
-    order.paymentMethod === "MAQUININHA_TOTEM" &&
-    order.paymentStatus === "PENDENTE"
+    order.paymentStatus === "PENDENTE" &&
+    (order.status === "RECEBIDO" || order.status === "PREPARANDO") &&
+    !order.mesaId &&
+    !order.comandaId &&
+    order.paymentMethod !== "PAGAR_DEPOIS"
   );
 }
 
@@ -315,9 +312,6 @@ function OrderCard({
   dragging,
   onDragStart,
   onDragEnd,
-  onConfirmPayment,
-  onPayLater,
-  confirmingPayment,
   onCancel,
   cancelling,
   motoboys = [],
@@ -337,7 +331,7 @@ function OrderCard({
     !order.mesaId &&
     !!onConfirmDelivery;
   const nextStatus = getNextStageKey(order.status, order);
-  const hasNext = !!nextStatus && !onConfirmPayment && !needsCodeConfirm;
+  const hasNext = !!nextStatus && !needsCodeConfirm;
   const eta = getOrderEta(order, now);
   const isPaymentPending = order.paymentStatus === "PENDENTE";
   const kitchenItems = getKitchenItems(order);
@@ -447,7 +441,7 @@ function OrderCard({
             ⏱ {formatElapsed(eta.elapsedMinutes)}
           </span>
         )}
-        {isPaymentPending && !onConfirmPayment && (
+        {isPaymentPending && (
           <span className={`${chip} bg-amber-100 text-amber-800`}>
             💰 {t("KITCHEN_PAYMENT_PENDING", "Pag. pendente")}
           </span>
@@ -561,34 +555,6 @@ function OrderCard({
         >
           ⚠ Obs. do pedido: {toKitchenAlertText(order.notes)}
         </p>
-      )}
-
-      {/* Pagamento pendente (totem) */}
-      {onConfirmPayment && (
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            disabled={confirmingPayment}
-            onClick={() => onConfirmPayment(order.id)}
-            className={`ui-btn ui-btn-success ${largeMode ? "ui-btn-lg" : ""}`}
-          >
-            {confirmingPayment
-              ? "..."
-              : t("KITCHEN_CONFIRM_PAYMENT_BTN", "✅ Confirmar Pgto")}
-          </button>
-          <button
-            type="button"
-            disabled={confirmingPayment}
-            onClick={() => onPayLater(order.id)}
-            className={`ui-btn border-2 border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100 ${
-              largeMode ? "ui-btn-lg" : ""
-            }`}
-          >
-            {confirmingPayment
-              ? "..."
-              : t("KITCHEN_PAY_LATER_BTN", "⏳ Pagar Depois")}
-          </button>
-        </div>
       )}
 
       {/* Próxima etapa */}
@@ -708,7 +674,7 @@ function OrderCard({
         ) : (
           <button
             type="button"
-            disabled={cancelling || advancing || confirmingPayment}
+            disabled={cancelling || advancing}
             onClick={() => setConfirmCancel(true)}
             className="mt-2 w-full py-1.5 text-xs font-bold text-red-500 transition hover:text-red-700 disabled:opacity-40"
           >
@@ -974,7 +940,7 @@ function KitchenPage() {
             : orders;
 
     return roleFiltered
-      .filter((order) => !isTotemWaitingPayment(order))
+      .filter((order) => !isAwaitingPayment(order))
       .map((order) => ({
         ...order,
         items: getKitchenItems(order),
@@ -1035,34 +1001,6 @@ function KitchenPage() {
       toast.error(t("KITCHEN_CANCEL_ERROR", "Falha ao cancelar pedido")),
   });
 
-  const {
-    mutate: setPaymentStatus,
-    variables: paymentVars,
-    isPending: isPaymentPending,
-  } = useMutation({
-    mutationFn: async ({
-      orderId,
-      paymentStatus,
-      paymentMethod,
-      advanceTo,
-      payLater,
-    }) => {
-      await api.patch(`/orders/${orderId}/payment-status`, {
-        paymentStatus,
-        ...(paymentMethod ? { paymentMethod } : {}),
-        ...(payLater ? { payLater: true } : {}),
-      });
-      if (advanceTo) {
-        await api.patch(`/orders/${orderId}/status`, { status: advanceTo });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
-      toast.success(t("KITCHEN_UPDATED_SUCCESS", "Atualizado com sucesso"));
-    },
-    onError: () => toast.error(t("KITCHEN_UPDATE_ERROR", "Falha ao atualizar")),
-  });
-
   const lastUpdate = dataUpdatedAt
     ? new Date(dataUpdatedAt).toLocaleTimeString("pt-BR", {
         hour: "2-digit",
@@ -1086,17 +1024,6 @@ function KitchenPage() {
   );
   const getColumnOrders = useCallback(
     (columnKey) => {
-      if (columnKey === "AGUARDANDO_PAGAMENTO") {
-        // Mesa orders never ficam aqui — vão direto pro status real
-        return visibleOrders.filter(
-          (o) =>
-            (o.status === "RECEBIDO" || o.status === "PREPARANDO") &&
-            o.paymentStatus === "PENDENTE" &&
-            o.paymentMethod !== "PAGAR_DEPOIS" &&
-            o.paymentMethod !== "MAQUININHA_TOTEM" &&
-            !o.mesaId,
-        );
-      }
       if (columnKey === "SAIU_PARA_ENTREGA") {
         // Só entregas normais (não mesa, não retirada)
         return visibleOrders.filter(
@@ -1116,22 +1043,6 @@ function KitchenPage() {
       return visibleOrders.filter((o) => o.status === columnKey);
     },
     [visibleOrders],
-  );
-
-  const handleConfirmPayment = useCallback(
-    async (orderId) => {
-      const paymentMethod = await askPaymentMethod({
-        title: "Confirmar pagamento",
-        text: "Escolha a forma de pagamento recebida.",
-      });
-      if (!paymentMethod) return;
-      setPaymentStatus({
-        orderId,
-        paymentStatus: "APROVADO",
-        paymentMethod,
-      });
-    },
-    [setPaymentStatus],
   );
 
   const stageCounts = useMemo(
@@ -1203,7 +1114,6 @@ function KitchenPage() {
         ? ["LEVAR_PARA_MESA"]
         : user?.role === "FUNCIONARIO"
           ? [
-              "AGUARDANDO_PAGAMENTO",
               "PRONTO",
               "SAIU_PARA_ENTREGA",
               "RETIRADA_PRONTA",
@@ -1327,24 +1237,6 @@ function KitchenPage() {
                     onDragEnd={handleDragEnd}
                     onAdvance={(orderId, status) =>
                       advance({ orderId, status })
-                    }
-                    onConfirmPayment={
-                      isVirtual && col.key === "AGUARDANDO_PAGAMENTO"
-                        ? handleConfirmPayment
-                        : undefined
-                    }
-                    onPayLater={
-                      isVirtual && col.key === "AGUARDANDO_PAGAMENTO"
-                        ? (orderId) =>
-                            setPaymentStatus({
-                              orderId,
-                              paymentStatus: "PENDENTE",
-                              payLater: true,
-                            })
-                        : undefined
-                    }
-                    confirmingPayment={
-                      isPaymentPending && paymentVars?.orderId === order.id
                     }
                     // A cozinha do totem só prepara; cancelar fica com o caixa
                     onCancel={isPreparationOnlyKitchen ? undefined : cancelOrder}

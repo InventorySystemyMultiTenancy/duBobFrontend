@@ -105,6 +105,9 @@ function CheckoutPage() {
     isTotemMode ? getTotemPendingOrder() : null,
   );
   const [paidTotemOrder, setPaidTotemOrder] = useState(null);
+  // Totem: escolheu pagar em dinheiro, o pedido espera no caixa
+  const [cashTotemOrder, setCashTotemOrder] = useState(null);
+  const doneTotemOrder = paidTotemOrder || cashTotemOrder;
   // SumUp: o valor é digitado na própria maquininha (mode "manual").
   const [manualCharge, setManualCharge] = useState(null);
   // SumUp online: Pix com QR na tela ou cartão na página da SumUp.
@@ -126,18 +129,18 @@ function CheckoutPage() {
 
   // Pedido pago no totem: a tela de confirmação volta sozinha para o início
   useEffect(() => {
-    if (!isTotemMode || !paidTotemOrder) return undefined;
+    if (!isTotemMode || !doneTotemOrder) return undefined;
     setDoneSecondsLeft(TOTEM_DONE_SECONDS);
     const intervalId = setInterval(
       () => setDoneSecondsLeft((current) => Math.max(0, current - 1)),
       1000,
     );
     return () => clearInterval(intervalId);
-  }, [isTotemMode, paidTotemOrder]);
+  }, [isTotemMode, doneTotemOrder]);
 
   useEffect(() => {
-    if (paidTotemOrder && doneSecondsLeft === 0) finishTotemOrder();
-  }, [paidTotemOrder, doneSecondsLeft, finishTotemOrder]);
+    if (doneTotemOrder && doneSecondsLeft === 0) finishTotemOrder();
+  }, [doneTotemOrder, doneSecondsLeft, finishTotemOrder]);
 
   // Esperando a maquininha: o timeout do totem não pode voltar para o início,
   // e o pedido fica salvo até aprovar, recusar ou cancelar.
@@ -158,6 +161,8 @@ function CheckoutPage() {
       ? ""
       : paidTotemOrder
         ? "Pagamento aprovado! Seu pedido foi enviado para a cozinha. Guarde o número que está na tela."
+        : cashTotemOrder
+          ? "Pedido registrado! Vá até o caixa, informe o número que está na tela e pague em dinheiro."
         : waitingOrderId
           ? manualCharge
             ? "Agora digite o valor na maquininha e faça o pagamento."
@@ -462,6 +467,19 @@ function CheckoutPage() {
     }
   };
 
+  const handleTotemCashCheckout = async () => {
+    try {
+      const order = await createOrderMutation.mutateAsync("DINHEIRO");
+      setCashTotemOrder({ ...order, total: order?.total ?? subtotal });
+      clearCart();
+    } catch (err) {
+      const data = err?.response?.data;
+      toast.error(
+        data?.error?.message || data?.message || "Erro ao registrar o pedido.",
+      );
+    }
+  };
+
   const handlePresencialCheckout = async () => {
     try {
       await createOrderMutation.mutateAsync("PRESENCIAL");
@@ -497,20 +515,32 @@ function CheckoutPage() {
     !isLoading &&
     (isTotemMode || deliveryType === "retirada" || freight !== null);
 
-  if (isTotemMode && paidTotemOrder) {
+  if (isTotemMode && doneTotemOrder) {
+    const isCash = !paidTotemOrder;
     return (
       <main className="flex min-h-screen items-center justify-center bg-accent bg-texture px-8 py-10 text-primary">
         <section className="w-full max-w-2xl rounded-2xl border border-border-soft bg-white p-10 text-center shadow-card">
           <p className="text-sm font-black uppercase tracking-[0.32em] text-secondary">
-            Pagamento aprovado
+            {isCash ? "Pagamento no caixa" : "Pagamento aprovado"}
           </p>
-          <h1 className="mt-3 text-5xl font-black">Pedido recebido</h1>
+          <h1 className="mt-3 text-5xl font-black">
+            {isCash ? "Dirija-se ao caixa" : "Pedido recebido"}
+          </h1>
+          {isCash && (
+            <p className="mt-4 text-xl font-bold text-text-muted">
+              Pague{" "}
+              <span className="text-secondary">
+                {currency(doneTotemOrder.total)}
+              </span>{" "}
+              em dinheiro no caixa e informe o número abaixo.
+            </p>
+          )}
           <div className="mt-8 rounded-2xl border border-border-soft bg-accent/70 p-6">
             <p className="text-sm font-black uppercase tracking-[0.22em] text-text-muted">
               Numero do pedido
             </p>
             <p className="mt-2 text-6xl font-black text-secondary">
-              #{paidTotemOrder.id.slice(-6).toUpperCase()}
+              #{doneTotemOrder.id.slice(-6).toUpperCase()}
             </p>
             <p className="mt-5 text-sm font-black uppercase tracking-[0.22em] text-text-muted">
               Nome
@@ -520,7 +550,9 @@ function CheckoutPage() {
             </p>
           </div>
           <p className="mt-6 text-lg text-text-muted">
-            Seu pedido foi enviado para a cozinha.
+            {isCash
+              ? "Seu pedido vai para a cozinha assim que o caixa receber o pagamento."
+              : "Seu pedido foi enviado para a cozinha."}
           </p>
           <button
             type="button"
@@ -656,8 +688,8 @@ function CheckoutPage() {
             </p>
             <h1 className="mt-3 text-5xl font-black">Confira seu pedido</h1>
             <p className="mt-3 text-lg text-text-muted">
-              Confirme o carrinho e toque em pagar para enviar a cobranca para
-              a maquininha do {currentTotemName || "Totem"}.
+              Pague com cartão ou Pix na maquininha do{" "}
+              {currentTotemName || "Totem"}, ou em dinheiro no caixa.
             </p>
           </div>
 
@@ -737,7 +769,16 @@ function CheckoutPage() {
                   onClick={handleTotemTerminalCheckout}
                   className="mt-6 w-full rounded-full bg-secondary px-6 py-5 text-xl font-black uppercase tracking-wide text-white shadow-card transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isLoading ? "Enviando para maquininha..." : "Pagar"}
+                  {isLoading ? "Enviando..." : "💳 Pagar na maquininha"}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!canConfirm}
+                  onClick={handleTotemCashCheckout}
+                  className="mt-3 w-full rounded-full border-2 border-secondary bg-white px-6 py-4 text-lg font-black uppercase tracking-wide text-secondary transition hover:bg-secondary hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  💵 Pagar em dinheiro no caixa
                 </button>
 
                 <button

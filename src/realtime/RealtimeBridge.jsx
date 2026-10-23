@@ -31,6 +31,7 @@ function getSocketUrl() {
 function invalidateAdminQueries(queryClient) {
   queryClient.invalidateQueries({ queryKey: ["admin-orders-preview"] });
   queryClient.invalidateQueries({ queryKey: ["admin-sales-analytics"] });
+  queryClient.invalidateQueries({ queryKey: ["caixa-pending-payments"] });
 }
 
 function dispatchRealtimeEvent(eventName, payload) {
