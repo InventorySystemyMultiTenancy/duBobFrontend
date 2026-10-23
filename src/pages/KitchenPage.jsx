@@ -245,14 +245,14 @@ function getFlavorImage(item, products) {
   const flavorMatch = notes.match(/Sabor:\s*([^|]+)/i);
   if (!flavorMatch || !products?.length) return "";
 
-  const flavorName = normalizeText(flavorMatch[1]);
+  const flavorName = normalizeText(flavorMatch[1]).trim();
   const categoryNeedle = getFlavorCategoryNeedle(notes);
   if (!categoryNeedle) return "";
 
   const match = products.find(
     (p) =>
       normalizeText(p.category).includes(categoryNeedle) &&
-      normalizeText(p.name) === flavorName,
+      normalizeText(p.name).trim() === flavorName,
   );
 
   return match?.imageUrl || "";
