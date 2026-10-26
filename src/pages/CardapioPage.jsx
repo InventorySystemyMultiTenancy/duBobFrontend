@@ -1001,6 +1001,12 @@ function GuidedMenu({
                       big={big}
                       fill
                       title={line.title}
+                      image={
+                        big
+                          ? ""
+                          : line.flavors.find((flavor) => flavor.imageUrl)?.imageUrl ||
+                            MilkShake1
+                      }
                       detail={`${line.flavors.length} sabores`}
                       price={`a partir de ${fmt(Math.min(...line.sizes.map((size) => size.price)))}`}
                       selected={selectedLineId === line.id}
@@ -1181,7 +1187,7 @@ const fewOptionsGrid = (big, shortLabels = false) =>
           ? "landscape:grid-cols-4"
           : "max-[899px]:portrait:grid-cols-1" // nomes longos em tela em pé estreita
       }`
-    : "grid gap-3 sm:grid-cols-2 xl:grid-cols-4";
+    : "grid grid-cols-2 gap-4 xl:grid-cols-4";
 
 // Listas longas (sabores, complementos): cartões grandes com rolagem da página.
 const manyOptionsGrid = (big) =>
@@ -1209,13 +1215,15 @@ function OptionTile({
       className={`relative flex flex-col overflow-hidden transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${
         fill ? "" : "text-left"
       } ${
-        big ? "rounded-3xl border-4" : "rounded-lg border-2"
+        big ? "rounded-3xl border-4" : "rounded-2xl border-2 shadow-sm hover:shadow-card"
       } ${
         selected
           ? "border-secondary bg-secondary/10"
           : "border-primary/10 bg-accent/50 hover:border-secondary/50"
       } ${
-        fill
+        fill && !big
+          ? `items-stretch text-center ${image ? "" : "min-h-40 justify-center"}`
+          : fill
           ? `items-center justify-center text-center landscape:h-full ${
               String(title).length <= 3
                 ? "portrait:aspect-[4/5]"
@@ -1239,7 +1247,7 @@ function OptionTile({
           src={image}
           alt=""
           className={`w-full object-cover ${
-            fill ? "min-h-0 flex-1" : big ? "h-44" : "h-32"
+            fill && big ? "min-h-0 flex-1" : big ? "h-44" : fill ? "h-40" : "h-32"
           }`}
         />
       ) : null}
@@ -1253,7 +1261,9 @@ function OptionTile({
             ? fill
               ? "gap-1 px-3 py-4 min-[900px]:px-6 min-[900px]:py-6"
               : "gap-1 px-6 py-6"
-            : "gap-0.5 px-4 py-3"
+            : fill
+              ? "gap-1 px-4 py-5"
+              : "gap-0.5 px-4 py-3"
         } ${
           big && !fill && !image ? "min-h-32" : ""
         } ${selected && !fill ? (big ? "pr-20" : "pr-12") : ""}`}
@@ -1261,7 +1271,11 @@ function OptionTile({
         <span
           className={`max-w-full break-words font-black leading-tight text-primary ${
             !big
-              ? "text-base"
+              ? fill
+                ? String(title).length <= 3
+                  ? "text-4xl"
+                  : "text-xl"
+                : "text-base"
               : fill && String(title).length <= 3
                 ? "whitespace-nowrap text-5xl min-[900px]:text-6xl landscape:text-5xl" // P, M, G, MG
                 : fill
@@ -1274,7 +1288,7 @@ function OptionTile({
         {detail && (
           <span
             className={`font-bold text-primary/70 ${
-              big ? (fill ? "text-xl min-[900px]:text-2xl" : "text-xl") : "text-xs"
+              big ? (fill ? "text-xl min-[900px]:text-2xl" : "text-xl") : fill ? "text-sm" : "text-xs"
             }`}
           >
             {detail}
@@ -1283,7 +1297,7 @@ function OptionTile({
         {price && (
           <span
             className={`font-black text-secondary ${
-              big ? (fill ? "mt-2 whitespace-nowrap text-2xl min-[900px]:text-3xl" : "text-2xl") : "text-sm"
+              big ? (fill ? "mt-2 whitespace-nowrap text-2xl min-[900px]:text-3xl" : "text-2xl") : fill ? "mt-1 text-lg" : "text-sm"
             }`}
           >
             {price}
