@@ -37,6 +37,24 @@ const STATUS_MENSAGEM = {
   DESCARTADA: "Descartada",
 };
 
+// Variáveis que dá para usar nos textos (com exemplo para a prévia)
+const VARIAVEIS = [
+  { chave: "nome", label: "Nome do cliente", exemplo: "Maria" },
+  { chave: "pedido", label: "Número do pedido", exemplo: "#AB12CD" },
+  { chave: "motoboy", label: "Motoboy", exemplo: "João" },
+  { chave: "codigo", label: "Código de entrega", exemplo: "4821" },
+];
+const RODAPE_PREVIA =
+  "_Mensagem automática do Dubob. Para não receber mais avisos, responda SAIR._";
+
+// Mesma troca que o servidor faz (aqui só para a prévia)
+function previaTexto(modelo) {
+  return VARIAVEIS.reduce(
+    (texto, v) => texto.replaceAll(`{${v.chave}}`, v.exemplo),
+    String(modelo || ""),
+  );
+}
+
 const errorMessage = (error, fallback) =>
   error?.response?.data?.error?.message ?? error?.response?.data?.message ?? fallback;
 
@@ -70,6 +88,7 @@ export default function AdminWhatsappPage() {
         apiKey: "",
         intervaloSegundos: data.config.intervaloSegundos ?? 15,
         etapas: data.config.etapas ?? ["SAIU"],
+        textos: { ...(data.config.textosPadrao ?? {}), ...(data.config.textos ?? {}) },
         ...edits,
       }
     : null;
@@ -119,6 +138,7 @@ export default function AdminWhatsappPage() {
       instancia: form.instancia,
       intervaloSegundos: Number(form.intervaloSegundos),
       etapas: form.etapas,
+      textos: form.textos,
       ...(form.apiKey.trim() ? { apiKey: form.apiKey.trim() } : {}),
     });
 
@@ -367,6 +387,84 @@ export default function AdminWhatsappPage() {
                 </div>
               </section>
             </div>
+
+            {/* Textos dos avisos */}
+            <section className="ui-card space-y-4 p-5">
+              <div>
+                <h2 className="font-display text-xl font-bold text-primary">Mensagens</h2>
+                <p className="mt-1 text-sm text-smoke">
+                  Edite o texto de cada aviso. Toque numa variável para colocá-la no texto. O aviso
+                  &quot;responda SAIR&quot; vai sempre no fim. Depois clique em &quot;Salvar
+                  mensagens&quot;.
+                </p>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                {ETAPAS.map((etapa) => {
+                  const texto = form.textos?.[etapa.id] ?? "";
+                  const padrao = data.config.textosPadrao?.[etapa.id] ?? "";
+                  const setTexto = (valor) =>
+                    setForm({ ...form, textos: { ...form.textos, [etapa.id]: valor } });
+                  return (
+                    <div key={etapa.id} className="space-y-2 rounded-2xl bg-accent/40 p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-bold text-primary">
+                          {etapa.label}
+                          {!form.etapas.includes(etapa.id) && (
+                            <span className="ml-2 text-xs font-semibold text-smoke">
+                              (desligado)
+                            </span>
+                          )}
+                        </p>
+                        {texto !== padrao && (
+                          <button
+                            type="button"
+                            onClick={() => setTexto(padrao)}
+                            className="text-xs font-bold text-secondary"
+                          >
+                            Restaurar padrão
+                          </button>
+                        )}
+                      </div>
+                      <textarea
+                        rows={4}
+                        maxLength={1000}
+                        className="ui-input resize-y text-sm"
+                        value={texto}
+                        onChange={(e) => setTexto(e.target.value)}
+                      />
+                      <div className="flex flex-wrap gap-1.5">
+                        {VARIAVEIS.map((v) => (
+                          <button
+                            key={v.chave}
+                            type="button"
+                            title={v.label}
+                            onClick={() => setTexto(`${texto}{${v.chave}}`)}
+                            className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-primary ring-1 ring-primary/10 hover:ring-secondary"
+                          >
+                            {`{${v.chave}}`}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="rounded-2xl bg-[#dcf8c6] px-3 py-2 text-sm text-gray-800 shadow-sm">
+                        <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                          Prévia
+                        </p>
+                        <p className="whitespace-pre-line">{previaTexto(texto)}</p>
+                        <p className="mt-2 text-xs italic text-gray-600">{RODAPE_PREVIA}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                disabled={salvar.isPending}
+                onClick={salvarConfig}
+                className="ui-btn ui-btn-primary w-full sm:w-auto"
+              >
+                {salvar.isPending ? "Salvando..." : "Salvar mensagens"}
+              </button>
+            </section>
           </>
         )}
       </div>
