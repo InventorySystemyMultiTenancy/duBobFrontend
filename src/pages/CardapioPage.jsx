@@ -523,8 +523,15 @@ function GuidedMenu({
   const [selectedComplements, setSelectedComplements] = useState([]);
   const [selectedPremium, setSelectedPremium] = useState([]);
   const [justAdded, setJustAdded] = useState(false);
-  const { items: cartItems, updateQuantity, removeItem, closeCart, setBackAction } =
-    useCart();
+  const {
+    items: cartItems,
+    updateQuantity,
+    removeItem,
+    closeCart,
+    isCartOpen,
+    backAction,
+    setBackAction,
+  } = useCart();
   const isTotemProductIntro = isTotemMode && !productType;
 
   const selectedLine =
@@ -608,7 +615,12 @@ function GuidedMenu({
     setProductType(null);
     resetSelections();
     scrollTop();
-    if (itemKey) setBackAction({ run: () => undoLastItem({ itemKey, restore }) });
+    if (itemKey) {
+      setBackAction({
+        type: restore.type,
+        run: () => undoLastItem({ itemKey, restore }),
+      });
+    }
   };
 
   const cartItemsRef = useRef(cartItems);
@@ -816,7 +828,10 @@ function GuidedMenu({
     ? ""
     : !productType
       ? justAdded
-        ? "Pronto, está no carrinho. Quer pedir mais alguma coisa? Milk shake ou açaí?"
+        ? // Milk shake recém-colocado: quem fala é o carrinho (turbinar)
+          isCartOpen && backAction?.type === "milkshake"
+          ? ""
+          : "Pronto, está no carrinho. Quer pedir mais alguma coisa? Milk shake ou açaí?"
         : "Você quer milk shake ou açaí?"
       : productType === "milkshake"
         ? step === "linha"

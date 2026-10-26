@@ -6,6 +6,7 @@ import { useAuth } from "../hooks/useAuth.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 import CartProductCard from "./CartProductCard.jsx";
 import { api } from "../lib/api.js";
+import { spokenList, spokenPrice, useTotemVoice } from "../lib/totemVoice.js";
 import {
   MILKSHAKE_COMPLEMENT_CATEGORY,
   isMilkshakeCartItem,
@@ -41,6 +42,20 @@ function CartDrawer() {
     products,
     MILKSHAKE_COMPLEMENT_CATEGORY,
   );
+
+  // Totem: logo depois de colocar um milk shake, pergunta se quer turbinar
+  const complementPrices = new Set(milkshakeComplements.map((item) => item.price));
+  const turboPrompt =
+    isCartOpen && backAction?.type === "milkshake" && milkshakeComplements.length
+      ? `Pronto, está no carrinho. Quer turbinar seu milk shake? Tem ${spokenList(
+          milkshakeComplements.map((item) => item.name),
+        )}${
+          complementPrices.size === 1
+            ? `, por ${spokenPrice(milkshakeComplements[0].price)} cada`
+            : ""
+        }. É só tocar no que quiser, ou em ir para pagamento.`
+      : "";
+  useTotemVoice(turboPrompt);
 
   const itemCount = items.reduce(
     (sum, item) => sum + Number(item.quantity || 1),
