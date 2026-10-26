@@ -16,13 +16,13 @@ const MAX_TILES = 40;
 
 const STATUS_CONFIG = {
   PREPARANDO: {
-    title: "Preparando",
+    title: "Pedido Preparando",
     subtitle: "Seu pedido está em preparo",
     panel: "border-secondary/50 bg-white",
     text: "text-primary",
   },
   PRONTO: {
-    title: "Pronto",
+    title: "Pedido Pronto",
     subtitle: "Pode retirar no balcão",
     panel: "border-secondary/35 bg-white",
     text: "text-secondary",
@@ -134,30 +134,15 @@ export default function TVOrdersPage() {
         className="pointer-events-none absolute -bottom-40 right-0 h-[30rem] w-[30rem] rounded-full bg-accent-dark/20 blur-3xl"
         aria-hidden="true"
       />
-      <header className="relative mb-7 flex flex-wrap items-center justify-between gap-4 sm:gap-6">
-        <div className="flex items-center gap-3 sm:gap-5">
-          <img
-            src="/LogoDuBob.png"
-            alt="Dubob"
-            className="h-12 w-12 rounded-2xl object-contain shadow-xl sm:h-20 sm:w-20"
-          />
-          <div>
-          <p className="text-xs font-black uppercase tracking-[0.32em] text-gold sm:text-lg">
-            Acompanhe seu pedido
-          </p>
-          <h1 className="mt-1 font-display text-3xl font-bold leading-none sm:mt-2 sm:text-6xl">
-            Status dos Pedidos
-          </h1>
-          </div>
-        </div>
-        <div className="hidden rounded-3xl bg-white px-6 py-4 text-right shadow-card ring-1 ring-primary/5 sm:block">
-          <p className="text-sm font-bold uppercase tracking-widest text-smoke">
-            Atualização
-          </p>
-          <p className="mt-1 text-2xl font-black text-secondary">
-            Automática
-          </p>
-        </div>
+      <header className="relative mb-6 flex items-center gap-3 sm:gap-5">
+        <img
+          src="/LogoDuBob.png"
+          alt="Dubob"
+          className="h-12 w-12 rounded-2xl object-contain shadow-xl sm:h-16 sm:w-16"
+        />
+        <p className="text-sm font-black uppercase tracking-[0.32em] text-gold sm:text-2xl">
+          Acompanhe seu pedido
+        </p>
       </header>
 
       {isLoading ? (
@@ -169,7 +154,7 @@ export default function TVOrdersPage() {
           Não foi possível carregar os pedidos.
         </div>
       ) : (
-        <div className="relative grid min-h-0 gap-7 lg:h-[calc(100vh-190px)] lg:grid-cols-2">
+        <div className="relative grid min-h-0 gap-7 lg:h-[calc(100vh-150px)] lg:grid-cols-2">
           <StatusColumn status="PREPARANDO" orders={preparing} />
           <StatusColumn status="PRONTO" orders={ready} />
         </div>
