@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
 import PageHeader from "../components/PageHeader.jsx";
+import NoAutofillInput from "../components/NoAutofillInput.jsx";
 
 // Avisos automáticos de WhatsApp do delivery (Evolution API).
 const ETAPAS = [
@@ -211,7 +212,7 @@ export default function AdminWhatsappPage() {
                   <span className="mb-1 block text-xs font-bold uppercase tracking-widest text-smoke">
                     URL do servidor
                   </span>
-                  <input
+                  <NoAutofillInput
                     className="ui-input"
                     placeholder="https://evolution.seudominio.com"
                     value={form.evolutionUrl}
@@ -222,13 +223,13 @@ export default function AdminWhatsappPage() {
                   <span className="mb-1 block text-xs font-bold uppercase tracking-widest text-smoke">
                     Chave (apikey)
                   </span>
-                  <input
+                  {/* A chave salva nunca volta para a tela, nem em parte */}
+                  <NoAutofillInput
+                    secret
                     className="ui-input"
-                    type="password"
-                    autoComplete="off"
                     placeholder={
                       data.config.apiKeyConfigurada
-                        ? `Salva (${data.config.apiKeyMascarada}). Deixe vazio para manter.`
+                        ? "Chave salva ✓ — deixe vazio para manter"
                         : "Cole a chave da Evolution"
                     }
                     value={form.apiKey}

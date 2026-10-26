@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
 
 import PageHeader from "../components/PageHeader.jsx";
+import NoAutofillInput from "../components/NoAutofillInput.jsx";
 
 const PROVIDERS = [
   {
@@ -151,7 +152,7 @@ function StoneCredentials({ stone }) {
       {stone.configured ? (
         <div className="mt-3 rounded-2xl bg-gray-50 p-3 text-xs">
           <span className="text-gray-500">Secret Key: </span>
-          <span className="font-mono">{stone.secretKeyMasked}</span>
+          <span className="font-semibold text-green-700">configurada ✓</span>
           {stone.source === "env" ? (
             <span className="ml-2 text-amber-600">(do .env: STONE_SECRET_KEY)</span>
           ) : null}
@@ -159,17 +160,14 @@ function StoneCredentials({ stone }) {
       ) : null}
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-2">
-        <input
-          type="password"
-          autoComplete="off"
+        <NoAutofillInput
+          secret
           placeholder={stone.configured ? "Trocar Secret Key (sk_...)" : "Secret Key (sk_...)"}
           value={secretKey}
           onChange={(event) => setSecretKey(event.target.value)}
           className="w-full rounded-2xl border border-gray-200 px-3 py-2.5 font-mono text-sm focus:border-secondary focus:outline-none"
         />
-        <input
-          type="text"
-          autoComplete="off"
+        <NoAutofillInput
           placeholder="ServiceRefererName (identificador de parceiro)"
           value={referer}
           onChange={(event) => setReferer(event.target.value)}
@@ -246,7 +244,7 @@ function SumUpCredentials({ sumup }) {
         <div className="mt-3 grid gap-2 rounded-2xl bg-gray-50 p-3 text-xs sm:grid-cols-2">
           <p>
             <span className="text-gray-500">API key: </span>
-            <span className="font-mono">{sumup.apiKeyMasked}</span>
+            <span className="font-semibold text-green-700">configurada ✓</span>
           </p>
           <p>
             <span className="text-gray-500">Comerciante: </span>
@@ -261,9 +259,8 @@ function SumUpCredentials({ sumup }) {
       ) : null}
 
       <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-2 sm:flex-row">
-        <input
-          type="password"
-          autoComplete="off"
+        <NoAutofillInput
+          secret
           placeholder={sumup.configured ? "Trocar API key (sup_sk_...)" : "sup_sk_..."}
           value={apiKey}
           onChange={(event) => setApiKey(event.target.value)}
