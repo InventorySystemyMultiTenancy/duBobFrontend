@@ -311,7 +311,7 @@ function buildAcaiOptions(products) {
 // Montagem do pedido passo a passo (milk shake e açaí). Usado no cardápio,
 // no totem e no caixa (pedido do balcão). afterAdd: o que fazer depois de
 // colocar o item; por padrão abre o carrinho.
-export function MenuBuilder({ afterAdd }) {
+export function MenuBuilder({ afterAdd, hideSummary = false }) {
   const { addItem, openCart } = useCart();
   const { t } = useTranslation();
 
@@ -422,6 +422,7 @@ export function MenuBuilder({ afterAdd }) {
   return (
     <>
       <GuidedMenu
+        hideSummary={hideSummary}
         isProductReady={!isLoading && !isError && displayProducts.length > 0}
         milkshakeLines={milkshakeLines}
         acaiOptions={acaiOptions}
@@ -517,6 +518,7 @@ const PRODUCT_STEPS = {
 };
 
 function GuidedMenu({
+  hideSummary = false,
   isProductReady,
   milkshakeLines,
   acaiOptions,
@@ -1007,7 +1009,9 @@ function GuidedMenu({
             className={
               big
                 ? "grid grid-cols-[minmax(0,1fr)_13rem] gap-4 sm:grid-cols-[minmax(0,1fr)_16rem] lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-6 landscape:flex-1 portrait:my-auto"
-                : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"
+                : hideSummary // caixa: o painel ao lado já mostra o pedido
+                  ? "grid gap-5"
+                  : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"
             }
           >
             <div className="flex min-w-0 flex-col">
@@ -1159,13 +1163,15 @@ function GuidedMenu({
                 )}
             </div>
 
-            <OrderSummary
-              big={big}
-              rows={summaryRows}
-              complements={productType === "acai" ? selectedComplements : null}
-              premium={productType === "acai" ? selectedPremium : null}
-              total={summaryTotal}
-            />
+            {!hideSummary && (
+              <OrderSummary
+                big={big}
+                rows={summaryRows}
+                complements={productType === "acai" ? selectedComplements : null}
+                premium={productType === "acai" ? selectedPremium : null}
+                total={summaryTotal}
+              />
+            )}
           </div>
 
           {productType === "acai" && step === "complementos" && (
@@ -1203,7 +1209,7 @@ const fewOptionsGrid = (big, shortLabels = false) =>
           ? "landscape:grid-cols-4"
           : "max-[899px]:portrait:grid-cols-1" // nomes longos em tela em pé estreita
       }`
-    : "grid grid-cols-2 gap-4 xl:grid-cols-4";
+    : "grid grid-cols-[repeat(auto-fit,minmax(min(100%,9rem),1fr))] gap-4";
 
 // Listas longas (sabores, complementos): cartões grandes com rolagem da página.
 const manyOptionsGrid = (big) =>

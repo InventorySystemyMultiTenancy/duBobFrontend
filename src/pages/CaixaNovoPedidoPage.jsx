@@ -115,7 +115,7 @@ export default function CaixaNovoPedidoPage() {
 
       <div className="mx-auto grid max-w-[96rem] gap-6 px-2 py-6 sm:px-4 xl:grid-cols-[minmax(0,1fr)_26rem]">
         <div className="min-w-0">
-          <MenuBuilder afterAdd={() => {}} />
+          <MenuBuilder afterAdd={() => {}} hideSummary />
         </div>
 
         <aside className="h-fit space-y-4 rounded-3xl bg-white p-5 shadow-card ring-1 ring-primary/5 xl:sticky xl:top-6">
