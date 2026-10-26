@@ -13,6 +13,7 @@ import acai1 from "/acai1.png";
 
 import PageHeader from "../components/PageHeader.jsx";
 import TotemSideMenu from "../components/TotemSideMenu.jsx";
+import { useMenuProducts } from "../lib/useMenuProducts.js";
 import {
   ACAI_PREMIUM_CATEGORY,
   paidComplementOptions,
@@ -252,6 +253,8 @@ function sizeDisplayParts(size, fallback = {}) {
     label: parts[0] || fallback.label || size?.size,
     ml: parts.slice(1).join(" - ") || fallback.ml || "",
     price: Number(size?.price ?? fallback.price ?? 0),
+    // Em promoção: preço normal para mostrar riscado
+    originalPrice: size?.originalPrice ?? null,
   };
 }
 
@@ -315,18 +318,8 @@ export function MenuBuilder({ afterAdd, hideSummary = false }) {
   const { addItem, openCart } = useCart();
   const { t } = useTranslation();
 
-  const {
-    data: products = [],
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ["products"],
-    queryFn: async () => {
-      const res = await api.get("/products");
-      return res.data?.data ?? [];
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  // Produtos já com o preço das promoções valendo agora
+  const { data: products = [], isLoading, isError } = useMenuProducts();
 
   const displayProducts = products.filter((product) => !isConfigProduct(product));
 
@@ -1046,6 +1039,7 @@ function GuidedMenu({
                       title={size.label}
                       detail={size.ml}
                       price={fmt(size.price)}
+                      oldPrice={size.originalPrice ? fmt(size.originalPrice) : null}
                       selected={selectedMilkshakeSize?.id === size.id}
                       disabled={!isProductReady}
                       onClick={() => pickMilkshakeSize(size)}
@@ -1080,6 +1074,7 @@ function GuidedMenu({
                       title={size.label}
                       detail={size.ml}
                       price={fmt(size.price)}
+                      oldPrice={size.originalPrice ? fmt(size.originalPrice) : null}
                       selected={selectedAcaiSize?.id === size.id}
                       onClick={() => pickAcaiSize(size)}
                     />
@@ -1221,6 +1216,7 @@ function OptionTile({
   title,
   detail,
   price,
+  oldPrice = null,
   image,
   selected,
   disabled = false,
@@ -1256,6 +1252,15 @@ function OptionTile({
           : ""
       }`}
     >
+      {oldPrice && !selected && (
+        <span
+          className={`absolute left-3 top-3 z-10 rounded-full bg-gold font-black uppercase text-primary shadow ${
+            big ? "px-4 py-1.5 text-base" : "px-2.5 py-0.5 text-[11px]"
+          }`}
+        >
+          🔥 Promoção
+        </span>
+      )}
       {selected && (
         <span
           className={`absolute right-3 top-3 z-10 flex items-center justify-center rounded-full bg-secondary font-black text-white shadow-lg ${
@@ -1322,6 +1327,15 @@ function OptionTile({
             }`}
           >
             {detail}
+          </span>
+        )}
+        {oldPrice && (
+          <span
+            className={`font-bold text-primary/50 line-through ${
+              big ? "text-xl" : "text-sm"
+            }`}
+          >
+            {oldPrice}
           </span>
         )}
         {price && (

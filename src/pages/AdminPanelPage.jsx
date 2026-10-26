@@ -323,6 +323,25 @@ function AdminPanelPage() {
 
         {isAdmin && (
           <Link
+            to="/admin/promocoes"
+            className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 text-2xl">
+              🔥
+            </span>
+            <div>
+              <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
+                Promoções
+              </h2>
+              <p className="mt-0.5 text-xs text-smoke">
+                Preço especial por tempo limitado e envio no WhatsApp
+              </p>
+            </div>
+          </Link>
+        )}
+
+        {isAdmin && (
+          <Link
             to="/admin/whatsapp"
             className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
           >

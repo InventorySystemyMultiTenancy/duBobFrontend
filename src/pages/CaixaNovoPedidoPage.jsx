@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import PageHeader from "../components/PageHeader.jsx";
 import CartProductCard from "../components/CartProductCard.jsx";
@@ -11,6 +11,7 @@ import {
   paidComplementOptions,
 } from "../lib/paidComplements.js";
 import { MenuBuilder } from "./CardapioPage.jsx";
+import { useMenuProducts } from "../lib/useMenuProducts.js";
 
 const PAYMENT_METHODS = [
   { id: "DINHEIRO", label: "💵 Dinheiro" },
@@ -61,11 +62,7 @@ export default function CaixaNovoPedidoPage() {
     return () => setCartScope("default");
   }, [setCartScope]);
 
-  const { data: products = [] } = useQuery({
-    queryKey: ["products"],
-    queryFn: async () => (await api.get("/products")).data?.data ?? [],
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: products = [] } = useMenuProducts();
   const milkshakeComplements = paidComplementOptions(
     products,
     MILKSHAKE_COMPLEMENT_CATEGORY,

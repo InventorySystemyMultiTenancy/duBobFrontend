@@ -183,6 +183,26 @@ function CheckoutPage() {
   const [celular, setCelular] = useState(() => user?.phone ?? "");
   const celularDigits = celular.replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "");
   const celularValido = /^\d{10,11}$/.test(celularDigits);
+
+  // Caixinha "Quero receber promoções no WhatsApp" (salva na hora)
+  const isClient = user?.role === "CLIENTE";
+  const { data: promoOptIn = false, refetch: refetchPromoOptIn } = useQuery({
+    queryKey: ["whatsapp-promo-optin"],
+    queryFn: async () => Boolean((await api.get("/me/whatsapp-promo")).data?.data?.aceita),
+    enabled: isAuthenticated && isClient && !isTotemMode,
+  });
+  const promoOptInMutation = useMutation({
+    mutationFn: async (aceita) => api.put("/me/whatsapp-promo", { aceita }),
+    onSuccess: (_res, aceita) => {
+      refetchPromoOptIn();
+      toast.success(
+        aceita
+          ? "Pronto! Você vai receber nossas promoções no WhatsApp."
+          : "Você não vai mais receber promoções no WhatsApp.",
+      );
+    },
+    onError: () => toast.error("Não foi possível salvar sua preferência."),
+  });
   const [rua, setRua] = useState("");
   const [bairro, setBairro] = useState("");
   const [cidade, setCidade] = useState("");
@@ -1198,6 +1218,21 @@ function CheckoutPage() {
                 </div>
               )}
             </div>
+
+            {isClient && (
+              <label className="mb-3 flex cursor-pointer items-start gap-3 rounded-2xl bg-accent/60 px-4 py-3 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 accent-secondary"
+                  checked={promoOptIn}
+                  disabled={promoOptInMutation.isPending}
+                  onChange={(e) => promoOptInMutation.mutate(e.target.checked)}
+                />
+                <span>
+                  Quero receber promoções no WhatsApp. Para parar, é só responder SAIR.
+                </span>
+              </label>
+            )}
 
             <button
               type="button"

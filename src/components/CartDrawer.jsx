@@ -1,11 +1,10 @@
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 import CartProductCard from "./CartProductCard.jsx";
-import { api } from "../lib/api.js";
+import { useMenuProducts } from "../lib/useMenuProducts.js";
 import { spokenList, spokenPrice, useTotemVoice } from "../lib/totemVoice.js";
 import {
   MILKSHAKE_COMPLEMENT_CATEGORY,
@@ -31,13 +30,8 @@ function CartDrawer() {
     backAction,
   } = useCart();
 
-  // Mesmo cache do cardápio: os complementos do milk shake vêm dos produtos
-  const { data: products = [] } = useQuery({
-    queryKey: ["products"],
-    queryFn: async () => (await api.get("/products")).data?.data ?? [],
-    staleTime: 5 * 60 * 1000,
-    enabled: isCartOpen,
-  });
+  // Mesmo cache do cardápio (com promoções): complementos do milk shake
+  const { data: products = [] } = useMenuProducts();
   const milkshakeComplements = paidComplementOptions(
     products,
     MILKSHAKE_COMPLEMENT_CATEGORY,

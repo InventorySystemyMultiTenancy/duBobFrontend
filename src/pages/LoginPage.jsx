@@ -63,7 +63,8 @@ function LoginPage() {
 
   const onRegisterSubmit = (e) => {
     e.preventDefault();
-    const { name, cpf, email, phone, password, address } = registerForm;
+    const { name, cpf, email, phone, password, address, whatsappPromo } =
+      registerForm;
     if (!email && !phone) {
       toast.error("Informe email ou telefone");
       return;
@@ -75,6 +76,7 @@ function LoginPage() {
       phone: phone || undefined,
       password,
       address: address || undefined,
+      whatsappPromo: Boolean(whatsappPromo),
     });
   };
 
@@ -273,6 +275,19 @@ function LoginPage() {
                   }
                   className={INPUT_CLS}
                 />
+                <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-accent/60 px-4 py-3 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 accent-secondary"
+                    checked={Boolean(registerForm.whatsappPromo)}
+                    onChange={(e) =>
+                      setRegisterForm((p) => ({ ...p, whatsappPromo: e.target.checked }))
+                    }
+                  />
+                  <span>
+                    Quero receber promoções no WhatsApp. Para parar, é só responder SAIR.
+                  </span>
+                </label>
                 <button
                   type="submit"
                   disabled={registerMutation.isPending}
