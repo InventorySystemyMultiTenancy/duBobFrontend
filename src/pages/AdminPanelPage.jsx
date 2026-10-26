@@ -27,7 +27,7 @@ import {
 const currency = (v) =>
   Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// Mesas, atendimento e comandas fora do painel por enquanto
+// Mesas, atendimento, comandas e cardápio de mesa fora do painel por enquanto
 const SHOW_MESAS_E_COMANDAS = false;
 
 function AdminPanelPage() {
@@ -477,22 +477,24 @@ function AdminPanelPage() {
                 </div>
               </Link>
             )}
-            <Link
-              to="/admin/cardapio-mesa"
-              className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
-            >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-fuchsia-500/15 text-2xl">
-                🔳
-              </span>
-              <div>
-                <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
-                  QR do Cardápio de Mesa
-                </h2>
-                <p className="mt-0.5 text-xs text-smoke">
-                  Imprimir QR Codes do cardápio só para visualização
-                </p>
-              </div>
-            </Link>
+            {SHOW_MESAS_E_COMANDAS && (
+              <Link
+                to="/admin/cardapio-mesa"
+                className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-fuchsia-500/15 text-2xl">
+                  🔳
+                </span>
+                <div>
+                  <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
+                    QR do Cardápio de Mesa
+                  </h2>
+                  <p className="mt-0.5 text-xs text-smoke">
+                    Imprimir QR Codes do cardápio só para visualização
+                  </p>
+                </div>
+              </Link>
+            )}
           </>
         )}
       </div>

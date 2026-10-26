@@ -1122,9 +1122,10 @@ function KitchenPage() {
               "RETIRADA_PRONTA",
             ]
           : null;
+  // "Levar para a Mesa" não é usado por enquanto: só o atendente vê essa coluna
   const visibleColumns = visibleColumnKeys
     ? COLUMNS.filter((column) => visibleColumnKeys.includes(column.key))
-    : COLUMNS;
+    : COLUMNS.filter((column) => column.key !== "LEVAR_PARA_MESA");
   const visibleStageCounts = stageCounts.filter((stage) =>
     visibleColumns.some((column) => column.key === stage.key),
   );
