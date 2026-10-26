@@ -12,7 +12,7 @@ import { TOTEM_MODE_KEY } from "./totemMode.js";
  */
 export const TOTEM_VOICE_KEY = "pc_totem_voice";
 
-const SIZE_LETTERS = { P: "pê", M: "eme", G: "gê", MG: "eme gê" };
+const SIZE_LETTERS = { P: "pê", M: "eme", G: "gê", MG: "mega" };
 const FULLY_LOCALE = "pt_BR";
 const FULLY_ENGINE = "com.google.android.tts";
 
