@@ -145,7 +145,8 @@ export function spokenPrice(value) {
 
 export function spokenSize(size) {
   const letter = SIZE_LETTERS[size.label] ?? size.label;
-  const ml = String(size.ml ?? "").replace(/\s*ml\b/i, " mililitros");
+  // Fala as letras "ml" (a voz leria "ml" como "mililitros")
+  const ml = String(size.ml ?? "").replace(/\s*ml\b/i, " eme éle");
   return `${letter}, ${ml}, ${spokenPrice(size.price)}`;
 }
 
