@@ -298,9 +298,14 @@ export default function CaixaPage() {
         title="Caixa"
         subtitle="Todos os pedidos em aberto para receber e dar baixa."
         actions={
-          <Link to="/comandas" className="ui-btn ui-btn-on-dark">
-            Comandas
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/caixa/novo-pedido" className="ui-btn ui-btn-primary">
+              + Novo pedido
+            </Link>
+            <Link to="/comandas" className="ui-btn ui-btn-on-dark">
+              Comandas
+            </Link>
+          </div>
         }
       />
       <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8">

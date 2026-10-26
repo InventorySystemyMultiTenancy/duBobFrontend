@@ -308,30 +308,12 @@ function buildAcaiOptions(products) {
   };
 }
 
-function CardapioPage() {
-  const { user } = useAuth();
+// Montagem do pedido passo a passo (milk shake e açaí). Usado no cardápio,
+// no totem e no caixa (pedido do balcão). afterAdd: o que fazer depois de
+// colocar o item; por padrão abre o carrinho.
+export function MenuBuilder({ afterAdd }) {
   const { addItem, openCart } = useCart();
   const { t } = useTranslation();
-  const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
-
-  const { data: mesaOrders = [] } = useQuery({
-    queryKey: ["mesa-orders"],
-    queryFn: async () => {
-      const res = await api.get("/mesa/orders");
-      return res.data?.data ?? [];
-    },
-    enabled: user?.role === "MESA",
-    refetchInterval: 30000,
-  });
-
-  const pendingTotal =
-    user?.role === "MESA"
-      ? mesaOrders
-          .filter(
-            (o) => o.paymentStatus !== "APROVADO" && o.status !== "CANCELADO",
-          )
-          .reduce((acc, o) => acc + Number(o.total), 0)
-      : 0;
 
   const {
     data: products = [],
@@ -376,7 +358,7 @@ function CardapioPage() {
         addonIds: [],
       },
     });
-    openCart();
+    (afterAdd ?? openCart)();
     return [product.id, line.id, flavor, size.id].join("|");
   };
 
@@ -433,22 +415,12 @@ function CardapioPage() {
         addonIds: extraAddon.map((addon) => addon.id),
       },
     });
-    openCart();
+    (afterAdd ?? openCart)();
     return key;
   };
 
   return (
-    <main className="min-h-screen font-body text-text-main">
-      <Navbar activeLink="cardapio" />
-
-      {!isTotemMode && (
-        <PageHeader
-          eyebrow={t("CARDAPIO_SINCE", "Açaí · Milkshake · Krekole")}
-          title={t("CARDAPIO_TITLE", "Monte seu pedido")}
-          subtitle="Escolha açaí ou milkshake e siga os passos. Leva menos de um minuto."
-        />
-      )}
-
+    <>
       <GuidedMenu
         isProductReady={!isLoading && !isError && displayProducts.length > 0}
         milkshakeLines={milkshakeLines}
@@ -462,6 +434,47 @@ function CardapioPage() {
           {t("CARDAPIO_ERROR", "Nao foi possivel carregar o cardapio. Tente novamente.")}
         </p>
       )}
+    </>
+  );
+}
+
+function CardapioPage() {
+  const { user } = useAuth();
+  const { t } = useTranslation();
+  const isTotemMode = localStorage.getItem("pc_totem_mode") === "true";
+
+  const { data: mesaOrders = [] } = useQuery({
+    queryKey: ["mesa-orders"],
+    queryFn: async () => {
+      const res = await api.get("/mesa/orders");
+      return res.data?.data ?? [];
+    },
+    enabled: user?.role === "MESA",
+    refetchInterval: 30000,
+  });
+
+  const pendingTotal =
+    user?.role === "MESA"
+      ? mesaOrders
+          .filter(
+            (o) => o.paymentStatus !== "APROVADO" && o.status !== "CANCELADO",
+          )
+          .reduce((acc, o) => acc + Number(o.total), 0)
+      : 0;
+
+  return (
+    <main className="min-h-screen font-body text-text-main">
+      <Navbar activeLink="cardapio" />
+
+      {!isTotemMode && (
+        <PageHeader
+          eyebrow={t("CARDAPIO_SINCE", "Açaí · Milkshake · Krekole")}
+          title={t("CARDAPIO_TITLE", "Monte seu pedido")}
+          subtitle="Escolha açaí ou milkshake e siga os passos. Leva menos de um minuto."
+        />
+      )}
+
+      <MenuBuilder />
 
       {!isTotemMode && (
         <footer className="border-t border-border-soft bg-white py-6 text-center text-xs text-text-muted">

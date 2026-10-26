@@ -27,6 +27,7 @@ import AdminMesaCardapioPage from "./pages/AdminMesaCardapioPage.jsx";
 import ComandasPage from "./pages/ComandasPage.jsx";
 import ComandaSummaryPage from "./pages/ComandaSummaryPage.jsx";
 import CaixaPage from "./pages/CaixaPage.jsx";
+import CaixaNovoPedidoPage from "./pages/CaixaNovoPedidoPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import PrivateRoute from "./routes/PrivateRoute.jsx";
 import { clearTotemMode, TOTEM_SLUG_KEY } from "./lib/totemMode.js";
@@ -158,6 +159,7 @@ function AppRoutes() {
       >
         <Route path="/comandas" element={<ComandasPage />} />
         <Route path="/caixa" element={<CaixaPage />} />
+        <Route path="/caixa/novo-pedido" element={<CaixaNovoPedidoPage />} />
       </Route>
 
       <Route

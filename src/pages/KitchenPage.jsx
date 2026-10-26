@@ -25,6 +25,7 @@ import {
 } from "../lib/waiterCallsStore.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 import { parseItemNotes } from "../lib/itemNotes.js";
+import { getCustomerName, isCounterOrder } from "../lib/orderCustomer.js";
 
 const SOUND_STORAGE_KEY = "pc_kitchen_sound_enabled";
 const NEW_ORDER_HIGHLIGHT_MS = 20000;
@@ -163,6 +164,10 @@ function getKitchenOrderTitle(order, t) {
     return getTotemLabel(order);
   }
 
+  if (isCounterOrder(order)) {
+    return "Balcão";
+  }
+
   if (order.isPickup) {
     return t("KITCHEN_PICKUP", "Retirada");
   }
@@ -180,7 +185,7 @@ function getKitchenOrderSubtitle(order, t) {
   }
 
   if (order.isPickup) {
-    return order.user?.name ?? t("CLIENT_DASHBOARD_CLIENT", "Cliente");
+    return getCustomerName(order) || t("CLIENT_DASHBOARD_CLIENT", "Cliente");
   }
 
   return order.deliveryAddress ?? t("KITCHEN_DELIVERY", "Entrega");
@@ -194,12 +199,22 @@ function hasKitchenItems(order) {
   return getKitchenItems(order).length > 0;
 }
 
+// Totem e balcão (caixa) são pedidos da loja: cozinha normal
 function isDeliveryOrPickupOrder(order) {
-  return !order?.mesaId && !order?.comandaId && !isTotemOrder(order);
+  return (
+    !order?.mesaId &&
+    !order?.comandaId &&
+    !isTotemOrder(order) &&
+    !isCounterOrder(order)
+  );
 }
 
 function isLocalKitchenOrder(order) {
-  return Boolean(order?.mesaId || order?.comandaId) || isTotemOrder(order);
+  return (
+    Boolean(order?.mesaId || order?.comandaId) ||
+    isTotemOrder(order) ||
+    isCounterOrder(order)
+  );
 }
 
 function isTotemOrder(order) {
@@ -425,7 +440,7 @@ function OrderCard({
           </span>
         )}
         {/* No totem o título já diz "Totem N" */}
-        {!isTotemOrder(order) && (
+        {!isTotemOrder(order) && !isCounterOrder(order) && (
           <span className={`${chip} ${typeChip.cls}`}>{typeChip.label}</span>
         )}
         {eta && !eta.isFinal && (
@@ -547,7 +562,7 @@ function OrderCard({
         })}
       </ul>
 
-      {order.notes && !isTotemOrder(order) && (
+      {order.notes && !isTotemOrder(order) && !isCounterOrder(order) && (
         <p
           className={`mt-3 rounded-xl border-2 border-amber-300 bg-amber-100 font-extrabold text-amber-900 ${
             largeMode ? "px-3 py-2 text-lg" : "px-3 py-2 text-base"
