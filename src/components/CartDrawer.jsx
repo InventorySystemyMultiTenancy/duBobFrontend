@@ -212,9 +212,9 @@ function CartDrawer() {
               <button
                 type="button"
                 onClick={goToMenu}
-                className="ui-btn ui-btn-ghost w-full"
+                className="ui-btn ui-btn-primary ui-btn-lg w-full"
               >
-                + Adicionar mais itens
+                Continuar pedido
               </button>
             </div>
           )}
