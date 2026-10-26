@@ -290,7 +290,12 @@ function buildAcaiOptions(products) {
           sizeDisplayParts(size, ACAI_SIZES[index] ?? {}),
         )
       : ACAI_SIZES,
-    flavors: productOptionsByCategory(products, "sabor acai", ACAI_FLAVORS),
+    // Tradicional sempre primeiro; os outros na ordem do cadastro
+    flavors: productOptionsByCategory(products, "sabor acai", ACAI_FLAVORS).sort(
+      (a, b) =>
+        Number(normalizeText(b.name) === "tradicional") -
+        Number(normalizeText(a.name) === "tradicional"),
+    ),
     complements: productOptionsByCategory(
       products.filter(
         (product) => !normalizeText(product.category).includes("premium"),
@@ -1222,13 +1227,13 @@ function OptionTile({
         fill && !big
           ? `items-stretch text-center ${image ? "" : "min-h-40 justify-center"}`
           : fill
-          ? `items-center justify-center text-center landscape:h-full ${
-              image // com foto a altura vem da foto + texto
-                ? ""
-                : String(title).length <= 3
+          ? image
+            ? "items-center text-center" // foto em cima, texto embaixo, sem esticar
+            : `items-center justify-center text-center landscape:h-full ${
+                String(title).length <= 3
                   ? "portrait:aspect-[4/5]"
                   : "portrait:min-h-36 min-[900px]:portrait:aspect-[4/5]"
-            }`
+              }`
           : ""
       }`}
     >
@@ -1259,7 +1264,7 @@ function OptionTile({
       ) : null}
       <span
         className={`flex flex-col ${
-          image ? "" : "flex-1 justify-center"
+          image && !fill ? "" : "flex-1 justify-center"
         } ${
           fill ? "w-full items-center text-center" : ""
         } ${
