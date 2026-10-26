@@ -181,6 +181,13 @@ export default function RealtimeBridge() {
       }
     };
 
+    // Pedido mudou sem trocar status (ex.: cliente do iFood pediu cancelamento)
+    const onOrderUpdated = () => {
+      if (STAFF_ROLES.has(user.role)) {
+        queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
+      }
+    };
+
     const onMotoboyLocation = (payload) => {
       dispatchRealtimeEvent("pc:motoboy-location", payload);
     };
@@ -241,6 +248,7 @@ export default function RealtimeBridge() {
     socket.on("order:created", onOrderCreated);
     socket.on("order:status-updated", onOrderStatusUpdated);
     socket.on("order:payment-updated", onPaymentUpdated);
+    socket.on("order:updated", onOrderUpdated);
     socket.on("mesa:chamar-garcom", onChamarGarcom);
     socket.on("order:motoboy-location", onMotoboyLocation);
 
@@ -251,6 +259,7 @@ export default function RealtimeBridge() {
       socket.off("order:created", onOrderCreated);
       socket.off("order:status-updated", onOrderStatusUpdated);
       socket.off("order:payment-updated", onPaymentUpdated);
+      socket.off("order:updated", onOrderUpdated);
       socket.off("mesa:chamar-garcom", onChamarGarcom);
       socket.off("order:motoboy-location", onMotoboyLocation);
       socket.disconnect();

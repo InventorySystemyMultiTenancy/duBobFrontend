@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { askPaymentMethod } from "../lib/paymentMethodPrompt.js";
+import { isIfoodOrder } from "../lib/orderCustomer.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 
 import PageHeader from "../components/PageHeader.jsx";
@@ -510,7 +511,19 @@ function MotoboyPage() {
             )}
 
             {/* Delivery confirmation */}
-            {order.paymentStatus === "APROVADO" ? (
+            {order.paymentStatus === "APROVADO" && isIfoodOrder(order) ? (
+              // Cliente do iFood não recebeu o nosso código de entrega
+              <button
+                type="button"
+                disabled={confirmingByOrderId[order.id]}
+                onClick={() => handleConfirmDelivery(order.id)}
+                className="mt-4 w-full rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {confirmingByOrderId[order.id]
+                  ? t("MOTOBOY_CONFIRMING", "Confirmando...")
+                  : "Confirmar entrega (iFood)"}
+              </button>
+            ) : order.paymentStatus === "APROVADO" ? (
               <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-3">
                 <p className="text-xs font-semibold text-gray-600">
                   {t(

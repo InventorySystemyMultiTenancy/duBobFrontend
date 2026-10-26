@@ -9,6 +9,7 @@ import AdminMesasPage from "./pages/AdminMesasPage.jsx";
 import AdminTotensPage from "./pages/AdminTotensPage.jsx";
 import AdminPagamentosPage from "./pages/AdminPagamentosPage.jsx";
 import AdminWhatsappPage from "./pages/AdminWhatsappPage.jsx";
+import AdminIfoodPage from "./pages/AdminIfoodPage.jsx";
 import AdminPromocoesPage from "./pages/AdminPromocoesPage.jsx";
 import AdminExpensesPage from "./pages/AdminExpensesPage.jsx";
 import SalesAnalyticsPage from "./pages/SalesAnalyticsPage.jsx";
@@ -188,6 +189,7 @@ function AppRoutes() {
         <Route path="/admin/totens" element={<AdminTotensPage />} />
         <Route path="/admin/pagamentos" element={<AdminPagamentosPage />} />
         <Route path="/admin/whatsapp" element={<AdminWhatsappPage />} />
+        <Route path="/admin/ifood" element={<AdminIfoodPage />} />
         <Route path="/admin/promocoes" element={<AdminPromocoesPage />} />
         <Route
           path="/admin/cardapio-mesa"

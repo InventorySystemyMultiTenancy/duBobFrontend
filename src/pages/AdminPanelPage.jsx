@@ -361,6 +361,25 @@ function AdminPanelPage() {
 
         {isAdmin && (
           <Link
+            to="/admin/ifood"
+            className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-500/15 text-2xl">
+              🛵
+            </span>
+            <div>
+              <h2 className="font-semibold text-gray-900 group-hover:text-secondary">
+                iFood
+              </h2>
+              <p className="mt-0.5 text-xs text-smoke">
+                Pedidos do iFood direto na cozinha
+              </p>
+            </div>
+          </Link>
+        )}
+
+        {isAdmin && (
+          <Link
             to="/admin/pagamentos"
             className="group ui-card flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover"
           >

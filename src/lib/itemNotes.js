@@ -3,7 +3,8 @@
 // Aqui separamos as partes para mostrar cada uma do jeito certo.
 
 const KNOWN_FIELDS = ["Sabor", "Linha", "Tamanho", "Adicional"];
-const FIELD_PATTERN = /^(Sabor|Linha|Tamanho|Complementos|Adicional|Obs)\s*:\s*(.*)$/i;
+// "iFood" traz o nome do item como veio do iFood (vira o título na cozinha)
+const FIELD_PATTERN = /^(Sabor|Linha|Tamanho|Complementos|Adicional|Obs|iFood)\s*:\s*(.*)$/i;
 
 function capitalize(label) {
   const lower = label.toLowerCase();
@@ -34,6 +35,8 @@ export function parseItemNotes(notes) {
             ...value.split(",").map((entry) => entry.trim()).filter(Boolean),
           );
         }
+      } else if (label === "Ifood") {
+        return;
       } else if (label === "Obs") {
         freeText.push(value);
       } else if (KNOWN_FIELDS.includes(label)) {

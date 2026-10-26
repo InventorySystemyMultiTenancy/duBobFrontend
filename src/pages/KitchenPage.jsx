@@ -25,7 +25,8 @@ import {
 } from "../lib/waiterCallsStore.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 import { parseItemNotes } from "../lib/itemNotes.js";
-import { getCustomerName, isCounterOrder } from "../lib/orderCustomer.js";
+import { getCustomerName, isCounterOrder, isIfoodOrder } from "../lib/orderCustomer.js";
+import IfoodOrderPanel from "../components/IfoodOrderPanel.jsx";
 
 const SOUND_STORAGE_KEY = "pc_kitchen_sound_enabled";
 const NEW_ORDER_HIGHLIGHT_MS = 20000;
@@ -168,6 +169,10 @@ function getKitchenOrderTitle(order, t) {
     return "Balcão";
   }
 
+  if (isIfoodOrder(order)) {
+    return `iFood #${order.externalDisplayId || getIfoodDisplayId(order)}`;
+  }
+
   if (order.isPickup) {
     return t("KITCHEN_PICKUP", "Retirada");
   }
@@ -184,11 +189,25 @@ function getKitchenOrderSubtitle(order, t) {
     return order.comanda.number ? `Comanda ${order.comanda.number}` : "Comanda";
   }
 
-  if (order.isPickup) {
+  if (order.isPickup || isIfoodOrder(order)) {
     return getCustomerName(order) || t("CLIENT_DASHBOARD_CLIENT", "Cliente");
   }
 
   return order.deliveryAddress ?? t("KITCHEN_DELIVERY", "Entrega");
+}
+
+function getIfoodDisplayId(order) {
+  const match = String(order?.notes || "").match(/^Pedido iFood #([^|]+)/);
+  return match ? match[1].trim() : "";
+}
+
+// Detalhes do pedido do iFood (sem o número e o nome, que já estão no título)
+function getIfoodDetails(order) {
+  return String(order?.notes || "")
+    .split("|")
+    .map((part) => part.trim())
+    .filter((part) => part && !/^(Pedido iFood #|Cliente:)/.test(part))
+    .join(" · ");
 }
 
 function getKitchenItems(order) {
@@ -232,7 +251,9 @@ function isAwaitingPayment(order) {
     (order.status === "RECEBIDO" || order.status === "PREPARANDO") &&
     !order.mesaId &&
     !order.comandaId &&
-    order.paymentMethod !== "PAGAR_DEPOIS"
+    order.paymentMethod !== "PAGAR_DEPOIS" &&
+    // iFood: pago lá ou cobrado na entrega; vai direto para o preparo
+    !isIfoodOrder(order)
   );
 }
 
@@ -288,7 +309,9 @@ function getProductImage(item, products = []) {
 function getKitchenItemTitle(item, t) {
   const notes = String(item?.notes || "");
   const flavorMatch = notes.match(/Sabor:\s*([^|]+)/i);
-  const fallback = item.product?.name ?? t("CLIENT_DASHBOARD_ITEM", "Item");
+  const ifoodMatch = notes.match(/(?:^|\|)\s*iFood:\s*([^|]+)/);
+  const fallback =
+    ifoodMatch?.[1].trim() ?? item.product?.name ?? t("CLIENT_DASHBOARD_ITEM", "Item");
   if (!flavorMatch) return fallback;
 
   const flavor = flavorMatch[1].trim();
@@ -344,6 +367,7 @@ function OrderCard({
     order.status === "SAIU_PARA_ENTREGA" &&
     !order.isPickup &&
     !order.mesaId &&
+    !isIfoodOrder(order) &&
     !!onConfirmDelivery;
   const nextStatus = getNextStageKey(order.status, order);
   const hasNext = !!nextStatus && !needsCodeConfirm;
@@ -372,6 +396,8 @@ function OrderCard({
   const subtitle = getKitchenOrderSubtitle(order, t);
   const typeChip = isTotemOrder(order)
     ? { label: `🖥️ ${getTotemLabel(order)}`, cls: "bg-indigo-100 text-indigo-800" }
+    : isIfoodOrder(order)
+      ? { label: "🛵 iFood", cls: "bg-red-100 text-red-700" }
     : order.mesa
       ? { label: `🪑 Mesa ${order.mesa.number}`, cls: "bg-amber-100 text-amber-800" }
       : order.comanda
@@ -562,7 +588,21 @@ function OrderCard({
         })}
       </ul>
 
-      {order.notes && !isTotemOrder(order) && !isCounterOrder(order) && (
+      {isIfoodOrder(order) && getIfoodDetails(order) && (
+        <p
+          className={`mt-3 rounded-xl bg-red-50 font-bold text-red-800 ring-1 ring-red-200 ${
+            largeMode ? "px-3 py-2 text-lg" : "px-3 py-2 text-base"
+          }`}
+        >
+          {getIfoodDetails(order)}
+        </p>
+      )}
+
+      {isIfoodOrder(order) && (
+        <IfoodOrderPanel order={order} canCancel={!!onCancel} largeMode={largeMode} />
+      )}
+
+      {order.notes && !isTotemOrder(order) && !isCounterOrder(order) && !isIfoodOrder(order) && (
         <p
           className={`mt-3 rounded-xl border-2 border-amber-300 bg-amber-100 font-extrabold text-amber-900 ${
             largeMode ? "px-3 py-2 text-lg" : "px-3 py-2 text-base"
@@ -657,8 +697,9 @@ function OrderCard({
           </div>
         )}
 
-      {/* Cancelar */}
+      {/* Cancelar (o iFood tem o próprio, com motivo) */}
       {onCancel &&
+        !isIfoodOrder(order) &&
         (confirmCancel ? (
           <div className="mt-3 flex items-center gap-2 rounded-2xl bg-red-50 px-3 py-2">
             <span className="flex-1 text-xs font-semibold text-red-700">
