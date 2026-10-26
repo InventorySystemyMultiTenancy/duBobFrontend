@@ -160,3 +160,32 @@ export function spokenList(items) {
   if (fixed.length <= 1) return fixed.join("");
   return `${fixed.slice(0, -1).join(", ")} ou ${fixed[fixed.length - 1]}`;
 }
+
+// "Milk Shake - Morango M (400 ml)" -> "Milk Shake, Morango, eme, 400 eme éle"
+function spokenItemName(name) {
+  const fixed = SPOKEN_FIXES.reduce(
+    (text, [from, to]) => text.replace(from, to),
+    String(name ?? "Item"),
+  );
+  return fixed
+    .replace(/\s+-\s+/g, ", ")
+    .replace(
+      /\s+(MG|P|M|G)\s*\((\d+)\s*ml\)/i,
+      (_, letter, ml) =>
+        `, ${SIZE_LETTERS[letter.toUpperCase()] ?? letter}, ${ml} eme éle`,
+    );
+}
+
+// Lê o carrinho na tela de pagamento: itens, adicionais e total.
+export function spokenOrder(items, total) {
+  const parts = items.map((item) => {
+    const addons = (item.addons ?? [])
+      .map((addon) => addon.nome || addon.name)
+      .filter(Boolean);
+    const name = spokenItemName(item.nome || item.title);
+    return `${item.quantity ?? 1} ${name}${
+      addons.length ? `, com ${spokenList(addons).replace(/ ou /, " e ")}` : ""
+    }`;
+  });
+  return `Confira seu pedido: ${parts.join(". ")}. Total: ${spokenPrice(total)}.`;
+}

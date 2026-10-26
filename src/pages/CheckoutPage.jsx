@@ -16,11 +16,13 @@ import {
   TOTEM_NAME_KEY,
   TOTEM_SLUG_KEY,
 } from "../lib/totemMode.js";
-import { useTotemVoice } from "../lib/totemVoice.js";
+import { spokenOrder, useTotemVoice } from "../lib/totemVoice.js";
 
 import PageHeader from "../components/PageHeader.jsx";
 const POLL_INTERVAL_MS = 4000;
 const TOTEM_DONE_SECONDS = 20;
+// Pagar em dinheiro no caixa pelo totem: desligado por enquanto
+const TOTEM_CASH_PAYMENT = false;
 
 const currency = (v) =>
   Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -167,7 +169,9 @@ function CheckoutPage() {
           ? manualCharge
             ? "Agora digite o valor na maquininha e faça o pagamento."
             : "Agora faça o pagamento na maquininha."
-          : "Confira seu pedido e toque em pagar.",
+          : items.length
+            ? `${spokenOrder(items, subtotal)} Toque em pagar na maquininha.`
+            : "Seu carrinho está vazio.",
   );
 
   // Address
@@ -689,7 +693,8 @@ function CheckoutPage() {
             <h1 className="mt-3 text-5xl font-black">Confira seu pedido</h1>
             <p className="mt-3 text-lg text-text-muted">
               Pague com cartão ou Pix na maquininha do{" "}
-              {currentTotemName || "Totem"}, ou em dinheiro no caixa.
+              {currentTotemName || "Totem"}
+              {TOTEM_CASH_PAYMENT ? ", ou em dinheiro no caixa." : "."}
             </p>
           </div>
 
@@ -782,14 +787,16 @@ function CheckoutPage() {
                   {isLoading ? "Enviando..." : "💳 Pagar na maquininha"}
                 </button>
 
-                <button
-                  type="button"
-                  disabled={!canConfirm}
-                  onClick={handleTotemCashCheckout}
-                  className="mt-3 w-full rounded-full border-2 border-secondary bg-white px-6 py-4 text-lg font-black uppercase tracking-wide text-secondary transition hover:bg-secondary hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  💵 Pagar em dinheiro no caixa
-                </button>
+                {TOTEM_CASH_PAYMENT && (
+                  <button
+                    type="button"
+                    disabled={!canConfirm}
+                    onClick={handleTotemCashCheckout}
+                    className="mt-3 w-full rounded-full border-2 border-secondary bg-white px-6 py-4 text-lg font-black uppercase tracking-wide text-secondary transition hover:bg-secondary hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    💵 Pagar em dinheiro no caixa
+                  </button>
+                )}
 
                 <button
                   type="button"
