@@ -179,6 +179,10 @@ function CheckoutPage() {
   const [numero, setNumero] = useState("");
   const [complemento, setComplemento] = useState("");
   const [referencia, setReferencia] = useState("");
+  // Celular para os avisos de WhatsApp da entrega (vem do cadastro)
+  const [celular, setCelular] = useState(() => user?.phone ?? "");
+  const celularDigits = celular.replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "");
+  const celularValido = /^\d{10,11}$/.test(celularDigits);
   const [rua, setRua] = useState("");
   const [bairro, setBairro] = useState("");
   const [cidade, setCidade] = useState("");
@@ -322,6 +326,8 @@ function CheckoutPage() {
         deliveryFee: effectiveFreight?.valorFreteNumerico ?? undefined,
         deliveryLat: effectiveFreight?.lat ?? undefined,
         deliveryLon: effectiveFreight?.lon ?? undefined,
+        contactPhone:
+          deliveryType === "entrega" && celularValido ? celularDigits : undefined,
         items: items.map(mapItemToApi).filter(Boolean),
       };
 
@@ -517,7 +523,9 @@ function CheckoutPage() {
     items.length > 0 &&
     subtotal > 0 &&
     !isLoading &&
-    (isTotemMode || deliveryType === "retirada" || freight !== null);
+    (isTotemMode ||
+      deliveryType === "retirada" ||
+      (freight !== null && celularValido));
 
   if (isTotemMode && doneTotemOrder) {
     const isCash = !paidTotemOrder;
@@ -969,6 +977,28 @@ function CheckoutPage() {
                         onChange={(e) => setBairro(e.target.value)}
                         className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-secondary focus:outline-none"
                       />
+                    </div>
+
+                    {/* Celular para os avisos da entrega */}
+                    <div className="col-span-2">
+                      <label className="mb-1 block text-xs font-semibold text-gray-600">
+                        Celular (WhatsApp) *
+                      </label>
+                      <input
+                        type="tel"
+                        inputMode="tel"
+                        placeholder="(11) 98765-4321"
+                        value={celular}
+                        onChange={(e) => setCelular(e.target.value)}
+                        className={`w-full rounded-2xl border px-3 py-2.5 text-sm focus:border-secondary focus:outline-none ${
+                          celular && !celularValido ? "border-red-300" : "border-gray-200"
+                        }`}
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        {celular && !celularValido
+                          ? "Digite o DDD e o número."
+                          : "Avisamos por WhatsApp quando o pedido sair para entrega."}
+                      </p>
                     </div>
 
                     {/* Referência */}
