@@ -102,7 +102,8 @@ function formatTime(value) {
   });
 }
 
-function PendingOrderCard({ order, onPay, onRelease, disabled }) {
+function PendingOrderCard({ order, onPay, onRelease, onCancel, disabled }) {
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const origin = getOrigin(order);
   const methodLabel = PAYMENT_METHOD_LABEL[order.paymentMethod];
   const waitingKitchen = canReleaseToKitchen(order);
@@ -193,6 +194,42 @@ function PendingOrderCard({ order, onPay, onRelease, disabled }) {
           Liberar p/ cozinha (paga depois)
         </button>
       )}
+
+      {onCancel &&
+        (confirmCancel ? (
+          <div className="mt-3 flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3">
+            <span className="flex-1 text-sm font-bold text-red-700">
+              Cancelar pedido #{order.id.slice(-6).toUpperCase()}?
+            </span>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => {
+                setConfirmCancel(false);
+                onCancel(order);
+              }}
+              className="ui-btn ui-btn-sm ui-btn-danger"
+            >
+              Sim, cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmCancel(false)}
+              className="ui-btn ui-btn-sm ui-btn-outline"
+            >
+              Não
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => setConfirmCancel(true)}
+            className="mt-2 w-full py-2 text-sm font-bold text-red-500 transition hover:text-red-700 disabled:opacity-40"
+          >
+            Cancelar pedido
+          </button>
+        ))}
     </article>
   );
 }
@@ -243,7 +280,23 @@ export default function CaixaPage() {
       ),
   });
   // A API só deixa admin e funcionário mudar o pagamento para "pagar depois"
+  // e cancelar pedido
   const canRelease = ["ADMIN", "FUNCIONARIO"].includes(user?.role);
+
+  const cancelOrder = useMutation({
+    mutationFn: async ({ orderId }) => api.patch(`/orders/${orderId}/cancel`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["caixa-pending-payments"] });
+      queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
+      toast.success("Pedido cancelado.");
+    },
+    onError: (error) =>
+      toast.error(
+        error?.response?.data?.error?.message ??
+          error?.response?.data?.message ??
+          "Erro ao cancelar pedido.",
+      ),
+  });
 
   const totals = useMemo(() => {
     const pendingTotal = orders.reduce(
@@ -385,7 +438,16 @@ export default function CaixaPage() {
                     ? (o) => releaseToKitchen.mutate({ orderId: o.id })
                     : undefined
                 }
-                disabled={markPaid.isPending || releaseToKitchen.isPending}
+                onCancel={
+                  canRelease
+                    ? (o) => cancelOrder.mutate({ orderId: o.id })
+                    : undefined
+                }
+                disabled={
+                  markPaid.isPending ||
+                  releaseToKitchen.isPending ||
+                  cancelOrder.isPending
+                }
               />
             ))}
           </section>
