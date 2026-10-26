@@ -29,7 +29,7 @@ const fmt = (value) =>
 const MILKSHAKE_LINES = [
   {
     id: "tradicional",
-    title: "Milk Shake",
+    title: "Linha Tradicional",
     productId: "db_milkshake_tradicional",
     sizes: [
       { id: "PEQUENA", label: "P", ml: "300 ml", price: 10 },
@@ -1002,10 +1002,8 @@ function GuidedMenu({
                       fill
                       title={line.title}
                       image={
-                        big
-                          ? ""
-                          : line.flavors.find((flavor) => flavor.imageUrl)?.imageUrl ||
-                            MilkShake1
+                        line.flavors.find((flavor) => flavor.imageUrl)?.imageUrl ||
+                        MilkShake1
                       }
                       detail={`${line.flavors.length} sabores`}
                       price={`a partir de ${fmt(Math.min(...line.sizes.map((size) => size.price)))}`}
@@ -1225,9 +1223,11 @@ function OptionTile({
           ? `items-stretch text-center ${image ? "" : "min-h-40 justify-center"}`
           : fill
           ? `items-center justify-center text-center landscape:h-full ${
-              String(title).length <= 3
-                ? "portrait:aspect-[4/5]"
-                : "portrait:min-h-36 min-[900px]:portrait:aspect-[4/5]"
+              image // com foto a altura vem da foto + texto
+                ? ""
+                : String(title).length <= 3
+                  ? "portrait:aspect-[4/5]"
+                  : "portrait:min-h-36 min-[900px]:portrait:aspect-[4/5]"
             }`
           : ""
       }`}
@@ -1247,7 +1247,13 @@ function OptionTile({
           src={image}
           alt=""
           className={`w-full object-cover ${
-            fill && big ? "min-h-0 flex-1" : big ? "h-44" : fill ? "h-40" : "h-32"
+            fill && big
+              ? "h-[18vh] shrink-0 landscape:h-[14vh]" // proporcional à tela do totem
+              : big
+                ? "h-44"
+                : fill
+                  ? "h-40"
+                  : "h-32"
           }`}
         />
       ) : null}
@@ -1297,7 +1303,15 @@ function OptionTile({
         {price && (
           <span
             className={`font-black text-secondary ${
-              big ? (fill ? "mt-2 whitespace-nowrap text-2xl min-[900px]:text-3xl" : "text-2xl") : fill ? "mt-1 text-lg" : "text-sm"
+              big
+                ? fill
+                  ? `mt-2 text-2xl min-[900px]:text-3xl ${
+                      String(price).length > 12 ? "" : "whitespace-nowrap" // "a partir de R$ ..." quebra
+                    }`
+                  : "text-2xl"
+                : fill
+                  ? "mt-1 text-lg"
+                  : "text-sm"
             }`}
           >
             {price}
