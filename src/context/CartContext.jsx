@@ -181,13 +181,14 @@ export function CartProvider({ children }) {
     );
   };
 
+  // Quantidade 0 tira o item (normalizeItem nunca deixa abaixo de 1)
   const updateQuantity = (key, quantity) => {
     setItems((prev) =>
-      prev
-        .map((item) =>
-          item.key === key ? normalizeItem({ ...item, quantity }) : item,
-        )
-        .filter((item) => item.quantity > 0),
+      quantity <= 0
+        ? prev.filter((item) => item.key !== key)
+        : prev.map((item) =>
+            item.key === key ? normalizeItem({ ...item, quantity }) : item,
+          ),
     );
   };
 
