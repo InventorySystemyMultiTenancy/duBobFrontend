@@ -381,6 +381,28 @@ function tProductField(t, productId, field, fallback) {
 
 // Modal de cadastro e edicao
 
+const NEW_CATEGORY = "__nova_categoria__";
+
+// Categorias para escolher: as das seções do admin primeiro (aparecem mesmo
+// sem nenhum produto ainda) e depois as que já existem nos produtos
+function buildCategoryOptions(existingCategories, current) {
+  const seen = new Set();
+  const options = [];
+  for (const section of GUIDED_ADMIN_SECTIONS) {
+    const category = section.preset?.category;
+    if (!category || seen.has(category)) continue;
+    seen.add(category);
+    options.push({ value: category, label: `${section.label} (${category})` });
+  }
+  for (const category of [...existingCategories].sort((a, b) => a.localeCompare(b))) {
+    if (seen.has(category)) continue;
+    seen.add(category);
+    options.push({ value: category, label: category });
+  }
+  if (current && !seen.has(current)) options.push({ value: current, label: current });
+  return options;
+}
+
 function ProductModal({
   product,
   onClose,
@@ -390,6 +412,7 @@ function ProductModal({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const isEdit = !!product;
+  const [newCategory, setNewCategory] = useState(false);
 
   const [form, setForm] = useState(() => {
     if (!isEdit) return emptyForm(initialValues);
@@ -441,6 +464,11 @@ function ProductModal({
       );
     },
   });
+
+  const categoryOptions = buildCategoryOptions(
+    existingCategories,
+    newCategory ? "" : form.category,
+  );
 
   const validate = () => {
     const errs = {};
@@ -589,23 +617,40 @@ function ProductModal({
             <label className="mb-1 block text-xs uppercase tracking-widest text-smoke">
               {t("ADMIN_PRODUCTS_CATEGORY_LABEL", "Categoria")}
             </label>
-            <input
-              list="category-options"
-              value={form.category}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, category: e.target.value }))
-              }
+            {/* Lista de seleção: as categorias das seções (mesmo vazias, como
+                "Complementos premium") e as que já existem nos produtos */}
+            <select
+              value={newCategory ? NEW_CATEGORY : form.category}
+              onChange={(e) => {
+                if (e.target.value === NEW_CATEGORY) {
+                  setNewCategory(true);
+                  setForm((p) => ({ ...p, category: "" }));
+                  return;
+                }
+                setNewCategory(false);
+                setForm((p) => ({ ...p, category: e.target.value }));
+              }}
               className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-secondary"
-              placeholder={t(
-                "ADMIN_PRODUCTS_CATEGORY_PLACEHOLDER",
-                "Ex: Doce, Salgado, Bebidas...",
-              )}
-            />
-            <datalist id="category-options">
-              {existingCategories.map((cat) => (
-                <option key={cat} value={cat} />
+            >
+              <option value="">Escolha a categoria...</option>
+              {categoryOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
               ))}
-            </datalist>
+              <option value={NEW_CATEGORY}>+ Nova categoria...</option>
+            </select>
+            {newCategory && (
+              <input
+                autoFocus
+                value={form.category}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, category: e.target.value }))
+                }
+                className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-secondary"
+                placeholder="Nome da nova categoria"
+              />
+            )}
           </div>
 
           {/* Available days */}
