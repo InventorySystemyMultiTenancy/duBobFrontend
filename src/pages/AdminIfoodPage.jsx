@@ -133,6 +133,35 @@ export default function AdminIfoodPage() {
               </div>
             </section>
 
+            <section className="ui-card p-5">
+              <h2 className="font-display text-lg font-bold text-primary">
+                Últimos eventos recebidos do iFood
+              </h2>
+              {polling?.eventos?.length ? (
+                <ul className="mt-2 space-y-1 text-sm">
+                  {polling.eventos.map((evento, index) => (
+                    <li key={`${evento.em}-${index}`} className="flex flex-wrap gap-2">
+                      <span className="text-smoke">{formatDateTime(evento.em)}</span>
+                      <strong>{evento.codigo}</strong>
+                      <code className="rounded bg-gray-100 px-2 py-0.5 text-xs">{evento.pedido}</code>
+                      <span
+                        className={
+                          evento.resultado === "ok" ? "text-emerald-700" : "font-bold text-red-600"
+                        }
+                      >
+                        {evento.resultado}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm text-smoke">
+                  Nenhum evento desde que o servidor iniciou. Gere um pedido de teste no portal do
+                  iFood e aguarde até 30 segundos.
+                </p>
+              )}
+            </section>
+
             {lojas && (
               <section className="ui-card p-5">
                 <h2 className="font-display text-lg font-bold text-primary">
