@@ -7,6 +7,8 @@ import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 
 import PageHeader from "../components/PageHeader.jsx";
+
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const emptyForm = (initialValues = {}) => ({
   name: "",
   description: "",
@@ -438,6 +440,52 @@ function ProductModal({
   });
 
   const [errors, setErrors] = useState({});
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  async function handleImageFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Escolha um arquivo de imagem.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast.error("Imagem muito grande (máximo 10 MB).");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const { data } = await api.post("/admin/products/image-upload-signature");
+      const sig = data.data;
+      const body = new FormData();
+      body.append("file", file);
+      body.append("api_key", sig.apiKey);
+      body.append("timestamp", sig.timestamp);
+      body.append("signature", sig.signature);
+      body.append("folder", sig.folder);
+
+      // Envio direto ao Cloudinary (fetch puro: sem o token da nossa API).
+      const res = await fetch(sig.uploadUrl, { method: "POST", body });
+      const result = await res.json();
+      if (!res.ok || !result.secure_url) {
+        throw new Error(result?.error?.message || "Falha no upload");
+      }
+
+      setForm((p) => ({ ...p, imageUrl: result.secure_url }));
+      setErrors((prev) => ({ ...prev, imageUrl: undefined }));
+      toast.success("Imagem enviada!");
+    } catch (err) {
+      toast.error(
+        err.response?.data?.message ||
+          err.message ||
+          "Não foi possível enviar a imagem.",
+      );
+    } finally {
+      setUploadingImage(false);
+    }
+  }
 
   const mutation = useMutation({
     mutationFn: async (payload) => {
@@ -693,14 +741,30 @@ function ProductModal({
                 ? "Foto do sabor ou complemento"
                 : t("ADMIN_PRODUCTS_IMAGE_URL", "URL da Imagem")}
             </label>
-            <input
-              value={form.imageUrl}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, imageUrl: e.target.value }))
-              }
-              className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-secondary"
-              placeholder="https://..."
-            />
+            <div className="flex gap-2">
+              <input
+                value={form.imageUrl}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, imageUrl: e.target.value }))
+                }
+                className="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-secondary"
+                placeholder="https://... ou envie uma foto"
+              />
+              <label
+                className={`shrink-0 cursor-pointer rounded-2xl border border-secondary px-4 py-3 text-sm font-semibold text-secondary hover:bg-secondary/10 ${
+                  uploadingImage ? "pointer-events-none opacity-60" : ""
+                }`}
+              >
+                {uploadingImage ? "Enviando..." : "Enviar foto"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploadingImage}
+                  onChange={handleImageFile}
+                />
+              </label>
+            </div>
             {errors.imageUrl && (
               <p className="mt-1 text-xs text-red-400">{errors.imageUrl}</p>
             )}
@@ -849,7 +913,7 @@ function ProductModal({
             </button>
             <button
               type="submit"
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || uploadingImage}
               className="flex-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 py-3 text-sm font-bold text-[#11161d] transition hover:opacity-90 disabled:opacity-50"
             >
               {mutation.isPending
