@@ -15,13 +15,14 @@ import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 
 import PageHeader from "../components/PageHeader.jsx";
+import { orderNumber } from "../lib/orderNumber.js";
 const DUBOB_WHATSAPP =
   import.meta.env.VITE_DUBOB_WHATSAPP ??
   import.meta.env.VITE_PIZZARIA_WHATSAPP ??
   "5543996714390";
 
 function buildWhatsAppUrl(order, userName, t) {
-  const shortId = `#${order.id.slice(-6).toUpperCase()}`;
+  const shortId = orderNumber(order);
   const date = new Date(order.createdAt).toLocaleString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
@@ -231,8 +232,8 @@ function ClientDashboardPage() {
               >
                 <div>
                   <p className="text-sm font-semibold text-gray-900">
-                    {t("CLIENT_DASHBOARD_ORDER_PREFIX", "Pedido")} #
-                    {order.id.slice(-6).toUpperCase()}
+                    {t("CLIENT_DASHBOARD_ORDER_PREFIX", "Pedido")}{" "}
+                    {orderNumber(order)}
                   </p>
                   <p className="mt-0.5 text-xs text-smoke">
                     {formatDate(order.createdAt)}

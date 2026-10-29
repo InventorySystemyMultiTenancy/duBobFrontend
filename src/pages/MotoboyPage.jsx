@@ -9,6 +9,7 @@ import { useTranslation } from "../context/I18nContext.jsx";
 
 import PageHeader from "../components/PageHeader.jsx";
 import DeliveryMap from "../components/DeliveryMap.jsx";
+import { orderNumber } from "../lib/orderNumber.js";
 
 const SHARE_LOCATION_KEY = "motoboy-share-location";
 
@@ -347,8 +348,8 @@ function MotoboyPage() {
                   {order.user?.name}
                 </p>
                 <p className="mt-0.5 text-xs text-gray-500">
-                  {t("MOTOBOY_ORDER_PREFIX", "Pedido")} #
-                  {order.id.slice(-8).toUpperCase()}
+                  {t("MOTOBOY_ORDER_PREFIX", "Pedido")}{" "}
+                  {orderNumber(order)}
                 </p>
               </div>
               {order.deliveryFee != null && (

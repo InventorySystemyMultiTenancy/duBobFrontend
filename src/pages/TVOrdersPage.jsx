@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api.js";
 import { getCustomerName, isCounterOrder } from "../lib/orderCustomer.js";
+import { orderNumber } from "../lib/orderNumber.js";
 
 // Retirada (totem/balcão) pronta pula o PRONTO e fica em SAIU_PARA_ENTREGA
 // esperando o cliente: na TV ela também aparece como pronta.
@@ -35,7 +36,7 @@ function getOrderCode(order) {
   if (order.comanda?.number) return `COMANDA ${order.comanda.number}`;
   const customerName = getCustomerName(order);
   if (customerName) return customerName;
-  return `PEDIDO ${String(order.id ?? "").slice(-4).toUpperCase()}`;
+  return `PEDIDO ${orderNumber(order)}`;
 }
 
 function getOrderDetail(order) {

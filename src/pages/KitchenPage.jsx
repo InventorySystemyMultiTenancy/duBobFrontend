@@ -27,6 +27,7 @@ import { useTranslation } from "../context/I18nContext.jsx";
 import { parseItemNotes } from "../lib/itemNotes.js";
 import { getCustomerName, isCounterOrder, isIfoodOrder } from "../lib/orderCustomer.js";
 import IfoodOrderPanel from "../components/IfoodOrderPanel.jsx";
+import { orderNumber } from "../lib/orderNumber.js";
 
 const SOUND_STORAGE_KEY = "pc_kitchen_sound_enabled";
 const NEW_ORDER_HIGHLIGHT_MS = 20000;
@@ -391,7 +392,7 @@ function OrderCard({
                 ? t("KITCHEN_MARK_PICKED_UP", "Marcar Retirado")
                 : t(`KITCHEN_NEXT_${order.status}`, NEXT_LABEL[order.status]);
 
-  const orderCode = `#${order.id.slice(-6).toUpperCase()}`;
+  const orderCode = orderNumber(order);
   const title = getKitchenOrderTitle(order, t);
   const subtitle = getKitchenOrderSubtitle(order, t);
   const typeChip = isTotemOrder(order)
@@ -452,7 +453,8 @@ function OrderCard({
           >
             {formatOrderTime(order.createdAt, now)}
           </p>
-          <p className="mt-1 text-xs font-bold tracking-wide text-text-muted">
+          {/* Número do pedido (1 a 1000) em destaque: é por ele que se chama o cliente */}
+          <p className="mt-1 font-display text-xl font-black leading-none text-secondary">
             {orderCode}
           </p>
         </div>
@@ -706,7 +708,7 @@ function OrderCard({
               {t(
                 "KITCHEN_CANCEL_CONFIRM_TEXT",
                 "Cancelar pedido #{{id}}?",
-              ).replace("{{id}}", order.id.slice(-6).toUpperCase())}
+              ).replace("{{id}}", orderNumber(order).slice(1))}
             </span>
             <button
               type="button"
@@ -890,6 +892,7 @@ function KitchenPage() {
 
       setLatestAlert({
         orderId: payload.orderId,
+        number: payload.number,
         timestamp: Date.now(),
       });
 
@@ -1579,7 +1582,7 @@ function KitchenPage() {
                 "Novo pedido {{id}} chegou na fila",
               ).replace(
                 "{{id}}",
-                `#${latestAlert.orderId.slice(-6).toUpperCase()}`,
+                orderNumber({ id: latestAlert.orderId, number: latestAlert.number }),
               )}
             </p>
             <p className="text-xs text-primary">

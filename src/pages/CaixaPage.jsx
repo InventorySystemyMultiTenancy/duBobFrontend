@@ -9,6 +9,7 @@ import { askPaymentMethod } from "../lib/paymentMethodPrompt.js";
 
 import PageHeader from "../components/PageHeader.jsx";
 import { getOrderStatusLabel } from "../lib/orderStatus.js";
+import { orderNumber } from "../lib/orderNumber.js";
 const currency = (value) =>
   Number(value || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -119,7 +120,7 @@ function PendingOrderCard({ order, onPay, onRelease, onCancel, disabled }) {
               {origin.type}
             </span>
             <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600">
-              #{order.id.slice(-6).toUpperCase()}
+              {orderNumber(order)}
             </span>
             {methodLabel && (
               <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-800">
@@ -199,7 +200,7 @@ function PendingOrderCard({ order, onPay, onRelease, onCancel, disabled }) {
         (confirmCancel ? (
           <div className="mt-3 flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3">
             <span className="flex-1 text-sm font-bold text-red-700">
-              Cancelar pedido #{order.id.slice(-6).toUpperCase()}?
+              Cancelar pedido {orderNumber(order)}?
             </span>
             <button
               type="button"

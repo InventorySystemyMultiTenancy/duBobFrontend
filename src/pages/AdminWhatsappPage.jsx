@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
 import PageHeader from "../components/PageHeader.jsx";
 import NoAutofillInput from "../components/NoAutofillInput.jsx";
+import { orderNumber } from "../lib/orderNumber.js";
 
 // Avisos automáticos de WhatsApp do delivery (Evolution API).
 const ETAPAS = [
@@ -370,7 +371,7 @@ export default function AdminWhatsappPage() {
                       <li key={m.id} className="flex items-start justify-between gap-3 py-2">
                         <div className="min-w-0">
                           <p className="font-bold text-primary">
-                            #{String(m.orderId).slice(-6).toUpperCase()} ·{" "}
+                            {orderNumber({ id: m.orderId, number: m.orderNumber })} ·{" "}
                             {ETAPAS.find((e) => e.id === m.etapa)?.label ?? m.etapa}
                           </p>
                           <p className="text-xs text-smoke">

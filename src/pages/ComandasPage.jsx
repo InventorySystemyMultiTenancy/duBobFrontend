@@ -9,6 +9,7 @@ import { getRoleHome } from "../lib/roleHome.js";
 import { askPaymentMethod } from "../lib/paymentMethodPrompt.js";
 
 import PageHeader from "../components/PageHeader.jsx";
+import { orderNumber } from "../lib/orderNumber.js";
 const currency = (value) =>
   Number(value || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -456,7 +457,7 @@ export default function ComandasPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-bold text-primary">
-                            Pedido #{order.id.slice(-6).toUpperCase()}
+                            Pedido {orderNumber(order)}
                           </p>
                           <p className="text-xs text-gray-500">
                             {new Date(order.createdAt).toLocaleTimeString(

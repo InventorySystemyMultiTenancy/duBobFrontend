@@ -23,6 +23,7 @@ import {
   getWaiterCalls,
   subscribeToWaiterCalls,
 } from "../lib/waiterCallsStore.js";
+import { orderNumber } from "../lib/orderNumber.js";
 
 const currency = (v) =>
   Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -682,7 +683,7 @@ function AdminPanelPage() {
               >
                 <div>
                   <p className="font-semibold text-gray-900">
-                    #{order.id.slice(-6).toUpperCase()}
+                    {orderNumber(order)}
                   </p>
                   <p className="mt-0.5 text-xs text-smoke">
                     {t(`ORDER_STATUS_${order.status}`, order.status)}
@@ -738,7 +739,7 @@ function AdminPanelPage() {
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-amber-700">
-                  #{order.id.slice(-6).toUpperCase()} ·{" "}
+                  {orderNumber(order)} ·{" "}
                   {t(
                     `PAYMENT_STATUS_${order.paymentStatus ?? "PENDENTE"}`,
                     order.paymentStatus ?? "PENDENTE",

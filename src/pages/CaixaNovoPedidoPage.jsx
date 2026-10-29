@@ -12,6 +12,7 @@ import {
 } from "../lib/paidComplements.js";
 import { MenuBuilder } from "./CardapioPage.jsx";
 import { useMenuProducts } from "../lib/useMenuProducts.js";
+import { orderNumber } from "../lib/orderNumber.js";
 
 const PAYMENT_METHODS = [
   { id: "DINHEIRO", label: "💵 Dinheiro" },
@@ -78,7 +79,7 @@ export default function CaixaNovoPedidoPage() {
         })
       ).data?.data,
     onSuccess: (order) => {
-      setLastOrder({ id: order?.id ?? "", name: customerName.trim() });
+      setLastOrder({ id: order?.id ?? "", number: order?.number, name: customerName.trim() });
       toast.success("Pedido enviado para a cozinha!");
       clearCart();
       setCustomerName("");
@@ -118,7 +119,7 @@ export default function CaixaNovoPedidoPage() {
         <aside className="h-fit space-y-4 rounded-3xl bg-white p-5 shadow-card ring-1 ring-primary/5 xl:sticky xl:top-6">
           {lastOrder && (
             <p className="rounded-2xl bg-green-50 px-4 py-3 text-sm font-bold text-green-800">
-              ✓ Pedido #{lastOrder.id.slice(-6).toUpperCase()} de {lastOrder.name}{" "}
+              ✓ Pedido {orderNumber(lastOrder)} de {lastOrder.name}{" "}
               enviado para a cozinha.
             </p>
           )}

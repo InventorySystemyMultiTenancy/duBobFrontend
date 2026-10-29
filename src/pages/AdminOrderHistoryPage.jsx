@@ -8,6 +8,7 @@ import { askPaymentMethod } from "../lib/paymentMethodPrompt.js";
 
 import PageHeader from "../components/PageHeader.jsx";
 import { getOrderStatusLabel } from "../lib/orderStatus.js";
+import { orderNumber } from "../lib/orderNumber.js";
 const STATUS_CLASS = {
   RECEBIDO: "bg-blue-100 text-blue-700",
   PREPARANDO: "bg-yellow-100 text-yellow-700",
@@ -419,7 +420,7 @@ function AdminOrderHistoryPage() {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="shrink-0 text-xs font-bold text-gray-500 uppercase tracking-wide">
-                      #{order.id.slice(-6).toUpperCase()}
+                      {orderNumber(order)}
                     </span>
                     <span className="truncate text-sm font-semibold text-gray-900">
                       {order.user?.name ??

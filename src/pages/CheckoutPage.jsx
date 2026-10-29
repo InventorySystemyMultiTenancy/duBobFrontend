@@ -19,6 +19,7 @@ import {
 import { spokenOrder, useTotemVoice } from "../lib/totemVoice.js";
 
 import PageHeader from "../components/PageHeader.jsx";
+import { orderNumber } from "../lib/orderNumber.js";
 const POLL_INTERVAL_MS = 4000;
 const TOTEM_DONE_SECONDS = 20;
 // Pagar em dinheiro no caixa pelo totem: desligado por enquanto
@@ -107,6 +108,8 @@ function CheckoutPage() {
     isTotemMode ? getTotemPendingOrder() : null,
   );
   const [paidTotemOrder, setPaidTotemOrder] = useState(null);
+  // Número de 1 a 1000 do pedido em espera (vem da consulta do pagamento)
+  const [waitingOrderNumber, setWaitingOrderNumber] = useState(null);
   // Totem: escolheu pagar em dinheiro, o pedido espera no caixa
   const [cashTotemOrder, setCashTotemOrder] = useState(null);
   const doneTotemOrder = paidTotemOrder || cashTotemOrder;
@@ -224,6 +227,7 @@ function CheckoutPage() {
         const order = res.data?.data || res.data;
         const status = order?.paymentStatus;
         setPollStatus(status);
+        setWaitingOrderNumber(order?.number ?? null);
         if (status === "APROVADO") {
           clearInterval(pollRef.current);
           clearCart();
@@ -572,7 +576,7 @@ function CheckoutPage() {
               Numero do pedido
             </p>
             <p className="mt-2 text-6xl font-black text-secondary">
-              #{doneTotemOrder.id.slice(-6).toUpperCase()}
+              {orderNumber(doneTotemOrder)}
             </p>
             <p className="mt-5 text-sm font-black uppercase tracking-[0.22em] text-text-muted">
               Nome
@@ -663,7 +667,7 @@ function CheckoutPage() {
             </p>
           ) : null}
           <p className="mt-4 rounded-xl bg-gray-50 px-4 py-2 font-mono text-xs text-smoke">
-            Pedido: #{waitingOrderId.slice(-8).toUpperCase()}
+            Pedido: {orderNumber({ id: waitingOrderId, number: waitingOrderNumber })}
           </p>
           <p className="mt-3 text-xs text-smoke">
             {t(

@@ -13,6 +13,7 @@ import {
   getWaiterCalls,
   subscribeToWaiterCalls,
 } from "../lib/waiterCallsStore.js";
+import { orderNumber } from "../lib/orderNumber.js";
 
 const ACTIVE_STATUSES = ["RECEBIDO", "PREPARANDO", "PRONTO", "LEVAR_PARA_MESA"];
 
@@ -209,7 +210,7 @@ function TerminalChargeModal({ order, onClose }) {
           Cobrança na maquininha
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          Pedido #{order.id.slice(-6).toUpperCase()} - {currency(order.total)}
+          Pedido {orderNumber(order)} - {currency(order.total)}
         </p>
 
         {terminalMutation.isPending ? (
@@ -907,7 +908,7 @@ export default function AtendentePanel() {
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="font-display text-lg text-primary">
-                            Pedido #{order.id.slice(-6).toUpperCase()}
+                            Pedido {orderNumber(order)}
                           </p>
                           <p className="text-xs text-gray-500">
                             {selectedMesa?.name ?? "Mesa"} •{" "}
@@ -981,7 +982,7 @@ export default function AtendentePanel() {
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="font-display text-lg text-primary">
-                            Pedido #{order.id.slice(-6).toUpperCase()}
+                            Pedido {orderNumber(order)}
                           </p>
                           <p className="text-xs text-gray-400">
                             {formatRelativeTime(order.createdAt)}

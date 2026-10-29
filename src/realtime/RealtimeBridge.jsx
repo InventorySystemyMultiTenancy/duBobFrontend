@@ -10,6 +10,7 @@ import { useAuth } from "../hooks/useAuth.js";
 import { incrementStaffUnreadCount } from "../lib/staffAlertsStore.js";
 import { appendWaiterCall } from "../lib/waiterCallsStore.js";
 import { getOrderStatusLabel } from "../lib/orderStatus.js";
+import { orderNumber } from "../lib/orderNumber.js";
 
 const STAFF_ROLES = new Set([
   "ADMIN",
@@ -131,12 +132,12 @@ export default function RealtimeBridge() {
         dispatchRealtimeEvent("pc:order-created", payload);
         if (getDesktopNotificationsEnabled()) {
           showDesktopNotification("Novo pedido na fila", {
-            body: `Pedido #${payload.orderId.slice(-6).toUpperCase()} aguardando atendimento.`,
+            body: `Pedido ${orderNumber({ id: payload.orderId, number: payload.number })} aguardando atendimento.`,
             tag: `order-created-${payload.orderId}`,
           });
         }
         toast.success(
-          `Novo pedido #${payload.orderId.slice(-6).toUpperCase()}`,
+          `Novo pedido ${orderNumber({ id: payload.orderId, number: payload.number })}`,
         );
       }
     };

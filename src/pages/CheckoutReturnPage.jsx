@@ -5,6 +5,7 @@ import { useCart } from "../context/CartContext.jsx";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
 import { TOTEM_SLUG_KEY } from "../lib/totemMode.js";
+import { orderNumber } from "../lib/orderNumber.js";
 
 const TOTEM_DONE_SECONDS = 20;
 
@@ -82,8 +83,8 @@ function CheckoutReturnPage() {
             </p>
             {orderId && (
               <p className="mt-3 rounded-xl bg-gray-50 px-4 py-2 font-mono text-xs text-smoke">
-                {t("CHECKOUT_RETURN_ORDER_PREFIX", "Pedido")}: #
-                {orderId.slice(-8).toUpperCase()}
+                {t("CHECKOUT_RETURN_ORDER_PREFIX", "Pedido")}:{" "}
+                {orderNumber({ id: orderId })}
               </p>
             )}
             <Link
