@@ -356,14 +356,14 @@ function TotemPage() {
         onClick={handleIntroClick}
       >
         <img
-          src="/acai.png"
+          src="/acai.webp"
           alt="Dubob"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <video
           className="absolute inset-0 h-full w-full object-cover"
           src="/totem.mp4"
-          poster="/acai.png"
+          poster="/acai.webp"
           autoPlay
           muted
           loop

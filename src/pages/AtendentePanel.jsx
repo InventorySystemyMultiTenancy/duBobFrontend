@@ -1,4 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { cloudinaryImage } from "../lib/cloudinaryImage.js";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -78,7 +79,7 @@ function AttendantProductCard({
       >
         {showPhoto && imageUrl ? (
           <img
-            src={imageUrl}
+            src={cloudinaryImage(imageUrl, 600)}
             alt={product.name}
             className="h-36 w-full object-cover"
           />

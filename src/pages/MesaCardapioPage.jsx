@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { cloudinaryImage } from "../lib/cloudinaryImage.js";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
@@ -34,7 +35,7 @@ function MenuCard({ product, onClick }) {
         {imageUrl ? (
           <div className="relative">
             <img
-              src={imageUrl}
+              src={cloudinaryImage(imageUrl, 200)}
               alt={name}
               className="h-20 w-20 rounded-3xl object-cover"
               onError={(event) => {
@@ -220,12 +221,13 @@ function MesaCardapioPage() {
               {t("FECHAR", "Fechar")}
             </button>
             <img
-              src={
+              src={cloudinaryImage(
                 selectedProduct.imageUrl ||
-                selectedProduct.image ||
-                selectedProduct.photo ||
-                ""
-              }
+                  selectedProduct.image ||
+                  selectedProduct.photo ||
+                  "",
+                1200,
+              )}
               alt={t(
                 `PRODUCT_${String(selectedProduct.id ?? "")}_NAME`,
                 selectedProduct.name,

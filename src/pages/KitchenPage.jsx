@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { cloudinaryImage } from "../lib/cloudinaryImage.js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
@@ -520,7 +521,7 @@ function OrderCard({
                 </p>
                 {image && (
                   <img
-                    src={image}
+                    src={cloudinaryImage(image, 200)}
                     alt=""
                     className="h-16 w-16 shrink-0 rounded-xl object-cover"
                   />

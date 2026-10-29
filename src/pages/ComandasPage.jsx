@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { cloudinaryImage } from "../lib/cloudinaryImage.js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
 import toast from "react-hot-toast";
@@ -321,7 +322,7 @@ export default function ComandasPage() {
                 >
                   {product.imageUrl ? (
                     <img
-                      src={product.imageUrl}
+                      src={cloudinaryImage(product.imageUrl, 200)}
                       alt={product.name}
                       className="h-16 w-16 rounded-xl object-cover"
                     />

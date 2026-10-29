@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { cloudinaryImage } from "../lib/cloudinaryImage.js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Link, useSearchParams } from "react-router-dom";
@@ -1123,7 +1124,7 @@ function ProductCard({ product, onEdit }) {
     >
       {product.imageUrl ? (
         <img
-          src={product.imageUrl}
+          src={cloudinaryImage(product.imageUrl, 600)}
           alt={productName}
           className="mb-3 h-32 w-full rounded-xl object-cover"
           onError={(e) => (e.currentTarget.style.display = "none")}

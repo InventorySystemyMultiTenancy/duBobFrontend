@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { cloudinaryImage } from "../lib/cloudinaryImage.js";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import CartDrawer from "../components/CartDrawer.jsx";
@@ -8,8 +9,8 @@ import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
-import MilkShake1 from "/milkshake1.png";
-import acai1 from "/acai1.png";
+import MilkShake1 from "/milkshake1.webp";
+import acai1 from "/acai1.webp";
 
 import PageHeader from "../components/PageHeader.jsx";
 import TotemSideMenu from "../components/TotemSideMenu.jsx";
@@ -1273,7 +1274,7 @@ function OptionTile({
       )}
       {image ? (
         <img
-          src={image}
+          src={cloudinaryImage(image)}
           alt=""
           className={`w-full object-cover ${
             fill && big
@@ -1516,7 +1517,7 @@ function ProductChoiceButton({ image, alt, title, description, large, onClick })
       }`}
     >
       <img
-        src={image}
+        src={cloudinaryImage(image)}
         alt={alt}
         className={`w-full object-cover ${
           large ? "min-h-0 flex-1" : "h-64 sm:h-72 lg:h-80"
