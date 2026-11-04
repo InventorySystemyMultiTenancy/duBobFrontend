@@ -65,6 +65,15 @@ const ADMIN_GROUPS = [
         category: "sabor acai",
       },
       {
+        id: "acai_sugestoes",
+        label: "Sugestão",
+        item: "sugestão",
+        kind: "priced",
+        where:
+          "Passo 3 do açaí, ANTES de todos os complementos: sugestões da casa, cada uma com seu preço. Já vêm cadastradas desligadas: defina o preço e ative as que quiser.",
+        category: "complemento acai sugestao",
+      },
+      {
         id: "acai_complementos",
         label: "Complementos inclusos",
         item: "complemento",
@@ -174,6 +183,9 @@ const ALL_SECTIONS = [
   ),
   ORPHAN_SECTION,
 ];
+// "Nova sugestão", "Nova linha", "Novo complemento"
+const newLabel = (item) => `${/(a|ão)$/.test(item) ? "Nova" : "Novo"} ${item}`;
+
 const sectionById = (id) =>
   ALL_SECTIONS.find((section) => section.id === id) ?? ALL_SECTIONS[0];
 
@@ -338,6 +350,7 @@ function sectionIdOfProduct(product) {
   if (category.includes("sabor milkshake alcool")) return "milkshake_alcoolico";
   if (category.includes("sabor acai")) return "acai_sabores";
   if (category.includes("complemento acai premium")) return "acai_complementos_premium";
+  if (category.includes("complemento acai sugestao")) return "acai_sugestoes";
   if (category.includes("complemento acai")) return "acai_complementos";
   if (category.includes("complemento milkshake")) return "milkshake_complementos";
   if (!isConfigCategory(product.category)) return "outros";
@@ -462,15 +475,23 @@ function Thumb({ product, size = "h-12 w-12" }) {
   );
 }
 
-function ActiveSwitch({ product, actions }) {
+// requirePrice: item cobrado à parte só pode ser ativado com preço
+function ActiveSwitch({ product, actions, requirePrice = false }) {
   const on = product.isActive;
+  const hasPrice = Number(product.sizes?.[0]?.price) > 0;
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
       disabled={actions.toggleActive.isPending}
-      onClick={() => actions.toggleActive.mutate()}
+      onClick={() => {
+        if (!on && requirePrice && !hasPrice) {
+          toast.error("Defina o preço primeiro e toque em Salvar; depois ative.");
+          return;
+        }
+        actions.toggleActive.mutate();
+      }}
       title={on ? "Aparece no cardápio. Toque para esconder." : "Escondido. Toque para mostrar no cardápio."}
       className="flex shrink-0 items-center gap-2 disabled:opacity-50"
     >
@@ -590,7 +611,7 @@ function PricedRow({ product, onEdit, showSection = false }) {
             {currentPrice ? `Cobrado ${fmt(currentPrice)} a mais` : "⚠️ Sem preço: não aparece para o cliente"}
           </p>
         </div>
-        <ActiveSwitch product={product} actions={actions} />
+        <ActiveSwitch product={product} actions={actions} requirePrice />
       </div>
       <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
       <form
@@ -883,7 +904,7 @@ function ProductModal({ product, initialSectionId, onClose }) {
           {section.label}
         </p>
         <h2 className="mt-1 font-display text-2xl font-bold text-primary">
-          {isEdit ? `Editar ${section.item}` : `Novo ${section.item}`}
+          {isEdit ? `Editar ${section.item}` : newLabel(section.item)}
         </h2>
 
         <form onSubmit={onSubmit} className="mt-5 space-y-5">
@@ -1471,7 +1492,7 @@ function AdminProductsPage() {
                           onClick={() => setModal({ product: null, sectionId: section.id })}
                           className="rounded-full bg-secondary px-5 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-primary"
                         >
-                          + Novo {section.item}
+                          + {newLabel(section.item)}
                         </button>
                       )}
                     </div>

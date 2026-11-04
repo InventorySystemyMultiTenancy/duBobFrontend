@@ -17,6 +17,7 @@ import TotemSideMenu from "../components/TotemSideMenu.jsx";
 import { useMenuProducts } from "../lib/useMenuProducts.js";
 import {
   ACAI_PREMIUM_CATEGORY,
+  ACAI_SUGGESTION_CATEGORY,
   paidComplementOptions,
 } from "../lib/paidComplements.js";
 import {
@@ -292,14 +293,16 @@ function buildAcaiOptions(products) {
         Number(normalizeText(a.name) === "tradicional"),
     ),
     complements: productOptionsByCategory(
-      products.filter(
-        (product) => !normalizeText(product.category).includes("premium"),
-      ),
+      products.filter((product) => {
+        const category = normalizeText(product.category);
+        return !category.includes("premium") && !category.includes("sugestao");
+      }),
       "complemento acai",
       ACAI_COMPLEMENTS,
     ),
-    // Premium não entra nos 4 inclusos: cada um soma o próprio preço
+    // Premium e Sugestão não entram nos 4 inclusos: cada um soma o próprio preço
     premiumComplements: paidComplementOptions(products, ACAI_PREMIUM_CATEGORY),
+    suggestionComplements: paidComplementOptions(products, ACAI_SUGGESTION_CATEGORY),
   };
 }
 
@@ -1096,6 +1099,49 @@ function GuidedMenu({
                 </div>
               )}
 
+              {/* Sugestões da casa: antes de todos os complementos, cobradas à parte */}
+              {productType === "acai" &&
+                step === "complementos" &&
+                acaiOptions.suggestionComplements.length > 0 && (
+                  <div className={big ? "mb-8" : "mb-6"}>
+                    <h3
+                      className={`font-black text-primary ${big ? "text-3xl" : "text-xl"}`}
+                    >
+                      💡 Sugestão
+                    </h3>
+                    <p
+                      className={`mb-4 font-bold text-text-muted ${big ? "text-xl" : "text-sm"}`}
+                    >
+                      Não entram nos 4 inclusos: cada um é cobrado à parte.
+                    </p>
+                    <div className={manyOptionsGrid(big)}>
+                      {acaiOptions.suggestionComplements.map((complement) => (
+                        <OptionTile
+                          key={complement.id}
+                          big={big}
+                          title={complement.name}
+                          price={`+ ${fmt(complement.price)}`}
+                          image={complement.imageUrl || (big ? "" : acai1)}
+                          selected={selectedPremium.some(
+                            (item) => item.id === complement.id,
+                          )}
+                          onClick={() => togglePremium(complement)}
+                        />
+                      ))}
+                    </div>
+                    <h3
+                      className={`mt-8 font-black text-primary ${big ? "text-3xl" : "text-xl"}`}
+                    >
+                      Complementos inclusos
+                    </h3>
+                    <p
+                      className={`mb-4 font-bold text-text-muted ${big ? "text-xl" : "text-sm"}`}
+                    >
+                      Escolha 4 complementos inclusos no valor.
+                    </p>
+                  </div>
+                )}
+
               {productType === "acai" && step === "complementos" && (
                 <div className={manyOptionsGrid(big)}>
                   {acaiOptions.complements.map((complement) => {
@@ -1170,7 +1216,7 @@ function GuidedMenu({
                       extraComplements ? " (inclui + R$ 5,00)" : ""
                     }${
                       selectedPremium.length
-                        ? ` + ${selectedPremium.length} premium`
+                        ? ` + ${selectedPremium.length} cobrado(s) à parte`
                         : ""
                     }`
                   : "Escolha pelo menos 1 complemento"

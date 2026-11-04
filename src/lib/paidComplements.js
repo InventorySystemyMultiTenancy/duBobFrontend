@@ -2,6 +2,8 @@
 // (o preço é o do tamanho cadastrado). A API soma o preço no item do pedido.
 export const MILKSHAKE_COMPLEMENT_CATEGORY = "complemento milkshake";
 export const ACAI_PREMIUM_CATEGORY = "complemento acai premium";
+// Sugestões da casa: aparecem antes de todos os complementos, cada uma com seu preço
+export const ACAI_SUGGESTION_CATEGORY = "complemento acai sugestao";
 
 const normalizeText = (value) =>
   String(value ?? "")
