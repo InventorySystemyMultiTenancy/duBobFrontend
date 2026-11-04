@@ -104,16 +104,20 @@ function CartDrawer() {
         aria-hidden="true"
       />
 
+      {/* Carrinho abre no meio da tela (janela), não mais na lateral */}
+      <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6">
       <aside
-        className={`fixed right-0 top-0 z-[100] flex h-[100dvh] w-full ${isTotemMode ? "max-w-2xl" : "max-w-md"} transform flex-col bg-white text-text-main shadow-2xl transition-transform duration-300 ease-in-out sm:rounded-l-[2rem] ${
-          isCartOpen ? "translate-x-0" : "translate-x-full"
+        className={`flex max-h-[92dvh] w-full ${isTotemMode ? "max-w-3xl" : "max-w-lg"} transform flex-col overflow-hidden rounded-[2rem] bg-white text-text-main shadow-2xl transition duration-300 ease-out ${
+          isCartOpen
+            ? "pointer-events-auto scale-100 opacity-100"
+            : "pointer-events-none scale-95 opacity-0"
         }`}
         role="dialog"
         aria-modal="true"
         aria-label={t("CART_TITLE", "Seu carrinho")}
         aria-hidden={!isCartOpen}
       >
-        <header className="relative overflow-hidden bg-primary px-5 py-5 text-white sm:rounded-tl-[2rem] sm:px-6">
+        <header className="relative overflow-hidden bg-primary px-5 py-5 text-white sm:px-6">
           <div
             className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full bg-secondary/40 blur-2xl"
             aria-hidden="true"
@@ -244,6 +248,7 @@ function CartDrawer() {
           </footer>
         )}
       </aside>
+      </div>
     </>
   );
 }
