@@ -176,26 +176,17 @@ const ACAI_SIZES = [
 
 const ACAI_FLAVORS = ["Tradicional", "Chocolate", "Trufa Branca", "Iogurte Grego"];
 
+// Reserva (só se a API não trouxer complementos): os inclusos no valor do copo
 const ACAI_COMPLEMENTS = [
-  "Morango",
-  "Banana",
-  "Kiwi",
   "Leite Condensado",
   "Leite em Po",
-  "Ovomaltine",
-  "Choco Wafer",
-  "Ganache Branco",
-  "Ganache Preto",
-  "Mini Confete",
-  "Granulado",
   "Granola",
-  "Cookies Cream",
-  "Wafer Branco",
-  "Creme de Amendoim",
   "Amendoim Triturado",
-  "Creme de Leite Ninho",
-  "Choco Wafer Branco",
-  "Chocolate com Avela",
+  "Granulado",
+  "Cobertura de Chocolate",
+  "Cobertura de Morango",
+  "Cobertura de Caramelo",
+  "Banana",
 ];
 
 // Cadastrado pelo backend ao subir (server.js); o preço vale do banco no pedido.

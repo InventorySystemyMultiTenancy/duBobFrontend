@@ -298,10 +298,13 @@ const DEFAULT_SECTION_IMPORTS = {
   acai_complementos: [
     "Leite Condensado",
     "Leite em Po",
-    "Banana",
     "Granola",
-    "Granulado",
     "Amendoim Triturado",
+    "Granulado",
+    "Cobertura de Chocolate",
+    "Cobertura de Morango",
+    "Cobertura de Caramelo",
+    "Banana",
   ],
 };
 
