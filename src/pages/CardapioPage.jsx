@@ -795,7 +795,7 @@ function GuidedMenu({
         ? "Toque no tamanho."
         : step === "sabor"
           ? `Copo ${sizeHint(selectedAcaiSize)}. Toque no sabor.`
-          : `Toque para marcar ou desmarcar. 4 estão inclusos; do 5º ao 8º custa R$ 5,00 a mais.${
+          : `Toque para marcar ou desmarcar. Escolha 4 complementos inclusos no valor.${
               acaiOptions.premiumComplements.length
                 ? " Premium é cobrado à parte."
                 : ""
