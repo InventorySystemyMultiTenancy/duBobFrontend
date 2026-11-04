@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { cloudinaryImage } from "../lib/cloudinaryImage.js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import { api } from "../lib/api.js";
 import { useTranslation } from "../context/I18nContext.jsx";
@@ -10,19 +10,6 @@ import { useTranslation } from "../context/I18nContext.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-const emptyForm = (initialValues = {}) => ({
-  name: "",
-  description: "",
-  imageUrl: "",
-  category: "",
-  availableDays: [],
-  ...initialValues,
-  sizes: initialValues.sizes ?? [emptySize()],
-});
-
-function getPrimarySize(product) {
-  return product?.sizes?.[0] ?? null;
-}
 
 function emptySize() {
   return {
@@ -33,112 +20,180 @@ function emptySize() {
   };
 }
 
+// Código interno do tamanho (a API usa estes 4) com o nome que o dono entende
 const SIZE_OPTIONS = [
-  { value: "PEQUENA", label: "PEQUENA" },
-  { value: "MEDIA", label: "MEDIA" },
-  { value: "GRANDE", label: "GRANDE" },
-  { value: "FAMILIA", label: "FAMILIA" },
+  { value: "PEQUENA", label: "P · Pequeno" },
+  { value: "MEDIA", label: "M · Médio" },
+  { value: "GRANDE", label: "G · Grande" },
+  { value: "FAMILIA", label: "MG · Mega" },
 ];
 
-// Traducao automatica de produtos
 const WEEKDAY_OPTIONS = [
   { value: "MON", label: "Seg" },
   { value: "TUE", label: "Ter" },
   { value: "WED", label: "Qua" },
   { value: "THU", label: "Qui" },
   { value: "FRI", label: "Sex" },
-  { value: "SAT", label: "Sab" },
+  { value: "SAT", label: "Sáb" },
   { value: "SUN", label: "Dom" },
 ];
 
-const GUIDED_ADMIN_SECTIONS = [
+// Seções do cadastro, na ordem do pedido. kind diz como a seção é mostrada:
+// - "product": produto com tamanhos e preços (copo de açaí, linhas de milk shake)
+// - "list": itens escolhidos no pedido sem custo extra (sabores, complementos inclusos)
+// - "priced": itens cobrados à parte (complementos premium, turbinar milk shake)
+const ADMIN_GROUPS = [
   {
-    id: "all",
-    label: "Tudo",
-    description: "Todos os cadastros do sistema.",
+    id: "acai",
+    label: "Açaí",
+    icon: "🍇",
+    sections: [
+      {
+        id: "acai_copo",
+        label: "Copo e tamanhos",
+        item: "copo",
+        kind: "product",
+        fixed: true,
+        where: "Passo 1 do açaí: os tamanhos P, M, G e MG e o preço de cada um.",
+      },
+      {
+        id: "acai_sabores",
+        label: "Sabores",
+        item: "sabor",
+        kind: "list",
+        where: "Passo 2 do açaí: o cliente escolhe 1 sabor.",
+        category: "sabor acai",
+      },
+      {
+        id: "acai_complementos",
+        label: "Complementos inclusos",
+        item: "complemento",
+        kind: "list",
+        where:
+          "Passo 3 do açaí: os 4 primeiros complementos escolhidos já estão inclusos no valor do copo.",
+        category: "complemento acai",
+      },
+      {
+        id: "acai_complementos_premium",
+        label: "Complementos premium",
+        item: "complemento premium",
+        kind: "priced",
+        where:
+          "Passo 3 do açaí, em ⭐ Premium: não entram nos 4 inclusos; cada um soma o próprio preço.",
+        category: "complemento acai premium",
+      },
+    ],
   },
   {
-    id: "bases",
-    label: "Bases e tamanhos",
-    description: "Produtos base usados para calcular valor e enviar o pedido.",
-    preset: { category: "Base cardapio" },
+    id: "milkshake",
+    label: "Milk shake",
+    icon: "🥤",
+    sections: [
+      {
+        id: "milkshake_linhas",
+        label: "Linhas e tamanhos",
+        item: "linha",
+        kind: "product",
+        fixed: true,
+        where:
+          "Passos 1 e 2 do milk shake: as linhas (Tradicional, Especial...) e o preço de cada tamanho.",
+      },
+      {
+        id: "milkshake_tradicional",
+        label: "Sabores · Tradicional",
+        item: "sabor",
+        kind: "list",
+        where: "Passo 3 do milk shake, quando o cliente escolhe a linha Tradicional.",
+        category: "sabor milkshake tradicional",
+      },
+      {
+        id: "milkshake_especial",
+        label: "Sabores · Especial",
+        item: "sabor",
+        kind: "list",
+        where: "Passo 3 do milk shake, na Linha Especial.",
+        category: "sabor milkshake especial",
+      },
+      {
+        id: "milkshake_premium",
+        label: "Sabores · Premium",
+        item: "sabor",
+        kind: "list",
+        where: "Passo 3 do milk shake, na Linha Premium.",
+        category: "sabor milkshake premium",
+      },
+      {
+        id: "milkshake_alcoolico",
+        label: "Sabores · Alcoólica",
+        item: "sabor",
+        kind: "list",
+        where: "Passo 3 do milk shake, na Linha Alcoólica.",
+        category: "sabor milkshake alcoolico",
+      },
+      {
+        id: "milkshake_complementos",
+        label: "Turbinar (adicionais)",
+        item: "adicional",
+        kind: "priced",
+        where:
+          "No carrinho, embaixo do milk shake: o cliente pode turbinar e cada adicional soma o próprio preço.",
+        category: "complemento milkshake",
+      },
+    ],
   },
   {
-    id: "milkshake_tradicional",
-    label: "Sabores milk shake",
-    description: "Sabores da linha tradicional do milk shake.",
-    preset: {
-      category: "sabor milkshake tradicional",
-      sizes: [{ ...emptySize(), label: "Config", price: "0" }],
-    },
-  },
-  {
-    id: "milkshake_especial",
-    label: "Linha especial",
-    description: "Sabores da linha especial.",
-    preset: {
-      category: "sabor milkshake especial",
-      sizes: [{ ...emptySize(), label: "Config", price: "0" }],
-    },
-  },
-  {
-    id: "milkshake_premium",
-    label: "Linha premium",
-    description: "Sabores premium.",
-    preset: {
-      category: "sabor milkshake premium",
-      sizes: [{ ...emptySize(), label: "Config", price: "0" }],
-    },
-  },
-  {
-    id: "milkshake_alcoolico",
-    label: "Linha alcoolica",
-    description: "Sabores alcoolicos.",
-    preset: {
-      category: "sabor milkshake alcoolico",
-      sizes: [{ ...emptySize(), label: "Config", price: "0" }],
-    },
-  },
-  {
-    id: "acai_sabores",
-    label: "Sabores acai",
-    description: "Sabores que aparecem depois do tamanho do acai.",
-    preset: {
-      category: "sabor acai",
-      sizes: [{ ...emptySize(), label: "Config", price: "0" }],
-    },
-  },
-  {
-    id: "acai_complementos",
-    label: "Complementos",
-    description: "Complementos selecionaveis na montagem do acai.",
-    preset: {
-      category: "complemento acai",
-      sizes: [{ ...emptySize(), label: "Config", price: "0" }],
-    },
-  },
-  {
-    id: "acai_complementos_premium",
-    label: "Complementos premium",
-    description:
-      "Complementos premium do acai: nao entram nos 4 inclusos, sao cobrados pelo preco de cada um.",
-    preset: {
-      category: "complemento acai premium",
-      sizes: [{ ...emptySize(), size: "PEQUENA", label: "Adicional", price: "3" }],
-    },
-  },
-  {
-    id: "milkshake_complementos",
-    label: "Complementos milk shake",
-    description:
-      "Turbine o milk shake: aparecem no carrinho embaixo do milk shake e somam o preco de cada um.",
-    preset: {
-      category: "complemento milkshake",
-      sizes: [{ ...emptySize(), size: "PEQUENA", label: "Adicional", price: "3" }],
-    },
+    id: "outros",
+    label: "Outros",
+    icon: "📦",
+    sections: [
+      {
+        id: "outros",
+        label: "Outros produtos",
+        item: "produto",
+        kind: "product",
+        where: "Produtos avulsos (ex.: itens do iFood e cadastros antigos).",
+        category: "",
+      },
+    ],
   },
 ];
 
+// Itens em categorias que o cardápio não usa (não aparecem para o cliente).
+const ORPHAN_SECTION = {
+  id: "fora",
+  label: "Fora do cardápio",
+  item: "item",
+  kind: "list",
+  where:
+    "Estes itens estão numa categoria que o cardápio não usa, então NÃO aparecem para o cliente. Em Editar, escolha em \"Onde aparece\" a seção certa, ou desative.",
+};
+
+const ALL_SECTIONS = [
+  ...ADMIN_GROUPS.flatMap((group) =>
+    group.sections.map((section) => ({ ...section, group })),
+  ),
+  ORPHAN_SECTION,
+];
+const sectionById = (id) =>
+  ALL_SECTIONS.find((section) => section.id === id) ?? ALL_SECTIONS[0];
+
+// Seções que podem ser escolhidas em "Onde aparece" (as fixas não)
+const MOVABLE_SECTIONS = ALL_SECTIONS.filter(
+  (section) => section.category !== undefined && !section.fixed,
+);
+
+// Links antigos (?secao=bases, ?secao=all) continuam funcionando
+const LEGACY_SECTION_IDS = { bases: "acai_copo", all: "acai_copo" };
+
+const ACAI_BASE_IDS = new Set(["db_acai_copo", "db_acai_tradicional"]);
+const MILKSHAKE_BASE_IDS = new Set([
+  "db_milkshake_tradicional",
+  "db_milkshake_especial",
+  "db_milkshake_alcoolico",
+  "db_milkshake_premium",
+]);
+
+// "Importar padrão": nomes sugeridos para seções ainda vazias
 const DEFAULT_SECTION_IMPORTS = {
   milkshake_tradicional: [
     "Abacaxi",
@@ -239,53 +294,25 @@ const DEFAULT_SECTION_IMPORTS = {
     "Kit Kat",
   ],
   acai_sabores: ["Tradicional", "Chocolate", "Trufa Branca", "Iogurte Grego"],
+  // Inclusos no valor do copo; os demais complementos são premium
   acai_complementos: [
-    "Morango",
-    "Banana",
-    "Kiwi",
     "Leite Condensado",
     "Leite em Po",
-    "Ovomaltine",
-    "Choco Wafer",
-    "Ganache Branco",
-    "Ganache Preto",
-    "Mini Confete",
-    "Granulado",
+    "Banana",
     "Granola",
-    "Cookies Cream",
-    "Wafer Branco",
-    "Creme de Amendoim",
+    "Granulado",
     "Amendoim Triturado",
-    "Creme de Leite Ninho",
-    "Choco Wafer Branco",
-    "Chocolate com Avela",
   ],
 };
-
-const BASE_PRODUCT_IDS = new Set([
-  "db_milkshake_tradicional",
-  "db_milkshake_especial",
-  "db_milkshake_alcoolico",
-  "db_milkshake_premium",
-  "db_acai_copo",
-  "db_acai_tradicional",
-  "db_acai_extra_complementos",
-]);
 
 const normalizeText = (value) =>
   String(value ?? "")
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[̀-ͯ]/g, "");
 
-// Complementos cobrados à parte: o valor do tamanho é o preço do adicional.
-function isPaidComplementCategory(category) {
-  const normalized = normalizeText(category);
-  return (
-    normalized.includes("complemento milkshake") ||
-    normalized.includes("complemento acai premium")
-  );
-}
+const fmt = (value) =>
+  Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function isConfigCategory(category) {
   const normalized = normalizeText(category);
@@ -296,45 +323,22 @@ function isConfigCategory(category) {
   );
 }
 
-function productMatchesAdminSection(product, sectionId) {
+// Em qual seção o produto aparece. Usa as mesmas regras do cardápio
+// (CardapioPage), para o admin mostrar só o que o cliente realmente vê.
+function sectionIdOfProduct(product) {
   const category = normalizeText(product.category);
-  if (sectionId === "all") return true;
-  if (sectionId === "bases") {
-    return BASE_PRODUCT_IDS.has(product.id) || !isConfigCategory(product.category);
-  }
-  if (sectionId === "milkshake_tradicional") {
-    return category.includes("sabor milkshake tradicional");
-  }
-  if (sectionId === "milkshake_especial") {
-    return category.includes("sabor milkshake especial");
-  }
-  if (sectionId === "milkshake_premium") {
-    return category.includes("sabor milkshake premium");
-  }
-  if (sectionId === "milkshake_alcoolico") {
-    return category.includes("sabor milkshake alcool");
-  }
-  if (sectionId === "acai_sabores") {
-    return (
-      category.includes("sabor acai") ||
-      category.includes("sabores acai") ||
-      category.includes("sabor do acai") ||
-      category.includes("sabores do acai")
-    );
-  }
-  if (sectionId === "acai_complementos_premium") {
-    return category.includes("complemento acai premium");
-  }
-  if (sectionId === "acai_complementos") {
-    return (
-      (category.includes("complemento acai") || category.includes("adicionais acai")) &&
-      !category.includes("premium")
-    );
-  }
-  if (sectionId === "milkshake_complementos") {
-    return category.includes("complemento milkshake");
-  }
-  return true;
+  if (ACAI_BASE_IDS.has(product.id)) return "acai_copo";
+  if (MILKSHAKE_BASE_IDS.has(product.id)) return "milkshake_linhas";
+  if (category.includes("sabor milkshake tradicional")) return "milkshake_tradicional";
+  if (category.includes("sabor milkshake especial")) return "milkshake_especial";
+  if (category.includes("sabor milkshake premium")) return "milkshake_premium";
+  if (category.includes("sabor milkshake alcool")) return "milkshake_alcoolico";
+  if (category.includes("sabor acai")) return "acai_sabores";
+  if (category.includes("complemento acai premium")) return "acai_complementos_premium";
+  if (category.includes("complemento acai")) return "acai_complementos";
+  if (category.includes("complemento milkshake")) return "milkshake_complementos";
+  if (!isConfigCategory(product.category)) return "outros";
+  return "fora";
 }
 
 function formatAvailableDays(days) {
@@ -345,107 +349,381 @@ function formatAvailableDays(days) {
   return days.map((day) => labelByValue[day] ?? day).join(", ");
 }
 
-function isDebugEnabled() {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem("i18n_debug") === "1";
-}
-
-function debugLog(...args) {
-  if (isDebugEnabled()) {
-    console.log("[I18N_DEBUG][AdminProducts]", ...args);
-  }
-}
-
-function normalizeCategoryKey(cat) {
-  return `CAT_${(cat ?? "GERAL")
-    .toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "_")
-    .replace(/[^A-Z0-9_]/g, "")}`;
+function sizeLabel(size) {
+  return (
+    size.label ||
+    SIZE_OPTIONS.find((option) => option.value === size.size)?.label ||
+    size.size
+  );
 }
 
 function tProductField(t, productId, field, fallback) {
   const id = String(productId ?? "");
-  const lowerKey = `PRODUCT_${id}_${field}`;
-  const upperKey = `PRODUCT_${id.toUpperCase()}_${field}`;
-  const upperValue = t(upperKey, fallback);
-  const resolved = t(lowerKey, upperValue);
-  debugLog("tProductField", {
-    productId: id,
-    field,
-    lowerKey,
-    upperKey,
-    resolved,
-    fallback,
-  });
-  return resolved;
+  const upperValue = t(`PRODUCT_${id.toUpperCase()}_${field}`, fallback);
+  return t(`PRODUCT_${id}_${field}`, upperValue);
 }
 
-// Modal de cadastro e edicao
-
-const NEW_CATEGORY = "__nova_categoria__";
-
-// Categorias para escolher: as das seções do admin primeiro (aparecem mesmo
-// sem nenhum produto ainda) e depois as que já existem nos produtos
-function buildCategoryOptions(existingCategories, current) {
-  const seen = new Set();
-  const options = [];
-  for (const section of GUIDED_ADMIN_SECTIONS) {
-    const category = section.preset?.category;
-    if (!category || seen.has(category)) continue;
-    seen.add(category);
-    options.push({ value: category, label: `${section.label} (${category})` });
-  }
-  for (const category of [...existingCategories].sort((a, b) => a.localeCompare(b))) {
-    if (seen.has(category)) continue;
-    seen.add(category);
-    options.push({ value: category, label: category });
-  }
-  if (current && !seen.has(current)) options.push({ value: current, label: current });
-  return options;
-}
-
-function ProductModal({
-  product,
-  onClose,
-  existingCategories = [],
-  initialValues = {},
-}) {
+// Ações de um produto (ativar/desativar, excluir, salvar preço) usadas nas linhas e cartões
+function useProductActions(product) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const isEdit = !!product;
-  const [newCategory, setNewCategory] = useState(false);
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["admin-products"] });
 
-  const [form, setForm] = useState(() => {
-    if (!isEdit) return emptyForm(initialValues);
-    return {
-      name: product.name,
-      description: product.description ?? "",
-      imageUrl: product.imageUrl ?? "",
-      category: product.category ?? "",
-      availableDays: Array.isArray(product.availableDays)
-        ? product.availableDays
-        : [],
-      sizes:
-        product.sizes?.length > 0
-          ? product.sizes.map((size) => ({
-              size: size.size ?? "MEDIA",
-              label: size.label ?? "",
-              price: size.price != null ? String(size.price) : "",
-              costPrice:
-                size.costPrice != null ? String(size.costPrice) : "",
-            }))
-          : [emptySize()],
-    };
+  const toggleActive = useMutation({
+    mutationFn: async () => {
+      if (product.isActive) {
+        await api.delete(`/admin/products/${product.id}`);
+      } else {
+        await api.patch(`/admin/products/${product.id}/restore`);
+      }
+    },
+    onSuccess: () => {
+      refresh();
+      toast.success(product.isActive ? "Desativado: não aparece mais no cardápio." : "Ativado: já aparece no cardápio.");
+    },
+    onError: () => toast.error(t("ADMIN_PRODUCTS_STATUS_ERROR", "Falha ao alterar status")),
   });
 
+  const deleteProduct = useMutation({
+    mutationFn: async () => {
+      await api.delete(`/admin/products/${product.id}/permanent`);
+    },
+    onSuccess: () => {
+      refresh();
+      toast.success("Excluído.");
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.error?.message || "Falha ao excluir. Desative para esconder do cardápio.",
+      );
+    },
+  });
+
+  const confirmDelete = async () => {
+    const result = await Swal.fire({
+      title: `Excluir "${product.name}"?`,
+      text: "Remove o cadastro de vez. Itens que já foram vendidos não podem ser excluídos (desative em vez disso).",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sim, excluir",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+    });
+    if (result.isConfirmed) deleteProduct.mutate();
+  };
+
+  // Preço de item cobrado à parte = preço do primeiro tamanho
+  const savePrice = useMutation({
+    mutationFn: async (price) => {
+      const first = product.sizes?.[0] ?? {};
+      await api.put(`/admin/products/${product.id}`, {
+        category: product.category,
+        sizes: [
+          {
+            size: first.size ?? "PEQUENA",
+            label: first.label || "Adicional",
+            price: Number(price),
+            ...(first.costPrice != null ? { costPrice: Number(first.costPrice) } : {}),
+          },
+        ],
+      });
+    },
+    onSuccess: () => {
+      refresh();
+      toast.success("Preço salvo.");
+    },
+    onError: (error) =>
+      toast.error(error?.response?.data?.message || "Não foi possível salvar o preço."),
+  });
+
+  return { toggleActive, confirmDelete, deleteProduct, savePrice };
+}
+
+function Thumb({ product, size = "h-12 w-12" }) {
+  const [failed, setFailed] = useState(false);
+  return product.imageUrl && !failed ? (
+    <img
+      src={cloudinaryImage(product.imageUrl, 160)}
+      alt=""
+      className={`${size} shrink-0 rounded-xl object-cover`}
+      onError={() => setFailed(true)}
+    />
+  ) : (
+    <span
+      className={`${size} flex shrink-0 items-center justify-center rounded-xl bg-accent text-lg font-black text-primary/50`}
+      aria-hidden="true"
+    >
+      {String(product.name ?? "?").trim().charAt(0).toUpperCase()}
+    </span>
+  );
+}
+
+function ActiveSwitch({ product, actions }) {
+  const on = product.isActive;
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      disabled={actions.toggleActive.isPending}
+      onClick={() => actions.toggleActive.mutate()}
+      title={on ? "Aparece no cardápio. Toque para esconder." : "Escondido. Toque para mostrar no cardápio."}
+      className="flex shrink-0 items-center gap-2 disabled:opacity-50"
+    >
+      <span
+        className={`relative h-6 w-11 rounded-full transition ${on ? "bg-green-500" : "bg-gray-300"}`}
+      >
+        <span
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${
+            on ? "left-[1.375rem]" : "left-0.5"
+          }`}
+        />
+      </span>
+      <span className={`w-14 text-left text-xs font-bold ${on ? "text-green-700" : "text-gray-500"}`}>
+        {on ? "Ativo" : "Oculto"}
+      </span>
+    </button>
+  );
+}
+
+function RowActions({ product, actions, onEdit, extra }) {
+  return (
+    <div className="flex shrink-0 items-center gap-2">
+      {extra}
+      <button
+        type="button"
+        onClick={() => onEdit(product)}
+        className="rounded-full border border-primary/15 px-3 py-1.5 text-xs font-bold text-primary transition hover:bg-primary/5"
+      >
+        Editar
+      </button>
+      {!product.isActive && (
+        <button
+          type="button"
+          disabled={actions.deleteProduct.isPending}
+          onClick={actions.confirmDelete}
+          className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-bold text-red-500 transition hover:bg-red-50 disabled:opacity-50"
+        >
+          Excluir
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Linha de item escolhido sem custo extra (sabor, complemento incluso) ou fora do cardápio
+function ListRow({ product, onEdit, onMakePremium, showCategory = false, showSection = false }) {
+  const { t } = useTranslation();
+  const actions = useProductActions(product);
+  const name = tProductField(t, product.id, "NAME", product.name);
+  const days = formatAvailableDays(product.availableDays);
+  const section = sectionById(sectionIdOfProduct(product));
+
+  return (
+    <div
+      className={`min-w-0 rounded-2xl border p-3 transition ${
+        product.isActive ? "border-gray-200 bg-white" : "border-dashed border-gray-200 bg-gray-50"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <Thumb product={product} />
+        <div className={`min-w-0 flex-1 ${product.isActive ? "" : "opacity-60"}`}>
+          <p className="truncate font-bold text-gray-900">{name}</p>
+          <p className="truncate text-xs text-gray-500">
+            {showSection && `${section.group ? `${section.group.label} › ` : ""}${section.label} · `}
+            {showCategory && `Categoria "${product.category || "sem categoria"}" · `}
+            {days}
+          </p>
+        </div>
+        <ActiveSwitch product={product} actions={actions} />
+      </div>
+      <div className="mt-2 flex justify-end">
+      <RowActions
+        product={product}
+        actions={actions}
+        onEdit={onEdit}
+        extra={
+          onMakePremium && product.isActive ? (
+            <button
+              type="button"
+              onClick={() => onMakePremium(product)}
+              title="Passa a ser cobrado à parte, com preço próprio"
+              className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 transition hover:bg-amber-100"
+            >
+              ⭐ Tornar premium
+            </button>
+          ) : null
+        }
+      />
+      </div>
+    </div>
+  );
+}
+
+// Linha de item cobrado à parte, com o preço editável ali mesmo
+function PricedRow({ product, onEdit, showSection = false }) {
+  const { t } = useTranslation();
+  const actions = useProductActions(product);
+  const name = tProductField(t, product.id, "NAME", product.name);
+  const currentPrice = Number(product.sizes?.[0]?.price ?? 0);
+  const [price, setPrice] = useState(currentPrice ? String(currentPrice) : "");
+  const dirty = price !== "" && Number(price) !== currentPrice;
+  const invalid = price !== "" && !(Number(price) > 0);
+  const section = sectionById(sectionIdOfProduct(product));
+
+  return (
+    <div
+      className={`min-w-0 rounded-2xl border p-3 transition ${
+        product.isActive ? "border-gray-200 bg-white" : "border-dashed border-gray-200 bg-gray-50"
+      } ${!currentPrice && product.isActive ? "ring-2 ring-amber-300" : ""}`}
+    >
+      <div className="flex items-center gap-3">
+        <Thumb product={product} />
+        <div className={`min-w-0 flex-1 ${product.isActive ? "" : "opacity-60"}`}>
+          <p className="truncate font-bold text-gray-900">{name}</p>
+          <p className="truncate text-xs text-gray-500">
+            {showSection && `${section.group ? `${section.group.label} › ` : ""}${section.label} · `}
+            {currentPrice ? `Cobrado ${fmt(currentPrice)} a mais` : "⚠️ Sem preço: não aparece para o cliente"}
+          </p>
+        </div>
+        <ActiveSwitch product={product} actions={actions} />
+      </div>
+      <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+      <form
+        className="flex items-center gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (dirty && !invalid) actions.savePrice.mutate(price);
+        }}
+      >
+        <label className="flex items-center rounded-xl border border-gray-200 bg-gray-50 px-2 focus-within:border-secondary">
+          <span className="text-xs font-bold text-gray-500">R$</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0"
+            value={price}
+            onChange={(event) => setPrice(event.target.value)}
+            aria-label={`Preço de ${name}`}
+            placeholder="0,00"
+            className="w-20 bg-transparent px-1.5 py-2 text-sm font-bold text-gray-900 outline-none"
+          />
+        </label>
+        {dirty && (
+          <button
+            type="submit"
+            disabled={invalid || actions.savePrice.isPending}
+            className="rounded-full bg-secondary px-3 py-2 text-xs font-bold text-white transition hover:bg-primary disabled:opacity-50"
+          >
+            {actions.savePrice.isPending ? "Salvando..." : "Salvar"}
+          </button>
+        )}
+      </form>
+      <RowActions product={product} actions={actions} onEdit={onEdit} />
+      </div>
+    </div>
+  );
+}
+
+// Cartão de produto com tamanhos e preços (copo de açaí, linhas de milk shake, avulsos)
+function ProductCard({ product, onEdit }) {
+  const { t } = useTranslation();
+  const actions = useProductActions(product);
+  const name = tProductField(t, product.id, "NAME", product.name);
+  const description = product.description
+    ? tProductField(t, product.id, "DESC", product.description)
+    : null;
+
+  return (
+    <article
+      className={`flex min-w-0 flex-col rounded-3xl border p-4 transition ${
+        product.isActive ? "border-gray-200 bg-white shadow-card" : "border-dashed border-gray-200 bg-gray-50"
+      }`}
+    >
+      <div className={`flex items-start gap-3 ${product.isActive ? "" : "opacity-60"}`}>
+        <Thumb product={product} size="h-16 w-16" />
+        <div className="min-w-0 flex-1">
+          <h3 className="font-display text-lg font-bold leading-tight text-primary">{name}</h3>
+          {description && <p className="mt-0.5 line-clamp-2 text-xs text-gray-500">{description}</p>}
+          <p className="mt-1 text-xs text-gray-400">{formatAvailableDays(product.availableDays)}</p>
+        </div>
+      </div>
+
+      <table className={`mt-3 w-full text-sm ${product.isActive ? "" : "opacity-60"}`}>
+        <thead>
+          <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">
+            <th className="pb-1 font-bold">Tamanho</th>
+            <th className="pb-1 text-right font-bold">Preço</th>
+            <th className="pb-1 text-right font-bold">Custo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(product.sizes ?? []).map((size) => (
+            <tr key={size.id ?? size.size} className="border-t border-gray-100">
+              <td className="py-1.5 font-semibold text-gray-800">{sizeLabel(size)}</td>
+              <td className="py-1.5 text-right font-bold text-secondary">{fmt(size.price)}</td>
+              <td className="py-1.5 text-right text-gray-500">
+                {size.costPrice != null ? fmt(size.costPrice) : "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3">
+        <ActiveSwitch product={product} actions={actions} />
+        <RowActions product={product} actions={actions} onEdit={onEdit} />
+      </div>
+    </article>
+  );
+}
+
+// Formulário de cadastro e edição. Mostra só os campos que fazem sentido para
+// o tipo de item: sabor/complemento incluso (sem preço), item cobrado à parte
+// (um preço) ou produto com tamanhos (tabela de preços).
+function ProductModal({ product, initialSectionId, onClose }) {
+  const queryClient = useQueryClient();
+  const isEdit = Boolean(product);
+  const startSectionId = initialSectionId ?? (product ? sectionIdOfProduct(product) : "outros");
+  const startSection = sectionById(startSectionId);
+  const firstSize = product?.sizes?.[0];
+
+  const [form, setForm] = useState(() => ({
+    name: product?.name ?? "",
+    description: product?.description ?? "",
+    imageUrl: product?.imageUrl ?? "",
+    sectionId: startSectionId,
+    // Categoria livre só para "Outros produtos" e itens fora do cardápio
+    category:
+      startSection.category !== undefined && startSection.id !== "outros"
+        ? startSection.category
+        : product?.category ?? "",
+    availableDays: Array.isArray(product?.availableDays) ? product.availableDays : [],
+    extraPrice:
+      startSection.kind === "priced" && Number(firstSize?.price) > 0 ? String(firstSize.price) : "",
+    extraCost: firstSize?.costPrice != null ? String(firstSize.costPrice) : "",
+    sizes:
+      product?.sizes?.length > 0
+        ? product.sizes.map((size) => ({
+            size: size.size ?? "MEDIA",
+            label: size.label ?? "",
+            price: size.price != null ? String(size.price) : "",
+            costPrice: size.costPrice != null ? String(size.costPrice) : "",
+          }))
+        : [emptySize()],
+  }));
   const [errors, setErrors] = useState({});
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  async function handleImageFile(e) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
+  const section = sectionById(form.sectionId);
+  const kind = section.kind;
+  const set = (patch) => setForm((current) => ({ ...current, ...patch }));
+
+  async function handleImageFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Escolha um arquivo de imagem.");
@@ -473,16 +751,10 @@ function ProductModal({
       if (!res.ok || !result.secure_url) {
         throw new Error(result?.error?.message || "Falha no upload");
       }
-
-      setForm((p) => ({ ...p, imageUrl: result.secure_url }));
-      setErrors((prev) => ({ ...prev, imageUrl: undefined }));
-      toast.success("Imagem enviada!");
+      set({ imageUrl: result.secure_url });
+      toast.success("Foto enviada!");
     } catch (err) {
-      toast.error(
-        err.response?.data?.message ||
-          err.message ||
-          "Não foi possível enviar a imagem.",
-      );
+      toast.error(err.response?.data?.message || err.message || "Não foi possível enviar a foto.");
     } finally {
       setUploadingImage(false);
     }
@@ -490,273 +762,343 @@ function ProductModal({
 
   const mutation = useMutation({
     mutationFn: async (payload) => {
-      if (isEdit) {
-        const res = await api.put(`/admin/products/${product.id}`, payload);
-        return res.data;
-      }
-      const res = await api.post("/admin/products", payload);
+      const res = isEdit
+        ? await api.put(`/admin/products/${product.id}`, payload)
+        : await api.post("/admin/products", payload);
       return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-      toast.success(
-        isEdit
-          ? t("ADMIN_PRODUCTS_UPDATED", "Produto atualizado!")
-          : t("ADMIN_PRODUCTS_CREATED", "Produto criado!"),
-      );
+      toast.success(isEdit ? "Salvo!" : "Cadastrado!");
       onClose();
     },
     onError: (err) => {
-      toast.error(
-        err?.response?.data?.message ??
-          t("ADMIN_PRODUCTS_SAVE_ERROR", "Erro ao salvar produto"),
-      );
+      toast.error(err?.response?.data?.message ?? "Erro ao salvar.");
     },
   });
 
-  const categoryOptions = buildCategoryOptions(
-    existingCategories,
-    newCategory ? "" : form.category,
-  );
+  const chooseSection = (sectionId) => {
+    const next = sectionById(sectionId);
+    set({
+      sectionId,
+      category: next.id === "outros" ? form.category : next.category ?? form.category,
+    });
+  };
+
+  const updateSizeRow = (index, patch) =>
+    set({ sizes: form.sizes.map((size, i) => (i === index ? { ...size, ...patch } : size)) });
+
+  const addSizeRow = () => {
+    const used = new Set(form.sizes.map((size) => size.size));
+    const nextOption = SIZE_OPTIONS.find((option) => !used.has(option.value)) ?? SIZE_OPTIONS[0];
+    set({ sizes: [...form.sizes, { ...emptySize(), size: nextOption.value }] });
+  };
+
+  const removeSizeRow = (index) =>
+    set({ sizes: form.sizes.length > 1 ? form.sizes.filter((_, i) => i !== index) : form.sizes });
+
+  const toggleDay = (day) =>
+    set({
+      availableDays: form.availableDays.includes(day)
+        ? form.availableDays.filter((value) => value !== day)
+        : [...form.availableDays, day],
+    });
+
+  const buildSizes = () => {
+    const first = form.sizes[0] ?? emptySize();
+    if (kind === "list") {
+      return [{ size: first.size || "MEDIA", label: "Config", price: 0 }];
+    }
+    if (kind === "priced") {
+      return [
+        {
+          size: first.size || "PEQUENA",
+          label: "Adicional",
+          price: Number(form.extraPrice),
+          ...(form.extraCost !== "" ? { costPrice: Number(form.extraCost) } : {}),
+        },
+      ];
+    }
+    return form.sizes.map((size) => ({
+      size: size.size,
+      label: size.label.trim() || undefined,
+      price: Number(size.price),
+      ...(size.costPrice !== "" ? { costPrice: Number(size.costPrice) } : {}),
+    }));
+  };
 
   const validate = () => {
     const errs = {};
-    if (!form.name.trim()) errs.name = "Nome obrigatorio";
-    if (!form.sizes.length) errs.sizes = "Informe ao menos um tamanho";
-    const configItem = isConfigCategory(form.category);
-    const usedSizes = new Set();
-    form.sizes.forEach((size, index) => {
-      if (usedSizes.has(size.size)) errs[`size_${index}`] = "Tamanho repetido";
-      usedSizes.add(size.size);
-      if (
-        size.price === "" ||
-        isNaN(Number(size.price)) ||
-        Number(size.price) < 0 ||
-        (!configItem && Number(size.price) <= 0)
-      ) {
-        errs[`price_${index}`] = configItem
-          ? "Preco invalido"
-          : "Preco precisa ser maior que zero";
-      }
-      if (
-        size.costPrice !== "" &&
-        (isNaN(Number(size.costPrice)) || Number(size.costPrice) < 0)
-      ) {
-        errs[`cost_${index}`] = "Custo invalido";
-      }
-    });
-    if (form.imageUrl && !/^https?:\/\/.+/.test(form.imageUrl))
-      errs.imageUrl = "URL invalida (deve comecar com http)";
+    if (form.name.trim().length < 2) errs.name = "Escreva o nome (pelo menos 2 letras).";
+    if (kind === "priced" && !(Number(form.extraPrice) > 0)) {
+      errs.extraPrice = "Informe o preço cobrado a mais.";
+    }
+    if (form.extraCost !== "" && Number(form.extraCost) < 0) errs.extraCost = "Custo inválido.";
+    if (kind === "product") {
+      const used = new Set();
+      form.sizes.forEach((size, index) => {
+        if (used.has(size.size)) errs[`size_${index}`] = "Tamanho repetido.";
+        used.add(size.size);
+        if (!(Number(size.price) > 0)) errs[`price_${index}`] = "Preço maior que zero.";
+        if (size.costPrice !== "" && Number(size.costPrice) < 0) errs[`cost_${index}`] = "Custo inválido.";
+      });
+    }
+    if (form.imageUrl && !/^https?:\/\/.+/.test(form.imageUrl)) {
+      errs.imageUrl = "Link inválido (deve começar com http).";
+    }
     setErrors(errs);
     return !Object.keys(errs).length;
   };
 
-  const toggleAvailableDay = (day) => {
-    setForm((prev) => ({
-      ...prev,
-      availableDays: prev.availableDays.includes(day)
-        ? prev.availableDays.filter((value) => value !== day)
-        : [...prev.availableDays, day],
-    }));
-  };
-
-  const updateSizeRow = (index, patch) => {
-    setForm((prev) => ({
-      ...prev,
-      sizes: prev.sizes.map((size, i) =>
-        i === index ? { ...size, ...patch } : size,
-      ),
-    }));
-  };
-
-  const addSizeRow = () => {
-    setForm((prev) => {
-      const used = new Set(prev.sizes.map((size) => size.size));
-      const nextOption =
-        SIZE_OPTIONS.find((option) => !used.has(option.value)) ??
-        SIZE_OPTIONS[0];
-      return {
-        ...prev,
-        sizes: [...prev.sizes, { ...emptySize(), size: nextOption.value }],
-      };
-    });
-  };
-
-  const removeSizeRow = (index) => {
-    setForm((prev) => ({
-      ...prev,
-      sizes:
-        prev.sizes.length > 1
-          ? prev.sizes.filter((_, i) => i !== index)
-          : prev.sizes,
-    }));
-  };
-
-  const onSubmit = (e) => {
-    e.preventDefault();
+  const onSubmit = (event) => {
+    event.preventDefault();
     if (!validate()) return;
-    const payload = {
+    mutation.mutate({
       name: form.name.trim(),
       description: form.description.trim() || undefined,
       imageUrl: form.imageUrl.trim() || undefined,
       category: form.category.trim() || undefined,
       availableDays: form.availableDays,
       waiterOnly: false,
-      sizes: form.sizes.map((size) => ({
-        size: size.size,
-        label: size.label.trim() || undefined,
-        price: Number(size.price),
-        ...(size.costPrice !== "" ? { costPrice: Number(size.costPrice) } : {}),
-      })),
-    };
-    mutation.mutate(payload);
+      sizes: buildSizes(),
+    });
   };
+
+  const inputCls =
+    "w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-secondary";
+  const labelCls = "mb-1 block text-sm font-bold text-gray-800";
+  const hintCls = "mt-1 text-xs text-gray-500";
+  const errorCls = "mt-1 text-xs font-semibold text-red-500";
+  const canMove = !section.fixed;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4">
-      <div className="fixed inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative z-10 my-auto w-full max-w-2xl rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-5 shadow-2xl sm:p-6">
-        <h2 className="font-display text-2xl text-primary">
-          {isEdit
-            ? t("ADMIN_PRODUCTS_EDIT_TITLE", "Editar Produto")
-            : t("ADMIN_PRODUCTS_NEW_TITLE", "Novo Produto")}
+      <div className="fixed inset-0 bg-black/60" onClick={onClose} />
+      <div className="relative z-10 my-auto w-full max-w-2xl rounded-3xl bg-white p-5 shadow-2xl sm:p-7">
+        <p className="text-xs font-bold uppercase tracking-widest text-secondary">
+          {section.group ? `${section.group.icon} ${section.group.label} › ` : ""}
+          {section.label}
+        </p>
+        <h2 className="mt-1 font-display text-2xl font-bold text-primary">
+          {isEdit ? `Editar ${section.item}` : `Novo ${section.item}`}
         </h2>
 
-        <form onSubmit={onSubmit} className="mt-5 space-y-4">
-          {/* Name */}
+        <form onSubmit={onSubmit} className="mt-5 space-y-5">
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-widest text-smoke">
-              {t("ADMIN_PRODUCTS_NAME_LABEL", "Nome *")}
-            </label>
+            <label className={labelCls} htmlFor="product-name">Nome</label>
             <input
+              id="product-name"
               value={form.name}
-              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-              className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-secondary"
-              placeholder={t(
-                "ADMIN_PRODUCTS_NAME_PLACEHOLDER",
-                "Ex: Calabresa Imperial",
-              )}
+              onChange={(event) => set({ name: event.target.value })}
+              className={inputCls}
+              placeholder={kind === "product" ? "Ex.: Açaí no copo" : "Ex.: Morango"}
             />
-            {errors.name && (
-              <p className="mt-1 text-xs text-red-400">{errors.name}</p>
-            )}
+            {errors.name && <p className={errorCls}>{errors.name}</p>}
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="mb-1 block text-xs uppercase tracking-widest text-smoke">
-              {t("ADMIN_PRODUCTS_DESCRIPTION_LABEL", "Descricao")}
-            </label>
-            <textarea
-              value={form.description}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, description: e.target.value }))
-              }
-              rows={2}
-              className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-secondary"
-              placeholder={t(
-                "ADMIN_PRODUCTS_DESCRIPTION_PLACEHOLDER",
-                "Breve descricao do sabor...",
+          {canMove && (
+            <div>
+              <label className={labelCls} htmlFor="product-section">Onde aparece no pedido</label>
+              <select
+                id="product-section"
+                value={form.sectionId}
+                onChange={(event) => chooseSection(event.target.value)}
+                className={`${inputCls} ${form.sectionId === "fora" ? "border-amber-400 bg-amber-50" : ""}`}
+              >
+                {form.sectionId === "fora" && (
+                  <option value="fora" disabled>
+                    ⚠️ Fora do cardápio: escolha onde aparece
+                  </option>
+                )}
+                {ADMIN_GROUPS.map((group) => (
+                  <optgroup key={group.id} label={`${group.icon} ${group.label}`}>
+                    {group.sections
+                      .filter((s) => MOVABLE_SECTIONS.some((m) => m.id === s.id))
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.label}
+                          {s.kind === "priced" ? " (cobrado à parte)" : ""}
+                        </option>
+                      ))}
+                  </optgroup>
+                ))}
+              </select>
+              <p className={hintCls}>{section.where}</p>
+              {form.sectionId === "outros" && (
+                <div className="mt-2">
+                  <input
+                    value={form.category}
+                    onChange={(event) => set({ category: event.target.value })}
+                    className={inputCls}
+                    placeholder="Categoria (opcional), ex.: Bebidas"
+                  />
+                </div>
               )}
-            />
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="mb-1 block text-xs uppercase tracking-widest text-smoke">
-              {t("ADMIN_PRODUCTS_CATEGORY_LABEL", "Categoria")}
-            </label>
-            {/* Lista de seleção: as categorias das seções (mesmo vazias, como
-                "Complementos premium") e as que já existem nos produtos */}
-            <select
-              value={newCategory ? NEW_CATEGORY : form.category}
-              onChange={(e) => {
-                if (e.target.value === NEW_CATEGORY) {
-                  setNewCategory(true);
-                  setForm((p) => ({ ...p, category: "" }));
-                  return;
-                }
-                setNewCategory(false);
-                setForm((p) => ({ ...p, category: e.target.value }));
-              }}
-              className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-secondary"
-            >
-              <option value="">Escolha a categoria...</option>
-              {categoryOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-              <option value={NEW_CATEGORY}>+ Nova categoria...</option>
-            </select>
-            {newCategory && (
-              <input
-                autoFocus
-                value={form.category}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, category: e.target.value }))
-                }
-                className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-secondary"
-                placeholder="Nome da nova categoria"
-              />
-            )}
-          </div>
-
-          {/* Available days */}
-          <div>
-            <label className="mb-2 block text-xs uppercase tracking-widest text-smoke">
-              Dias em que aparece no cardapio
-            </label>
-            <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
-              {WEEKDAY_OPTIONS.map((day) => {
-                const checked = form.availableDays.includes(day.value);
-                return (
-                  <label
-                    key={day.value}
-                    className={`flex cursor-pointer items-center justify-center rounded-xl border px-2 py-2 text-xs font-semibold transition ${
-                      checked
-                        ? "border-secondary bg-secondary text-white"
-                        : "border-gray-200 bg-gray-100 text-gray-700 hover:border-secondary/40"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleAvailableDay(day.value)}
-                      className="sr-only"
-                    />
-                    {day.label}
-                  </label>
-                );
-              })}
             </div>
-            <p className="mt-1 text-xs text-smoke">
-              Se nao marcar nenhum dia, o produto aparece todos os dias.
-            </p>
-          </div>
+          )}
 
-          {/* Image URL */}
+          {kind === "priced" && (
+            <div className="grid gap-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 sm:grid-cols-2">
+              <div>
+                <label className={labelCls} htmlFor="extra-price">Preço cobrado a mais</label>
+                <div className="flex items-center rounded-2xl border border-gray-200 bg-white px-3 focus-within:border-secondary">
+                  <span className="text-sm font-bold text-gray-500">R$</span>
+                  <input
+                    id="extra-price"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    value={form.extraPrice}
+                    onChange={(event) => set({ extraPrice: event.target.value })}
+                    className="w-full bg-transparent px-2 py-3 text-sm font-bold text-gray-900 outline-none"
+                    placeholder="0,00"
+                  />
+                </div>
+                {errors.extraPrice && <p className={errorCls}>{errors.extraPrice}</p>}
+              </div>
+              <div>
+                <label className={labelCls} htmlFor="extra-cost">
+                  Custo <span className="font-normal text-gray-500">(opcional)</span>
+                </label>
+                <div className="flex items-center rounded-2xl border border-gray-200 bg-white px-3 focus-within:border-secondary">
+                  <span className="text-sm font-bold text-gray-500">R$</span>
+                  <input
+                    id="extra-cost"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    value={form.extraCost}
+                    onChange={(event) => set({ extraCost: event.target.value })}
+                    className="w-full bg-transparent px-2 py-3 text-sm text-gray-900 outline-none"
+                    placeholder="0,00"
+                  />
+                </div>
+                {errors.extraCost && <p className={errorCls}>{errors.extraCost}</p>}
+                <p className={hintCls}>Usado no relatório de lucro.</p>
+              </div>
+            </div>
+          )}
+
+          {kind === "list" && (
+            <p className="rounded-2xl bg-accent/60 px-4 py-3 text-sm text-gray-600">
+              Sem preço: o cliente escolhe sem pagar a mais.
+              {form.sectionId === "acai_complementos" &&
+                " Para cobrar à parte, mude \"Onde aparece\" para Complementos premium."}
+            </p>
+          )}
+
+          {kind === "product" && (
+            <div className="rounded-2xl border border-gray-200 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-gray-800">Tamanhos e preços</p>
+                  <p className="text-xs text-gray-500">Cada linha é um tamanho que o cliente pode escolher.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addSizeRow}
+                  disabled={form.sizes.length >= SIZE_OPTIONS.length}
+                  className="shrink-0 rounded-full bg-gold px-4 py-2 text-xs font-bold text-primary transition hover:bg-secondary hover:text-white disabled:opacity-40"
+                >
+                  + Tamanho
+                </button>
+              </div>
+              <div className="space-y-3">
+                {form.sizes.map((sizeRow, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-2 gap-2 rounded-2xl bg-gray-50 p-3 sm:grid-cols-[8rem_minmax(0,1fr)_6.5rem_6.5rem_auto] sm:items-end"
+                  >
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-gray-600">Tamanho</label>
+                      <select
+                        value={sizeRow.size}
+                        onChange={(event) => updateSizeRow(index, { size: event.target.value })}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-2 py-2 text-sm outline-none focus:border-secondary"
+                      >
+                        {SIZE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      {errors[`size_${index}`] && <p className={errorCls}>{errors[`size_${index}`]}</p>}
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-gray-600">Nome no cardápio</label>
+                      <input
+                        value={sizeRow.label}
+                        onChange={(event) => updateSizeRow(index, { label: event.target.value })}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-secondary"
+                        placeholder="Ex.: P - 300 ml"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-gray-600">Preço (R$)</label>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        step="0.01"
+                        min="0"
+                        value={sizeRow.price}
+                        onChange={(event) => updateSizeRow(index, { price: event.target.value })}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-secondary"
+                        placeholder="0,00"
+                      />
+                      {errors[`price_${index}`] && <p className={errorCls}>{errors[`price_${index}`]}</p>}
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-gray-600">Custo (R$)</label>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        step="0.01"
+                        min="0"
+                        value={sizeRow.costPrice}
+                        onChange={(event) => updateSizeRow(index, { costPrice: event.target.value })}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-secondary"
+                        placeholder="opcional"
+                      />
+                      {errors[`cost_${index}`] && <p className={errorCls}>{errors[`cost_${index}`]}</p>}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeSizeRow(index)}
+                      disabled={form.sizes.length <= 1}
+                      aria-label="Remover tamanho"
+                      className="col-span-2 rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-500 transition hover:bg-red-50 disabled:opacity-30 sm:col-span-1"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-widest text-smoke">
-              {isConfigCategory(form.category)
-                ? "Foto do sabor ou complemento"
-                : t("ADMIN_PRODUCTS_IMAGE_URL", "URL da Imagem")}
-            </label>
-            <div className="flex gap-2">
-              <input
-                value={form.imageUrl}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, imageUrl: e.target.value }))
-                }
-                className="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-secondary"
-                placeholder="https://... ou envie uma foto"
-              />
+            <label className={labelCls}>Foto <span className="font-normal text-gray-500">(opcional)</span></label>
+            <div className="flex items-center gap-3">
+              {form.imageUrl ? (
+                <img
+                  src={cloudinaryImage(form.imageUrl, 200)}
+                  alt=""
+                  className="h-16 w-16 shrink-0 rounded-xl object-cover"
+                  onError={(event) => (event.currentTarget.style.visibility = "hidden")}
+                />
+              ) : (
+                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-xs text-gray-400">
+                  sem foto
+                </span>
+              )}
               <label
-                className={`shrink-0 cursor-pointer rounded-2xl border border-secondary px-4 py-3 text-sm font-semibold text-secondary hover:bg-secondary/10 ${
+                className={`cursor-pointer rounded-full border border-secondary px-4 py-2 text-sm font-bold text-secondary transition hover:bg-secondary/10 ${
                   uploadingImage ? "pointer-events-none opacity-60" : ""
                 }`}
               >
-                {uploadingImage ? "Enviando..." : "Enviar foto"}
+                {uploadingImage ? "Enviando..." : form.imageUrl ? "Trocar foto" : "Enviar foto"}
                 <input
                   type="file"
                   accept="image/*"
@@ -765,163 +1107,77 @@ function ProductModal({
                   onChange={handleImageFile}
                 />
               </label>
+              {form.imageUrl && (
+                <button
+                  type="button"
+                  onClick={() => set({ imageUrl: "" })}
+                  className="text-sm font-semibold text-gray-500 underline hover:text-red-500"
+                >
+                  Remover
+                </button>
+              )}
             </div>
-            {errors.imageUrl && (
-              <p className="mt-1 text-xs text-red-400">{errors.imageUrl}</p>
-            )}
-            {form.imageUrl && !errors.imageUrl && (
-              <img
-                src={form.imageUrl}
-                alt="preview"
-                className="mt-2 h-20 w-full rounded-2xl object-cover"
-                onError={(e) => (e.currentTarget.style.display = "none")}
-              />
-            )}
+            {errors.imageUrl && <p className={errorCls}>{errors.imageUrl}</p>}
           </div>
 
-          <div className="rounded-2xl border border-border-soft bg-accent/35 p-4">
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-widest text-smoke">
-                  Tamanhos e valores
-                </p>
-                <p className="mt-1 text-xs text-smoke">
-                  {isPaidComplementCategory(form.category)
-                    ? "Valor cobrado a mais por este complemento."
-                    : isConfigCategory(form.category)
-                    ? "Item tecnico do fluxo: pode ficar com valor zero."
-                    : "Crie, edite ou remova os tamanhos que aparecem no cardapio."}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={addSizeRow}
-                disabled={form.sizes.length >= SIZE_OPTIONS.length}
-                className="w-full rounded-xl bg-gold px-4 py-3 text-xs font-bold text-primary shadow-sm transition hover:bg-secondary hover:text-white disabled:opacity-50 sm:w-auto"
-              >
-                + Tamanho
-              </button>
+          {kind === "product" && (
+            <div>
+              <label className={labelCls} htmlFor="product-description">
+                Descrição <span className="font-normal text-gray-500">(opcional)</span>
+              </label>
+              <textarea
+                id="product-description"
+                value={form.description}
+                onChange={(event) => set({ description: event.target.value })}
+                rows={2}
+                className={`${inputCls} resize-none`}
+              />
             </div>
+          )}
 
-            {errors.sizes && (
-              <p className="mb-2 text-xs text-red-400">{errors.sizes}</p>
-            )}
-
-            <div className="space-y-3">
-              {form.sizes.map((sizeRow, index) => (
-                <div
-                  key={`${sizeRow.size}-${index}`}
-                  className="rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-3"
-                >
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[150px_minmax(0,1fr)_120px_120px]">
-                    <div>
-                      <label className="mb-1 block text-[10px] uppercase tracking-widest text-smoke">
-                        Codigo
-                      </label>
-                      <select
-                        value={sizeRow.size}
-                        onChange={(e) => updateSizeRow(index, { size: e.target.value })}
-                        className="w-full min-w-0 rounded-2xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
-                      >
-                        {SIZE_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      {errors[`size_${index}`] && (
-                        <p className="mt-1 text-[11px] text-red-400">
-                          {errors[`size_${index}`]}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="min-w-0">
-                      <label className="mb-1 block text-[10px] uppercase tracking-widest text-smoke">
-                        Nome no cardapio
-                      </label>
-                      <input
-                        value={sizeRow.label}
-                        onChange={(e) => updateSizeRow(index, { label: e.target.value })}
-                        className="w-full min-w-0 rounded-2xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
-                        placeholder="Ex: P - 300 ml"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1 block text-[10px] uppercase tracking-widest text-smoke">
-                        Venda
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={sizeRow.price}
-                        onChange={(e) => updateSizeRow(index, { price: e.target.value })}
-                        className="w-full min-w-0 rounded-2xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
-                        placeholder="0,00"
-                      />
-                      {errors[`price_${index}`] && (
-                        <p className="mt-1 text-[11px] text-red-400">
-                          {errors[`price_${index}`]}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="mb-1 block text-[10px] uppercase tracking-widest text-smoke">
-                        Custo
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={sizeRow.costPrice}
-                        onChange={(e) => updateSizeRow(index, { costPrice: e.target.value })}
-                        className="w-full min-w-0 rounded-2xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-secondary/50"
-                        placeholder="0,00"
-                      />
-                      {errors[`cost_${index}`] && (
-                        <p className="mt-1 text-[11px] text-red-400">
-                          {errors[`cost_${index}`]}
-                        </p>
-                      )}
-                    </div>
-
-                  </div>
-                  <div className="mt-3 flex justify-end border-t border-border-soft pt-3">
-                    <button
-                      type="button"
-                      onClick={() => removeSizeRow(index)}
-                      disabled={form.sizes.length <= 1}
-                      className="rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      Remover
-                    </button>
-                  </div>
-                </div>
-              ))}
+          <div>
+            <p className={labelCls}>Dias em que aparece</p>
+            <div className="flex flex-wrap gap-2">
+              {WEEKDAY_OPTIONS.map((day) => {
+                const checked = form.availableDays.includes(day.value);
+                return (
+                  <button
+                    key={day.value}
+                    type="button"
+                    aria-pressed={checked}
+                    onClick={() => toggleDay(day.value)}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                      checked
+                        ? "border-secondary bg-secondary text-white"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-secondary/40"
+                    }`}
+                  >
+                    {day.label}
+                  </button>
+                );
+              })}
             </div>
+            <p className={hintCls}>
+              {form.availableDays.length
+                ? `Aparece só em: ${formatAvailableDays(form.availableDays)}.`
+                : "Nenhum dia marcado = aparece todos os dias."}
+            </p>
           </div>
 
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-full border border-gray-200 py-3 text-sm text-smoke transition hover:border-gray-400"
+              className="flex-1 rounded-full border border-gray-200 py-3 text-sm font-bold text-gray-600 transition hover:border-gray-400"
             >
-              {t("BTN_CANCEL", "Cancelar")}
+              Cancelar
             </button>
             <button
               type="submit"
               disabled={mutation.isPending || uploadingImage}
-              className="flex-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 py-3 text-sm font-bold text-[#11161d] transition hover:opacity-90 disabled:opacity-50"
+              className="flex-1 rounded-full bg-secondary py-3 text-sm font-bold text-white transition hover:bg-primary disabled:opacity-50"
             >
-              {mutation.isPending
-                ? t("ADMIN_PRODUCTS_SAVING", "Salvando...")
-                : isEdit
-                  ? t("BTN_SAVE", "Salvar")
-                  : t("ADMIN_PRODUCTS_CREATE", "Criar")}
+              {mutation.isPending ? "Salvando..." : isEdit ? "Salvar" : "Cadastrar"}
             </button>
           </div>
         </form>
@@ -930,312 +1186,51 @@ function ProductModal({
   );
 }
 
-function ProductCard({ product, onEdit }) {
-  const { t, locale } = useTranslation();
-  const queryClient = useQueryClient();
-  const primarySize = getPrimarySize(product);
-  const productName = tProductField(t, product.id, "NAME", product.name);
-  const productDescription = product.description
-    ? tProductField(t, product.id, "DESC", product.description)
-    : null;
-  const configItem =
-    isConfigCategory(product.category) &&
-    !isPaidComplementCategory(product.category);
-  const translatedCategory = product.category
-    ? t(normalizeCategoryKey(product.category), product.category)
-    : null;
-
-  useEffect(() => {
-    debugLog("productCard:render", {
-      locale,
-      productId: product.id,
-      originalName: product.name,
-      translatedName: productName,
-      translatedDescription: productDescription,
-    });
-  }, [locale, product.id, product.name, productName, productDescription]);
-
-  const toggleActive = useMutation({
-    mutationFn: async () => {
-      if (product.isActive) {
-        await api.delete(`/admin/products/${product.id}`);
-      } else {
-        await api.patch(`/admin/products/${product.id}/restore`);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-      toast.success(
-        product.isActive
-          ? t("ADMIN_PRODUCTS_DISABLED", "Produto desativado")
-          : t("ADMIN_PRODUCTS_RESTORED", "Produto reativado"),
-      );
-    },
-    onError: () =>
-      toast.error(t("ADMIN_PRODUCTS_STATUS_ERROR", "Falha ao alterar status")),
-  });
-
-  /*
-  const refreshTranslations = null;
-  const REAPPLY_TRANSLATIONS = useMutation({
-    mutationFn: async () => {
-      const baseLocale = "pt-BR";
-      console.log(
-        "[MUTATION] Iniciando reapplyTranslations com baseLocale:",
-        baseLocale,
-      );
-
-      const summary = await saveProductTranslations(
-        product.id,
-        product.name,
-        product.description,
-        product.category,
-        baseLocale,
-      );
-
-      console.log("[MUTATION] Summary retornado:", summary);
-
-      if (!summary.total || summary.succeeded === 0) {
-        console.error("[MUTATION] Erro - summary.total e 0 ou falsy");
-        throw new Error("Translation sync failed");
-      }
-
-      console.log("[MUTATION] Sucesso - total:", summary.total);
-      return summary;
-    },
-    onSuccess: ({ succeeded, failed }) => {
-      console.log(
-        "[MUTATION SUCCESS] succeeded:",
-        succeeded,
-        "failed:",
-        failed,
-      );
-      refreshTranslations?.();
-      if (failed > 0) {
-        toast.success(
-          t(
-            "ADMIN_PRODUCTS_REAPPLY_TRANSLATION_PARTIAL",
-            "Traducoes reaplicadas parcialmente ({{ok}} OK, {{fail}} falharam).",
-          )
-            .replace("{{ok}}", String(succeeded))
-            .replace("{{fail}}", String(failed)),
-        );
-        return;
-      }
-      toast.success(
-        t(
-          "ADMIN_PRODUCTS_REAPPLY_TRANSLATION_SUCCESS",
-          "Traducoes reaplicadas com sucesso.",
-        ),
-      );
-    },
-    onError: (error) => {
-      console.error("[MUTATION ERROR]", error);
-      toast.error(
-        t(
-          "ADMIN_PRODUCTS_REAPPLY_TRANSLATION_ERROR",
-          "Falha ao reaplicar traducoes.",
-        ),
-      );
-    },
-  });
-
-  const deleteProduct = useMutation({
-    mutationFn: async () => {
-      await api.delete(`/admin/products/${product.id}/permanent`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-      toast.success(t("ADMIN_PRODUCTS_DELETE_SUCCESS", "Produto excluido."));
-    },
-    onError: (error) => {
-      toast.error(
-        error?.response?.data?.error?.message ||
-          t("ADMIN_PRODUCTS_DELETE_ERROR", "Falha ao excluir produto."),
-      );
-    },
-  });
-
-  const confirmDeleteProduct = async () => {
-    const result = await Swal.fire({
-      title: t("ADMIN_PRODUCTS_DELETE_CONFIRM_TITLE", "Excluir produto?"),
-      text: t(
-        "ADMIN_PRODUCTS_DELETE_CONFIRM_TEXT",
-        "Essa acao remove o produto definitivamente. Produtos com historico de pedido nao podem ser excluidos.",
-      ),
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: t("ADMIN_PRODUCTS_DELETE_CONFIRM", "Sim, excluir"),
-      cancelButtonText: t("CANCEL", "Cancelar"),
-      confirmButtonColor: "#dc2626",
-      cancelButtonColor: "#6b7280",
-    });
-
-    if (result.isConfirmed) {
-      deleteProduct.mutate();
-    }
-  };
-
-  */
-
-  const deleteProduct = useMutation({
-    mutationFn: async () => {
-      await api.delete(`/admin/products/${product.id}/permanent`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-      toast.success(t("ADMIN_PRODUCTS_DELETE_SUCCESS", "Produto excluido."));
-    },
-    onError: (error) => {
-      toast.error(
-        error?.response?.data?.error?.message ||
-          t("ADMIN_PRODUCTS_DELETE_ERROR", "Falha ao excluir produto."),
-      );
-    },
-  });
-
-  const confirmDeleteProduct = async () => {
-    const result = await Swal.fire({
-      title: t("ADMIN_PRODUCTS_DELETE_CONFIRM_TITLE", "Excluir produto?"),
-      text: t(
-        "ADMIN_PRODUCTS_DELETE_CONFIRM_TEXT",
-        "Essa acao remove o produto definitivamente. Produtos com historico de pedido nao podem ser excluidos.",
-      ),
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: t("ADMIN_PRODUCTS_DELETE_CONFIRM", "Sim, excluir"),
-      cancelButtonText: t("CANCEL", "Cancelar"),
-      confirmButtonColor: "#dc2626",
-      cancelButtonColor: "#6b7280",
-    });
-
-    if (result.isConfirmed) {
-      deleteProduct.mutate();
-    }
-  };
-
-  return (
-    <article
-      className={`rounded-2xl border p-4 transition-all duration-200 ${
-        product.isActive
-          ? "border-gray-200 bg-white"
-          : "border-gray-100 bg-gray-50 opacity-50"
-      }`}
-    >
-      {product.imageUrl ? (
-        <img
-          src={cloudinaryImage(product.imageUrl, 600)}
-          alt={productName}
-          className="mb-3 h-32 w-full rounded-xl object-cover"
-          onError={(e) => (e.currentTarget.style.display = "none")}
-        />
-      ) : (
-        <div className="mb-3 flex h-32 w-full items-center justify-center rounded-xl bg-gray-100 text-3xl">
-          Sem foto
-        </div>
-      )}
-
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="truncate font-semibold text-gray-900">
-            {productName}
-          </h3>
-          {productDescription && (
-            <p className="mt-0.5 line-clamp-2 text-xs text-smoke">
-              {productDescription}
-            </p>
-          )}
-        </div>
-        <span
-          className={`shrink-0 rounded-xl px-2 py-1 text-xs font-bold ${
-            product.isActive
-              ? "bg-green-500/20 text-green-400"
-              : "bg-gray-200 text-smoke"
-          }`}
-        >
-          {product.isActive
-            ? t("ADMIN_PRODUCTS_ACTIVE", "Ativo")
-            : t("ADMIN_PRODUCTS_INACTIVE", "Inativo")}
-        </span>
+function SectionBody({ section, items, onEdit, onMakePremium }) {
+  if (!items.length) {
+    return (
+      <div className="rounded-3xl border border-dashed border-gray-300 p-10 text-center text-sm text-gray-500">
+        Nada cadastrado aqui ainda.
       </div>
-
-      <div className="mt-2 flex flex-wrap gap-1">
-        {product.sizes?.map((size) => (
-          <span
-            key={size.id ?? size.size}
-            className="rounded-xl bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700"
-          >
-            {configItem
-              ? "Config do fluxo"
-              : `${size.label || size.size}: R$ ${Number(size.price).toFixed(2)}`}
-          </span>
+    );
+  }
+  if (section.kind === "product") {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+        {items.map((product) => (
+          <ProductCard key={product.id} product={product} onEdit={onEdit} />
         ))}
-        {primarySize?.costPrice != null && (
-          <span className="rounded-xl bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
-            Custo R$ {Number(primarySize.costPrice).toFixed(2)}
-          </span>
-        )}
-        {translatedCategory ? (
-          <span className="rounded-xl bg-gray-200 px-2 py-0.5 text-xs text-smoke">
-            {translatedCategory}
-          </span>
-        ) : null}
-        <span className="rounded-xl bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">
-          {formatAvailableDays(product.availableDays)}
-        </span>
       </div>
-
-      <div
-        className={`mt-4 grid gap-2 ${
-          product.isActive ? "grid-cols-2" : "grid-cols-3"
-        }`}
-      >
-        <button
-          type="button"
-          onClick={() => onEdit(product)}
-          className="rounded-full border border-primary/10 py-2 text-xs font-semibold text-primary transition hover:bg-primary/5"
-        >
-          {t("EDIT", "Editar")}
-        </button>
-        <button
-          type="button"
-          disabled={toggleActive.isPending}
-          onClick={() => toggleActive.mutate()}
-          className={`rounded-full border py-2 text-xs font-semibold transition ${
-            product.isActive
-              ? "border-red-500/30 text-red-400 hover:bg-red-500/10"
-              : "border-green-500/30 text-green-400 hover:bg-green-500/10"
-          } disabled:opacity-50`}
-        >
-          {product.isActive
-            ? t("ADMIN_PRODUCTS_DISABLE", "Desativar")
-            : t("ADMIN_PRODUCTS_RESTORE", "Ativar")}
-        </button>
-        {!product.isActive ? (
-          <button
-            type="button"
-            disabled={deleteProduct.isPending}
-            onClick={confirmDeleteProduct}
-            className="rounded-full border border-red-500/40 py-2 text-xs font-semibold text-red-500 transition hover:bg-red-500/10 disabled:opacity-50"
-          >
-            {t("ADMIN_PRODUCTS_DELETE", "Excluir")}
-          </button>
-        ) : null}
-      </div>
-    </article>
+    );
+  }
+  return (
+    <div className="grid gap-2 xl:grid-cols-2">
+      {items.map((product) =>
+        section.kind === "priced" ? (
+          <PricedRow key={product.id} product={product} onEdit={onEdit} />
+        ) : (
+          <ListRow
+            key={product.id}
+            product={product}
+            onEdit={onEdit}
+            showCategory={section.id === "fora"}
+            onMakePremium={section.id === "acai_complementos" ? onMakePremium : undefined}
+          />
+        ),
+      )}
+    </div>
   );
 }
 
 function AdminProductsPage() {
-  const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [modal, setModal] = useState(null); // null | "new" | product object
   const [searchParams] = useSearchParams();
+  const [modal, setModal] = useState(null); // { product?, sectionId }
+  const [search, setSearch] = useState("");
   const [activeSection, setActiveSection] = useState(() => {
     const secao = searchParams.get("secao");
-    return GUIDED_ADMIN_SECTIONS.some((section) => section.id === secao)
-      ? secao
-      : "all";
+    const id = LEGACY_SECTION_IDS[secao] ?? secao;
+    return ALL_SECTIONS.some((section) => section.id === id) ? id : "acai_copo";
   });
 
   const {
@@ -1250,193 +1245,263 @@ function AdminProductsPage() {
     },
   });
 
-  const existingCategories = [
-    ...new Set(
-      products.map((p) => p.category).filter((c) => c && c !== "Geral"),
-    ),
-  ];
-  const activeSectionConfig =
-    GUIDED_ADMIN_SECTIONS.find((section) => section.id === activeSection) ??
-    GUIDED_ADMIN_SECTIONS[0];
-  const defaultImportNames = DEFAULT_SECTION_IMPORTS[activeSection] ?? [];
-  const filteredProducts = products.filter((product) =>
-    productMatchesAdminSection(product, activeSection),
-  );
-  const existingNamesInSection = new Set(
-    filteredProducts.map((product) => normalizeText(product.name)),
-  );
-  const missingDefaultNames = defaultImportNames.filter(
-    (name) => !existingNamesInSection.has(normalizeText(name)),
-  );
-  const sectionCounts = Object.fromEntries(
-    GUIDED_ADMIN_SECTIONS.map((section) => [
-      section.id,
-      products.filter((product) => productMatchesAdminSection(product, section.id))
-        .length,
-    ]),
-  );
-  const isNewModal = modal?.mode === "new";
+  const bySection = {};
+  for (const product of products) {
+    const id = sectionIdOfProduct(product);
+    (bySection[id] ??= []).push(product);
+  }
+  // Ativos primeiro, depois por nome
+  const sortItems = (items = []) =>
+    [...items].sort(
+      (a, b) =>
+        Number(b.isActive) - Number(a.isActive) ||
+        String(a.name).localeCompare(String(b.name), "pt-BR"),
+    );
+
+  const section = sectionById(activeSection);
+  const items = sortItems(bySection[section.id]);
+  const activeCount = items.filter((product) => product.isActive).length;
+  const orphanCount = bySection.fora?.length ?? 0;
+  const pricelessCount = (bySection[section.id] ?? []).filter(
+    (product) => section.kind === "priced" && product.isActive && !(Number(product.sizes?.[0]?.price) > 0),
+  ).length;
+
+  const query = normalizeText(search.trim());
+  const searchResults = query
+    ? sortItems(products.filter((product) => normalizeText(product.name).includes(query)))
+    : [];
+
+  const defaultNames = DEFAULT_SECTION_IMPORTS[section.id] ?? [];
+  const existingNames = new Set(items.map((product) => normalizeText(product.name)));
+  const missingDefaultNames = defaultNames.filter((name) => !existingNames.has(normalizeText(name)));
   const importDefaults = useMutation({
     mutationFn: async () => {
-      const category = activeSectionConfig.preset?.category;
-      if (!category || !missingDefaultNames.length) return;
-
       for (const name of missingDefaultNames) {
         await api.post("/admin/products", {
           name,
           description: "",
           imageUrl: "",
-          category,
+          category: section.category,
           availableDays: [],
           waiterOnly: false,
-          sizes: [{ size: "MEDIA", price: 0 }],
+          sizes: [{ size: "MEDIA", price: 0, label: "Config" }],
         });
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-      toast.success("Sabores padrao importados!");
+      toast.success("Itens padrão cadastrados!");
     },
-    onError: (err) => {
-      toast.error(
-        err?.response?.data?.error?.message ??
-          err?.response?.data?.message ??
-          "Nao foi possivel importar os sabores.",
-      );
-    },
+    onError: (err) =>
+      toast.error(err?.response?.data?.message ?? "Não foi possível cadastrar os itens padrão."),
   });
+
+  const openEdit = (product) => setModal({ product, sectionId: sectionIdOfProduct(product) });
+  const openMakePremium = (product) =>
+    setModal({ product, sectionId: "acai_complementos_premium" });
+  const canAdd = !section.fixed && section.id !== "fora";
+
+  const navButton = (target, count, tone = "") => (
+    <button
+      key={target.id}
+      type="button"
+      onClick={() => {
+        setActiveSection(target.id);
+        setSearch("");
+      }}
+      className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm transition ${
+        activeSection === target.id && !query
+          ? "bg-secondary font-bold text-white"
+          : `text-gray-700 hover:bg-gray-100 ${tone}`
+      }`}
+    >
+      <span className="truncate">{target.label}</span>
+      <span
+        className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+          activeSection === target.id && !query ? "bg-white/20" : "bg-gray-100 text-gray-500"
+        }`}
+      >
+        {count}
+      </span>
+    </button>
+  );
 
   return (
     <main className="min-h-screen text-gray-900">
       <PageHeader
         backTo="/admin/produtos"
         backLabel="Cardápio"
-        title={t("ADMIN_PRODUCTS_TITLE", "Produtos")}
-        subtitle={t("ADMIN_PRODUCTS_SUBTITLE", "Gerencie o cardápio da Dubob")}
-        actions={
-          <button
-            type="button"
-            onClick={() =>
-              setModal({
-                mode: "new",
-                preset: activeSectionConfig.preset ?? {},
-              })
-            }
-            className="ui-btn ui-btn-accent"
-          >
-            + {t("ADMIN_PRODUCTS_NEW_BUTTON", "Novo Produto")}
-          </button>
-        }
+        title="Produtos e preços"
+        subtitle="Escolha a seção e mude o que precisar. Tudo segue a ordem do pedido no totem e no site."
       />
       <div className="ui-page">
-
-      {isLoading && (
-        <div className="mt-6 grid animate-pulse gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-64 rounded-2xl bg-gray-50" />
-          ))}
-        </div>
-      )}
-
-      {isError && (
-        <p className="mt-6 text-sm text-red-300">
-          {t("ADMIN_PRODUCTS_LOAD_ERROR", "Falha ao carregar produtos.")}
-        </p>
-      )}
-
-      {!isLoading && !isError && (
-        <>
-          <section className="mt-6 rounded-3xl shadow-card ring-1 ring-primary/5 bg-white p-4">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-smoke">
-                  Fluxo do cardapio
-                </p>
-                <h2 className="mt-1 text-xl font-bold text-gray-900">
-                  {activeSectionConfig.label}
-                </h2>
-                <p className="mt-1 text-sm text-smoke">
-                  {activeSectionConfig.description}
-                </p>
-              </div>
-              {missingDefaultNames.length > 0 && activeSection !== "all" ? (
-                <button
-                  type="button"
-                  disabled={importDefaults.isPending}
-                  onClick={() => importDefaults.mutate()}
-                  className="shrink-0 rounded-full bg-secondary px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {importDefaults.isPending
-                    ? "Importando..."
-                    : `Importar ${missingDefaultNames.length} padrao`}
-                </button>
-              ) : null}
-            </div>
-
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              {GUIDED_ADMIN_SECTIONS.map((section) => (
-                <button
-                  key={section.id}
-                  type="button"
-                  onClick={() => setActiveSection(section.id)}
-                  className={`rounded-xl border px-3 py-3 text-left transition ${
-                    activeSection === section.id
-                      ? "border-secondary bg-secondary text-white"
-                      : "border-gray-200 bg-gray-50 text-gray-800 hover:border-secondary/40"
-                  }`}
-                >
-                  <span className="block text-sm font-bold">
-                    {section.label}
-                  </span>
-                  <span className="mt-1 block text-xs text-smoke">
-                    {sectionCounts[section.id] ?? 0} itens
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <p className="mt-4 text-xs text-smoke">
-            {t("ADMIN_PRODUCTS_ACTIVE_COUNT", "{{count}} ativos").replace(
-              "{{count}}",
-              String(filteredProducts.filter((p) => p.isActive).length),
-            )}
-            {" - "}
-            {t("ADMIN_PRODUCTS_INACTIVE_COUNT", "{{count}} inativos").replace(
-              "{{count}}",
-              String(filteredProducts.filter((p) => !p.isActive).length),
-            )}
-          </p>
-          <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onEdit={(p) => setModal(p)}
-              />
+        {isLoading && (
+          <div className="mt-6 grid animate-pulse gap-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-16 rounded-2xl bg-gray-100" />
             ))}
-            {filteredProducts.length === 0 && (
-              <div className="col-span-full rounded-2xl border border-dashed border-white/15 p-10 text-center text-sm text-smoke">
-                {t("ADMIN_PRODUCTS_EMPTY", "Nenhum produto cadastrado ainda.")}
-              </div>
-            )}
           </div>
-        </>
-      )}
+        )}
 
-      {modal && (
-        <ProductModal
-          product={isNewModal ? null : modal}
-          onClose={() => setModal(null)}
-          existingCategories={existingCategories}
-          initialValues={isNewModal ? modal.preset : {}}
-        />
-      )}
+        {isError && <p className="mt-6 text-sm text-red-500">Falha ao carregar os produtos.</p>}
+
+        {!isLoading && !isError && (
+          <div className="mt-6 grid items-start gap-6 lg:grid-cols-[17rem_minmax(0,1fr)]">
+            <nav className="min-w-0 rounded-3xl bg-white p-3 shadow-card ring-1 ring-primary/5 lg:sticky lg:top-6">
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="🔎 Buscar sabor, complemento..."
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm outline-none focus:border-secondary lg:mb-3"
+              />
+              {/* Celular: seletor compacto em vez da lista inteira */}
+              <label className="mt-2 block lg:hidden">
+                <span className="sr-only">Mostrar seção</span>
+                <select
+                  value={activeSection}
+                  onChange={(event) => {
+                    setActiveSection(event.target.value);
+                    setSearch("");
+                  }}
+                  className="w-full rounded-xl border border-secondary/40 bg-white px-3 py-2.5 text-sm font-bold text-primary outline-none focus:border-secondary"
+                >
+                  {ADMIN_GROUPS.map((group) => (
+                    <optgroup key={group.id} label={`${group.icon} ${group.label}`}>
+                      {group.sections.map((target) => (
+                        <option key={target.id} value={target.id}>
+                          {target.label} ({bySection[target.id]?.length ?? 0})
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                  {orphanCount > 0 && (
+                    <option value={ORPHAN_SECTION.id}>
+                      ⚠️ {ORPHAN_SECTION.label} ({orphanCount})
+                    </option>
+                  )}
+                </select>
+              </label>
+              <div className="hidden lg:block">
+              {ADMIN_GROUPS.map((group) => (
+                <div key={group.id} className="mb-3">
+                  <p className="px-3 pb-1 text-xs font-black uppercase tracking-widest text-secondary">
+                    {group.icon} {group.label}
+                  </p>
+                  <div className="space-y-0.5">
+                    {group.sections.map((target) =>
+                      navButton(target, bySection[target.id]?.length ?? 0),
+                    )}
+                  </div>
+                </div>
+              ))}
+              {orphanCount > 0 && (
+                <div className="border-t border-gray-100 pt-2">
+                  {navButton(ORPHAN_SECTION, orphanCount, "font-bold text-amber-700")}
+                </div>
+              )}
+              </div>
+            </nav>
+
+            <section className="min-w-0">
+              {query ? (
+                <>
+                  <h2 className="font-display text-2xl font-bold text-primary">
+                    Busca: “{search.trim()}”
+                  </h2>
+                  <p className="mb-4 mt-1 text-sm text-gray-500">
+                    {searchResults.length} resultado(s) em todas as seções.
+                  </p>
+                  {searchResults.length ? (
+                    <div className="grid gap-2 xl:grid-cols-2">
+                      {searchResults.map((product) =>
+                        sectionById(sectionIdOfProduct(product)).kind === "priced" ? (
+                          <PricedRow key={product.id} product={product} onEdit={openEdit} showSection />
+                        ) : (
+                          <ListRow key={product.id} product={product} onEdit={openEdit} showSection />
+                        ),
+                      )}
+                    </div>
+                  ) : (
+                    <div className="rounded-3xl border border-dashed border-gray-300 p-10 text-center text-sm text-gray-500">
+                      Nada encontrado.
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-black uppercase tracking-widest text-secondary">
+                        {section.group ? `${section.group.icon} ${section.group.label}` : "⚠️ Atenção"}
+                      </p>
+                      <h2 className="font-display text-2xl font-bold text-primary">{section.label}</h2>
+                      <p
+                        className={`mt-1 max-w-2xl text-sm ${
+                          section.id === "fora" ? "font-semibold text-amber-700" : "text-gray-500"
+                        }`}
+                      >
+                        {section.where}
+                      </p>
+                      <p className="mt-2 text-xs font-semibold text-gray-400">
+                        {activeCount} ativo(s)
+                        {items.length - activeCount > 0 && ` · ${items.length - activeCount} oculto(s)`}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      {missingDefaultNames.length > 0 && (
+                        <button
+                          type="button"
+                          disabled={importDefaults.isPending}
+                          onClick={() => importDefaults.mutate()}
+                          title={missingDefaultNames.join(", ")}
+                          className="rounded-full border border-secondary px-4 py-2.5 text-sm font-bold text-secondary transition hover:bg-secondary/10 disabled:opacity-50"
+                        >
+                          {importDefaults.isPending
+                            ? "Cadastrando..."
+                            : `Cadastrar ${missingDefaultNames.length} padrão`}
+                        </button>
+                      )}
+                      {canAdd && (
+                        <button
+                          type="button"
+                          onClick={() => setModal({ product: null, sectionId: section.id })}
+                          className="rounded-full bg-secondary px-5 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-primary"
+                        >
+                          + Novo {section.item}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {pricelessCount > 0 && (
+                    <p className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                      ⚠️ {pricelessCount} item(ns) sem preço não aparecem para o cliente. Digite o preço e toque em Salvar.
+                    </p>
+                  )}
+
+                  <SectionBody
+                    section={section}
+                    items={items}
+                    onEdit={openEdit}
+                    onMakePremium={openMakePremium}
+                  />
+                </>
+              )}
+            </section>
+          </div>
+        )}
+
+        {modal && (
+          <ProductModal
+            product={modal.product}
+            initialSectionId={modal.sectionId}
+            onClose={() => setModal(null)}
+          />
+        )}
       </div>
     </main>
   );
 }
 
 export default AdminProductsPage;
-
-
