@@ -310,7 +310,7 @@ function CheckoutPage() {
       const res = await api.post("/delivery/calculate", {
         cep,
         numero: numero.trim(),
-        cidade: cidade.trim() || "São Paulo",
+        cidade: cidade.trim() || "Cornélio Procópio",
         rua: rua.trim() || undefined,
         complemento: complemento.trim() || undefined,
       });
@@ -918,7 +918,7 @@ function CheckoutPage() {
                     )}
                   </p>
                   <p className="mt-1 text-xs text-green-700">
-                    Av. Cachoeira Paulista, 17 — CEP 03551-000, São Paulo
+                    Av. XV de Novembro, 29 — Centro, Cornélio Procópio - PR
                   </p>
                 </div>
               ) : (

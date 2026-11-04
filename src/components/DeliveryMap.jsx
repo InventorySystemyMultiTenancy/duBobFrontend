@@ -45,7 +45,7 @@ function DeliveryMap({
     const map = L.map(containerRef.current, {
       zoomControl: true,
       attributionControl: true,
-    }).setView([store?.lat ?? -23.55, store?.lon ?? -46.63], 13);
+    }).setView([store?.lat ?? -23.181, store?.lon ?? -50.648], 13);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
