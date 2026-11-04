@@ -456,7 +456,7 @@ function useProductActions(product) {
   return { toggleActive, confirmDelete, deleteProduct, savePrice };
 }
 
-function Thumb({ product, size = "h-12 w-12" }) {
+function Thumb({ product, size = "h-16 w-16" }) {
   const [failed, setFailed] = useState(false);
   return product.imageUrl && !failed ? (
     <img
@@ -467,7 +467,7 @@ function Thumb({ product, size = "h-12 w-12" }) {
     />
   ) : (
     <span
-      className={`${size} flex shrink-0 items-center justify-center rounded-xl bg-accent text-lg font-black text-primary/50`}
+      className={`${size} flex shrink-0 items-center justify-center rounded-xl bg-accent text-2xl font-black text-primary/50`}
       aria-hidden="true"
     >
       {String(product.name ?? "?").trim().charAt(0).toUpperCase()}
@@ -496,15 +496,15 @@ function ActiveSwitch({ product, actions, requirePrice = false }) {
       className="flex shrink-0 items-center gap-2 disabled:opacity-50"
     >
       <span
-        className={`relative h-6 w-11 rounded-full transition ${on ? "bg-green-500" : "bg-gray-300"}`}
+        className={`relative h-8 w-14 rounded-full transition ${on ? "bg-green-500" : "bg-gray-300"}`}
       >
         <span
-          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${
-            on ? "left-[1.375rem]" : "left-0.5"
+          className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${
+            on ? "left-7" : "left-1"
           }`}
         />
       </span>
-      <span className={`w-14 text-left text-xs font-bold ${on ? "text-green-700" : "text-gray-500"}`}>
+      <span className={`w-16 text-left text-sm font-bold ${on ? "text-green-700" : "text-gray-500"}`}>
         {on ? "Ativo" : "Oculto"}
       </span>
     </button>
@@ -518,7 +518,7 @@ function RowActions({ product, actions, onEdit, extra }) {
       <button
         type="button"
         onClick={() => onEdit(product)}
-        className="rounded-full border border-primary/15 px-3 py-1.5 text-xs font-bold text-primary transition hover:bg-primary/5"
+        className="rounded-full border border-primary/15 px-5 py-2.5 text-sm font-bold text-primary transition hover:bg-primary/5"
       >
         Editar
       </button>
@@ -527,7 +527,7 @@ function RowActions({ product, actions, onEdit, extra }) {
           type="button"
           disabled={actions.deleteProduct.isPending}
           onClick={actions.confirmDelete}
-          className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-bold text-red-500 transition hover:bg-red-50 disabled:opacity-50"
+          className="rounded-full border border-red-200 px-5 py-2.5 text-sm font-bold text-red-500 transition hover:bg-red-50 disabled:opacity-50"
         >
           Excluir
         </button>
@@ -546,15 +546,15 @@ function ListRow({ product, onEdit, onMakePremium, showCategory = false, showSec
 
   return (
     <div
-      className={`min-w-0 rounded-2xl border p-3 transition ${
+      className={`min-w-0 rounded-2xl border p-4 transition ${
         product.isActive ? "border-gray-200 bg-white" : "border-dashed border-gray-200 bg-gray-50"
       }`}
     >
       <div className="flex items-center gap-3">
         <Thumb product={product} />
         <div className={`min-w-0 flex-1 ${product.isActive ? "" : "opacity-60"}`}>
-          <p className="truncate font-bold text-gray-900">{name}</p>
-          <p className="truncate text-xs text-gray-500">
+          <p className="truncate text-lg font-bold text-gray-900">{name}</p>
+          <p className="truncate text-sm text-gray-500">
             {showSection && `${section.group ? `${section.group.label} › ` : ""}${section.label} · `}
             {showCategory && `Categoria "${product.category || "sem categoria"}" · `}
             {days}
@@ -562,7 +562,7 @@ function ListRow({ product, onEdit, onMakePremium, showCategory = false, showSec
         </div>
         <ActiveSwitch product={product} actions={actions} />
       </div>
-      <div className="mt-2 flex justify-end">
+      <div className="mt-3 flex justify-end">
       <RowActions
         product={product}
         actions={actions}
@@ -573,7 +573,7 @@ function ListRow({ product, onEdit, onMakePremium, showCategory = false, showSec
               type="button"
               onClick={() => onMakePremium(product)}
               title="Passa a ser cobrado à parte, com preço próprio"
-              className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 transition hover:bg-amber-100"
+              className="rounded-full border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-700 transition hover:bg-amber-100"
             >
               ⭐ Tornar premium
             </button>
@@ -598,22 +598,22 @@ function PricedRow({ product, onEdit, showSection = false }) {
 
   return (
     <div
-      className={`min-w-0 rounded-2xl border p-3 transition ${
+      className={`min-w-0 rounded-2xl border p-4 transition ${
         product.isActive ? "border-gray-200 bg-white" : "border-dashed border-gray-200 bg-gray-50"
       } ${!currentPrice && product.isActive ? "ring-2 ring-amber-300" : ""}`}
     >
       <div className="flex items-center gap-3">
         <Thumb product={product} />
         <div className={`min-w-0 flex-1 ${product.isActive ? "" : "opacity-60"}`}>
-          <p className="truncate font-bold text-gray-900">{name}</p>
-          <p className="truncate text-xs text-gray-500">
+          <p className="truncate text-lg font-bold text-gray-900">{name}</p>
+          <p className="truncate text-sm text-gray-500">
             {showSection && `${section.group ? `${section.group.label} › ` : ""}${section.label} · `}
             {currentPrice ? `Cobrado ${fmt(currentPrice)} a mais` : "⚠️ Sem preço: não aparece para o cliente"}
           </p>
         </div>
         <ActiveSwitch product={product} actions={actions} requirePrice />
       </div>
-      <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
       <form
         className="flex items-center gap-2"
         onSubmit={(event) => {
@@ -622,7 +622,7 @@ function PricedRow({ product, onEdit, showSection = false }) {
         }}
       >
         <label className="flex items-center rounded-xl border border-gray-200 bg-gray-50 px-2 focus-within:border-secondary">
-          <span className="text-xs font-bold text-gray-500">R$</span>
+          <span className="text-sm font-bold text-gray-500">R$</span>
           <input
             type="number"
             inputMode="decimal"
@@ -632,14 +632,14 @@ function PricedRow({ product, onEdit, showSection = false }) {
             onChange={(event) => setPrice(event.target.value)}
             aria-label={`Preço de ${name}`}
             placeholder="0,00"
-            className="w-20 bg-transparent px-1.5 py-2 text-sm font-bold text-gray-900 outline-none"
+            className="w-24 bg-transparent px-2 py-2.5 text-base font-bold text-gray-900 outline-none"
           />
         </label>
         {dirty && (
           <button
             type="submit"
             disabled={invalid || actions.savePrice.isPending}
-            className="rounded-full bg-secondary px-3 py-2 text-xs font-bold text-white transition hover:bg-primary disabled:opacity-50"
+            className="rounded-full bg-secondary px-5 py-2.5 text-sm font-bold text-white transition hover:bg-primary disabled:opacity-50"
           >
             {actions.savePrice.isPending ? "Salvando..." : "Salvar"}
           </button>
@@ -662,22 +662,22 @@ function ProductCard({ product, onEdit }) {
 
   return (
     <article
-      className={`flex min-w-0 flex-col rounded-3xl border p-4 transition ${
+      className={`flex min-w-0 flex-col rounded-3xl border p-6 transition ${
         product.isActive ? "border-gray-200 bg-white shadow-card" : "border-dashed border-gray-200 bg-gray-50"
       }`}
     >
       <div className={`flex items-start gap-3 ${product.isActive ? "" : "opacity-60"}`}>
-        <Thumb product={product} size="h-16 w-16" />
+        <Thumb product={product} size="h-24 w-24" />
         <div className="min-w-0 flex-1">
-          <h3 className="font-display text-lg font-bold leading-tight text-primary">{name}</h3>
-          {description && <p className="mt-0.5 line-clamp-2 text-xs text-gray-500">{description}</p>}
-          <p className="mt-1 text-xs text-gray-400">{formatAvailableDays(product.availableDays)}</p>
+          <h3 className="font-display text-2xl font-bold leading-tight text-primary">{name}</h3>
+          {description && <p className="mt-1 line-clamp-3 text-sm text-gray-500">{description}</p>}
+          <p className="mt-1 text-sm text-gray-400">{formatAvailableDays(product.availableDays)}</p>
         </div>
       </div>
 
-      <table className={`mt-3 w-full text-sm ${product.isActive ? "" : "opacity-60"}`}>
+      <table className={`mt-5 w-full text-lg ${product.isActive ? "" : "opacity-60"}`}>
         <thead>
-          <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">
+          <tr className="text-left text-xs font-bold uppercase tracking-wider text-gray-400">
             <th className="pb-1 font-bold">Tamanho</th>
             <th className="pb-1 text-right font-bold">Preço</th>
             <th className="pb-1 text-right font-bold">Custo</th>
@@ -686,9 +686,9 @@ function ProductCard({ product, onEdit }) {
         <tbody>
           {(product.sizes ?? []).map((size) => (
             <tr key={size.id ?? size.size} className="border-t border-gray-100">
-              <td className="py-1.5 font-semibold text-gray-800">{sizeLabel(size)}</td>
-              <td className="py-1.5 text-right font-bold text-secondary">{fmt(size.price)}</td>
-              <td className="py-1.5 text-right text-gray-500">
+              <td className="py-2.5 font-semibold text-gray-800">{sizeLabel(size)}</td>
+              <td className="py-2.5 text-right font-bold text-secondary">{fmt(size.price)}</td>
+              <td className="py-2.5 text-right text-gray-500">
                 {size.costPrice != null ? fmt(size.costPrice) : "—"}
               </td>
             </tr>
@@ -1220,7 +1220,7 @@ function SectionBody({ section, items, onEdit, onMakePremium }) {
   }
   if (section.kind === "product") {
     return (
-      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+      <div className="grid gap-5 xl:grid-cols-2">
         {items.map((product) => (
           <ProductCard key={product.id} product={product} onEdit={onEdit} />
         ))}
@@ -1333,7 +1333,7 @@ function AdminProductsPage() {
         setActiveSection(target.id);
         setSearch("");
       }}
-      className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm transition ${
+      className={`flex w-full items-center justify-between gap-2 rounded-xl px-4 py-3 text-left text-base transition ${
         activeSection === target.id && !query
           ? "bg-secondary font-bold text-white"
           : `text-gray-700 hover:bg-gray-100 ${tone}`
@@ -1341,7 +1341,7 @@ function AdminProductsPage() {
     >
       <span className="truncate">{target.label}</span>
       <span
-        className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${
           activeSection === target.id && !query ? "bg-white/20" : "bg-gray-100 text-gray-500"
         }`}
       >
@@ -1355,10 +1355,11 @@ function AdminProductsPage() {
       <PageHeader
         backTo="/admin/produtos"
         backLabel="Cardápio"
+        wide
         title="Produtos e preços"
         subtitle="Escolha a seção e mude o que precisar. Tudo segue a ordem do pedido no totem e no site."
       />
-      <div className="ui-page">
+      <div className="ui-page-wide">
         {isLoading && (
           <div className="mt-6 grid animate-pulse gap-3">
             {[...Array(6)].map((_, i) => (
@@ -1370,14 +1371,14 @@ function AdminProductsPage() {
         {isError && <p className="mt-6 text-sm text-red-500">Falha ao carregar os produtos.</p>}
 
         {!isLoading && !isError && (
-          <div className="mt-6 grid items-start gap-6 lg:grid-cols-[17rem_minmax(0,1fr)]">
+          <div className="mt-6 grid items-start gap-8 lg:grid-cols-[20rem_minmax(0,1fr)]">
             <nav className="min-w-0 rounded-3xl bg-white p-3 shadow-card ring-1 ring-primary/5 lg:sticky lg:top-6">
               <input
                 type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="🔎 Buscar sabor, complemento..."
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm outline-none focus:border-secondary lg:mb-3"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-base outline-none focus:border-secondary lg:mb-3"
               />
               {/* Celular: seletor compacto em vez da lista inteira */}
               <label className="mt-2 block lg:hidden">
@@ -1409,7 +1410,7 @@ function AdminProductsPage() {
               <div className="hidden lg:block">
               {ADMIN_GROUPS.map((group) => (
                 <div key={group.id} className="mb-3">
-                  <p className="px-3 pb-1 text-xs font-black uppercase tracking-widest text-secondary">
+                  <p className="px-4 pb-1 pt-2 text-sm font-black uppercase tracking-widest text-secondary">
                     {group.icon} {group.label}
                   </p>
                   <div className="space-y-0.5">
@@ -1456,18 +1457,18 @@ function AdminProductsPage() {
                 <>
                   <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-xs font-black uppercase tracking-widest text-secondary">
+                      <p className="text-sm font-black uppercase tracking-widest text-secondary">
                         {section.group ? `${section.group.icon} ${section.group.label}` : "⚠️ Atenção"}
                       </p>
-                      <h2 className="font-display text-2xl font-bold text-primary">{section.label}</h2>
+                      <h2 className="font-display text-4xl font-bold text-primary">{section.label}</h2>
                       <p
-                        className={`mt-1 max-w-2xl text-sm ${
+                        className={`mt-2 max-w-3xl text-base ${
                           section.id === "fora" ? "font-semibold text-amber-700" : "text-gray-500"
                         }`}
                       >
                         {section.where}
                       </p>
-                      <p className="mt-2 text-xs font-semibold text-gray-400">
+                      <p className="mt-2 text-sm font-semibold text-gray-400">
                         {activeCount} ativo(s)
                         {items.length - activeCount > 0 && ` · ${items.length - activeCount} oculto(s)`}
                       </p>
@@ -1479,7 +1480,7 @@ function AdminProductsPage() {
                           disabled={importDefaults.isPending}
                           onClick={() => importDefaults.mutate()}
                           title={missingDefaultNames.join(", ")}
-                          className="rounded-full border border-secondary px-4 py-2.5 text-sm font-bold text-secondary transition hover:bg-secondary/10 disabled:opacity-50"
+                          className="rounded-full border border-secondary px-6 py-3 text-base font-bold text-secondary transition hover:bg-secondary/10 disabled:opacity-50"
                         >
                           {importDefaults.isPending
                             ? "Cadastrando..."
@@ -1490,7 +1491,7 @@ function AdminProductsPage() {
                         <button
                           type="button"
                           onClick={() => setModal({ product: null, sectionId: section.id })}
-                          className="rounded-full bg-secondary px-5 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-primary"
+                          className="rounded-full bg-secondary px-6 py-3 text-base font-bold text-white shadow-card transition hover:bg-primary"
                         >
                           + {newLabel(section.item)}
                         </button>
@@ -1499,7 +1500,7 @@ function AdminProductsPage() {
                   </div>
 
                   {pricelessCount > 0 && (
-                    <p className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                    <p className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-base font-semibold text-amber-800">
                       ⚠️ {pricelessCount} item(ns) sem preço não aparecem para o cliente. Digite o preço e toque em Salvar.
                     </p>
                   )}
