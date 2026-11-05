@@ -29,6 +29,10 @@ import { parseItemNotes } from "../lib/itemNotes.js";
 import { getCustomerName, isCounterOrder, isIfoodOrder } from "../lib/orderCustomer.js";
 import IfoodOrderPanel from "../components/IfoodOrderPanel.jsx";
 import { orderNumber } from "../lib/orderNumber.js";
+import {
+  EXTERNAL_MOTOBOY_ID,
+  isExternalMotoboy,
+} from "../lib/externalMotoboy.js";
 
 const SOUND_STORAGE_KEY = "pc_kitchen_sound_enabled";
 const NEW_ORDER_HIGHLIGHT_MS = 20000;
@@ -370,6 +374,7 @@ function OrderCard({
     !order.isPickup &&
     !order.mesaId &&
     !isIfoodOrder(order) &&
+    !isExternalMotoboy(order.assignedMotoboyId) &&
     !!onConfirmDelivery;
   const nextStatus = getNextStageKey(order.status, order);
   const hasNext = !!nextStatus && !needsCodeConfirm;
@@ -667,38 +672,38 @@ function OrderCard({
         </div>
       )}
 
-      {/* Motoboy — só entregas */}
-      {!order.isPickup &&
-        !order.mesaId &&
-        onAssignMotoboy &&
-        motoboys.length > 0 && (
-          <div className="mt-4">
-            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-text-muted">
-              🛵 Motoboy
-            </p>
-            <select
-              value={order.assignedMotoboyId ?? ""}
-              onChange={(e) =>
-                e.target.value && onAssignMotoboy(order.id, e.target.value)
-              }
-              disabled={assigningMotoboy}
-              className={`ui-input py-2 ${
-                order.assignedMotoboyId ? "" : "border-amber-300 bg-amber-50"
-              }`}
-            >
-              {!order.assignedMotoboyId && (
-                <option value="">
-                  {t("KITCHEN_SELECT_MOTOBOY", "Selecionar motoboy...")}
-                </option>
+      {/* Motoboy — só entregas; sem escolha, sai com motoboy de fora */}
+      {!order.isPickup && !order.mesaId && onAssignMotoboy && (
+        <div className="mt-4">
+          <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-text-muted">
+            🛵 Motoboy
+          </p>
+          <select
+            value={order.assignedMotoboyId ?? EXTERNAL_MOTOBOY_ID}
+            onChange={(e) => onAssignMotoboy(order.id, e.target.value)}
+            disabled={assigningMotoboy}
+            className="ui-input py-2"
+          >
+            <option value={EXTERNAL_MOTOBOY_ID}>
+              {t("KITCHEN_EXTERNAL_MOTOBOY", "Motoboy de fora")}
+            </option>
+            {motoboys.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+          {(!order.assignedMotoboyId ||
+            isExternalMotoboy(order.assignedMotoboyId)) && (
+            <p className="mt-1 text-[11px] font-semibold text-text-muted">
+              {t(
+                "KITCHEN_EXTERNAL_MOTOBOY_HINT",
+                "Sem mapa e sem código: o pedido finaliza ao sair.",
               )}
-              {motoboys.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Cancelar (o iFood tem o próprio, com motivo) */}
       {onCancel &&

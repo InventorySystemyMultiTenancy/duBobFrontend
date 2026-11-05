@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import EstimatedTimeBadge from "../components/EstimatedTimeBadge.jsx";
 import OrderTracker from "../components/OrderTracker.jsx";
 import MotoboyTracker from "../components/MotoboyTracker.jsx";
+import { isExternalMotoboy } from "../lib/externalMotoboy.js";
 import { getOrderStatusLabel } from "../lib/orderStatus.js";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
@@ -291,12 +292,16 @@ function ClientDashboardPage() {
 
                   {isExpanded &&
                     order.status === "SAIU_PARA_ENTREGA" &&
-                    !order.isPickup && <MotoboyTracker order={order} />}
+                    !order.isPickup &&
+                    !isExternalMotoboy(order.assignedMotoboyId) && (
+                      <MotoboyTracker order={order} />
+                    )}
 
                   {/* Delivery code — shown while order is out for delivery */}
                   {order.deliveryCode &&
                     order.status === "SAIU_PARA_ENTREGA" &&
-                    !order.isPickup && (
+                    !order.isPickup &&
+                    !isExternalMotoboy(order.assignedMotoboyId) && (
                       <div className="mt-4 rounded-2xl border-2 border-amber-400/60 bg-amber-50 px-4 py-3 text-center">
                         <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-amber-700">
                           {t(
