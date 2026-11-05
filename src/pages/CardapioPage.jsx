@@ -276,6 +276,8 @@ function buildMilkshakeLines(products) {
   });
 }
 
+const ACAI_READY_CATEGORY = "acai pronto";
+
 function buildAcaiOptions(products) {
   const acaiBase =
     products.find((item) => item.id === "db_acai_copo") ??
@@ -303,6 +305,24 @@ function buildAcaiOptions(products) {
     // Premium e Sugestão não entram nos 4 inclusos: cada um soma o próprio preço
     premiumComplements: paidComplementOptions(products, ACAI_PREMIUM_CATEGORY),
     suggestionComplements: paidComplementOptions(products, ACAI_SUGGESTION_CATEGORY),
+    // Copos prontos da casa (admin › Açaí › Copos prontos): oferecidos depois
+    // do tamanho, junto com o "Monte o seu"
+    readyCups: products
+      .filter(
+        (product) =>
+          product.isActive !== false &&
+          normalizeText(product.category).includes(ACAI_READY_CATEGORY) &&
+          product.sizes?.some((size) => Number(size.price) > 0),
+      )
+      .map((product) => ({
+        id: product.id,
+        name: product.name,
+        description: product.description ?? "",
+        imageUrl: product.imageUrl ?? "",
+        sizes: product.sizes
+          .map((size, index) => sizeDisplayParts(size, ACAI_SIZES[index] ?? {}))
+          .filter((size) => size.price > 0),
+      })),
   };
 }
 
@@ -407,10 +427,40 @@ export function MenuBuilder({ afterAdd, hideSummary = false }) {
     return key;
   };
 
+  // Copo pronto da casa: item próprio, no preço do tamanho escolhido
+  const handleReadyAdd = ({ cup, size }) => {
+    const key = [cup.id, "pronto", size.id].join("|");
+    addItem({
+      key,
+      id: cup.id,
+      nome: `${cup.name} ${size.label}${size.ml ? ` (${size.ml})` : ""}`,
+      price: size.price,
+      addons: [],
+      removals: [],
+      observation: [
+        "Sugestão da casa",
+        cup.description ? `Leva: ${cup.description}` : "",
+        `Tamanho: ${size.label} ${size.ml}`.trim(),
+      ]
+        .filter(Boolean)
+        .join(" | "),
+      quantity: 1,
+      size: size.id,
+      payload: {
+        productId: cup.id,
+        size: size.id,
+        addonIds: [],
+      },
+    });
+    (afterAdd ?? openCart)();
+    return key;
+  };
+
   return (
     <>
       <GuidedMenu
         hideSummary={hideSummary}
+        onAddReady={handleReadyAdd}
         isProductReady={!isLoading && !isError && displayProducts.length > 0}
         milkshakeLines={milkshakeLines}
         acaiOptions={acaiOptions}
@@ -505,8 +555,12 @@ const PRODUCT_STEPS = {
   ],
 };
 
+// Com copos prontos cadastrados: depois do tamanho, sugestão da casa ou "Monte o seu"
+const READY_STEP = { id: "prontos", label: "Sugestão ou monte", title: "Sugestão da casa ou monte o seu" };
+
 function GuidedMenu({
   hideSummary = false,
+  onAddReady,
   isProductReady,
   milkshakeLines,
   acaiOptions,
@@ -520,6 +574,10 @@ function GuidedMenu({
     ? searchParams.get("tipo")
     : null;
   const [productType, setProductType] = useState(initialType);
+  const stepsFor = (type) =>
+    type === "acai" && acaiOptions.readyCups.length
+      ? [PRODUCT_STEPS.acai[0], READY_STEP, ...PRODUCT_STEPS.acai.slice(1)]
+      : PRODUCT_STEPS[type] ?? [];
   const [step, setStep] = useState(
     initialType ? PRODUCT_STEPS[initialType][0].id : null,
   );
@@ -545,7 +603,7 @@ function GuidedMenu({
   const selectedLine =
     milkshakeLines.find((line) => line.id === selectedLineId) ??
     milkshakeLines[0];
-  const steps = productType ? PRODUCT_STEPS[productType] : [];
+  const steps = productType ? stepsFor(productType) : [];
   const stepIndex = steps.findIndex((item) => item.id === step);
   const currentStep = steps[stepIndex];
 
@@ -584,7 +642,7 @@ function GuidedMenu({
     if (stepId === PRODUCT_STEPS[type][0].id) return true;
     if (productType !== type) return false;
     if (type === "acai") {
-      if (stepId === "sabor") return Boolean(selectedAcaiSize);
+      if (stepId === "sabor" || stepId === "prontos") return Boolean(selectedAcaiSize);
       return Boolean(selectedAcaiSize && selectedAcaiFlavor);
     }
     if (stepId === "tamanho") return Boolean(selectedLineId);
@@ -697,8 +755,21 @@ function GuidedMenu({
 
   const pickAcaiSize = (size) => {
     setSelectedAcaiSize(size);
-    setStep("sabor");
+    setStep(acaiOptions.readyCups.length ? "prontos" : "sabor");
     scrollTop();
+  };
+
+  // Copos prontos que existem no tamanho escolhido (com o preço dele)
+  const readyCupsForSize = acaiOptions.readyCups
+    .map((cup) => ({
+      cup,
+      size: cup.sizes.find((size) => size.id === selectedAcaiSize?.id),
+    }))
+    .filter((entry) => entry.size);
+
+  const pickReadyCup = ({ cup, size }) => {
+    const itemKey = onAddReady({ cup, size });
+    finishItem(itemKey, { type: "acai", step: "prontos", acaiSize: selectedAcaiSize });
   };
 
   const pickAcaiFlavor = (flavor) => {
@@ -758,7 +829,7 @@ function GuidedMenu({
     {
       id: "acai",
       title: "Açaí",
-      items: PRODUCT_STEPS.acai.map((item) => ({
+      items: stepsFor("acai").map((item) => ({
         id: `acai-${item.id}`,
         label: item.label,
         hint:
@@ -785,7 +856,9 @@ function GuidedMenu({
         : step === "tamanho"
           ? `${selectedLine.title}. Toque no tamanho.`
           : `${selectedLine.title}, ${sizeHint(selectedMilkshakeSize)}. Toque no sabor para colocar no carrinho.`
-      : step === "tamanho"
+      : step === "prontos"
+        ? `Copo ${sizeHint(selectedAcaiSize)}. Toque numa sugestão da casa para colocar no carrinho, ou monte o seu.`
+        : step === "tamanho"
         ? "Toque no tamanho."
         : step === "sabor"
           ? `Copo ${sizeHint(selectedAcaiSize)}. Toque no sabor.`
@@ -847,7 +920,9 @@ function GuidedMenu({
           : step === "tamanho"
             ? `Qual o tamanho? ${selectedLine.sizes.map(spokenSize).join(". ")}.`
             : "Agora toque no sabor para colocar no carrinho."
-        : step === "tamanho"
+        : step === "prontos"
+          ? `Quer uma sugestão da casa? ${spokenList(readyCupsForSize.map((entry) => entry.cup.name))}. Ou toque em monte o seu.`
+          : step === "tamanho"
           ? `Qual o tamanho do copo? ${acaiOptions.sizes.map(spokenSize).join(". ")}.`
           : step === "sabor"
             ? `Qual o sabor do açaí? ${spokenList(acaiOptions.flavors.map((flavor) => flavor.name))}.`
@@ -1056,6 +1131,68 @@ function GuidedMenu({
                       onClick={() => pickMilkshakeFlavor(flavor)}
                     />
                   ))}
+                </div>
+              )}
+
+              {/* Depois do tamanho: sugestões da casa (copos prontos) ou "Monte o seu" */}
+              {productType === "acai" && step === "prontos" && (
+                <div className="space-y-6">
+                  {readyCupsForSize.length > 0 ? (
+                    <div className={manyOptionsGrid(big)}>
+                      {readyCupsForSize.map(({ cup, size }) => (
+                        <button
+                          key={cup.id}
+                          type="button"
+                          disabled={!isProductReady}
+                          onClick={() => pickReadyCup({ cup, size })}
+                          className={`flex flex-col overflow-hidden border-primary/10 bg-accent/50 text-left transition hover:border-secondary/50 active:scale-[0.98] disabled:opacity-40 ${
+                            big ? "rounded-3xl border-4" : "rounded-lg border-2"
+                          }`}
+                        >
+                          {cup.imageUrl ? (
+                            <img
+                              src={cup.imageUrl}
+                              alt=""
+                              className={`w-full object-cover ${big ? "h-56" : "h-40"}`}
+                            />
+                          ) : null}
+                          <span className={`flex flex-1 flex-col gap-1 ${big ? "p-6" : "p-4"}`}>
+                            <span className={`font-black leading-tight text-primary ${big ? "text-3xl" : "text-lg"}`}>
+                              {cup.name}
+                            </span>
+                            {cup.description && (
+                              <span className={`font-semibold text-primary/70 ${big ? "text-xl" : "text-sm"}`}>
+                                {cup.description}
+                              </span>
+                            )}
+                            <span className={`mt-auto pt-2 font-black text-secondary ${big ? "text-3xl" : "text-xl"}`}>
+                              {fmt(size.price)}
+                            </span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={`rounded-2xl bg-accent/60 p-5 font-bold text-primary/70 ${big ? "text-xl" : "text-sm"}`}>
+                      Não temos sugestão pronta nesse tamanho. Monte o seu!
+                    </p>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep("sabor");
+                      scrollTop();
+                    }}
+                    className={`flex w-full items-center justify-center gap-3 rounded-3xl border-4 border-dashed border-secondary bg-white font-black text-secondary transition hover:bg-secondary/5 active:scale-[0.98] ${
+                      big ? "px-8 py-8 text-4xl" : "px-6 py-5 text-xl"
+                    }`}
+                  >
+                    🛠️ Monte o seu açaí
+                    <span className={`font-bold text-primary/60 ${big ? "text-xl" : "text-sm"}`}>
+                      (sabor e complementos do seu jeito)
+                    </span>
+                  </button>
                 </div>
               )}
 

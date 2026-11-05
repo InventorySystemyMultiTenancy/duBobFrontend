@@ -57,6 +57,15 @@ const ADMIN_GROUPS = [
         where: "Passo 1 do açaí: os tamanhos P, M, G e MG e o preço de cada um.",
       },
       {
+        id: "acai_prontos",
+        label: "Copos prontos (sugestões)",
+        item: "copo pronto",
+        kind: "product",
+        where:
+          "Depois que o cliente escolhe o tamanho do açaí: copos já montados pela casa, com o preço de cada tamanho. Embaixo aparece o \"Monte o seu\". Escreva na descrição o que vai no copo.",
+        category: "acai pronto",
+      },
+      {
         id: "acai_sabores",
         label: "Sabores",
         item: "sabor",
@@ -344,6 +353,7 @@ function sectionIdOfProduct(product) {
   const category = normalizeText(product.category);
   if (ACAI_BASE_IDS.has(product.id)) return "acai_copo";
   if (MILKSHAKE_BASE_IDS.has(product.id)) return "milkshake_linhas";
+  if (category.includes("acai pronto")) return "acai_prontos";
   if (category.includes("sabor milkshake tradicional")) return "milkshake_tradicional";
   if (category.includes("sabor milkshake especial")) return "milkshake_especial";
   if (category.includes("sabor milkshake premium")) return "milkshake_premium";
@@ -736,7 +746,15 @@ function ProductModal({ product, initialSectionId, onClose }) {
             price: size.price != null ? String(size.price) : "",
             costPrice: size.costPrice != null ? String(size.costPrice) : "",
           }))
-        : [emptySize()],
+        : startSection.id === "acai_prontos"
+          ? // Copo pronto novo já vem com os 4 tamanhos do açaí
+            [
+              { ...emptySize(), size: "PEQUENA", label: "P - 300 ml" },
+              { ...emptySize(), size: "MEDIA", label: "M - 400 ml" },
+              { ...emptySize(), size: "GRANDE", label: "G - 500 ml" },
+              { ...emptySize(), size: "FAMILIA", label: "MG - 700 ml" },
+            ]
+          : [emptySize()],
   }));
   const [errors, setErrors] = useState({});
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -1147,7 +1165,13 @@ function ProductModal({ product, initialSectionId, onClose }) {
           {kind === "product" && (
             <div>
               <label className={labelCls} htmlFor="product-description">
-                Descrição <span className="font-normal text-gray-500">(opcional)</span>
+                {form.sectionId === "acai_prontos" ? (
+                  "O que vai no copo"
+                ) : (
+                  <>
+                    Descrição <span className="font-normal text-gray-500">(opcional)</span>
+                  </>
+                )}
               </label>
               <textarea
                 id="product-description"
@@ -1155,6 +1179,11 @@ function ProductModal({ product, initialSectionId, onClose }) {
                 onChange={(event) => set({ description: event.target.value })}
                 rows={2}
                 className={`${inputCls} resize-none`}
+                placeholder={
+                  form.sectionId === "acai_prontos"
+                    ? "Ex.: Açaí tradicional, leite ninho, morango e Nutella"
+                    : ""
+                }
               />
             </div>
           )}
