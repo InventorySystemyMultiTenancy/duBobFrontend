@@ -28,6 +28,7 @@ import { useTranslation } from "../context/I18nContext.jsx";
 import { parseItemNotes } from "../lib/itemNotes.js";
 import { getCustomerName, isCounterOrder, isIfoodOrder } from "../lib/orderCustomer.js";
 import IfoodOrderPanel from "../components/IfoodOrderPanel.jsx";
+import StoreCancelPanel from "../components/StoreCancelPanel.jsx";
 import { orderNumber } from "../lib/orderNumber.js";
 import {
   EXTERNAL_MOTOBOY_ID,
@@ -367,7 +368,6 @@ function OrderCard({
   products = [],
 }) {
   const { t } = useTranslation();
-  const [confirmCancel, setConfirmCancel] = useState(false);
   const [deliveryCodeInput, setDeliveryCodeInput] = useState("");
   const needsCodeConfirm =
     order.status === "SAIU_PARA_ENTREGA" &&
@@ -378,12 +378,20 @@ function OrderCard({
     !!onConfirmDelivery;
   const nextStatus = getNextStageKey(order.status, order);
   const hasNext = !!nextStatus && !needsCodeConfirm;
+  // Pedido novo do site (delivery ou retirada): a cozinha aceita ou recusa
+  const needsAcceptance =
+    order.status === "RECEBIDO" &&
+    isDeliveryOrPickupOrder(order) &&
+    !isIfoodOrder(order) &&
+    !!onCancel;
   const eta = getOrderEta(order, now);
   const isPaymentPending = order.paymentStatus === "PENDENTE";
   const kitchenItems = getKitchenItems(order);
 
   const advanceLabel = advancing
     ? t("KITCHEN_UPDATING", "Atualizando...")
+    : needsAcceptance
+      ? t("KITCHEN_ACCEPT_ORDER", "✓ Aceitar pedido")
     : order.mesaId && order.status === "PREPARANDO"
       ? t("KITCHEN_ADVANCE_TO_TABLE", "Levar para a Mesa")
       : order.isPickup && order.status === "PREPARANDO"
@@ -705,48 +713,16 @@ function OrderCard({
         </div>
       )}
 
-      {/* Cancelar (o iFood tem o próprio, com motivo) */}
-      {onCancel &&
-        !isIfoodOrder(order) &&
-        (confirmCancel ? (
-          <div className="mt-3 flex items-center gap-2 rounded-2xl bg-red-50 px-3 py-2">
-            <span className="flex-1 text-xs font-semibold text-red-700">
-              {t(
-                "KITCHEN_CANCEL_CONFIRM_TEXT",
-                "Cancelar pedido #{{id}}?",
-              ).replace("{{id}}", orderNumber(order).slice(1))}
-            </span>
-            <button
-              type="button"
-              disabled={cancelling}
-              onClick={() => {
-                setConfirmCancel(false);
-                onCancel(order.id);
-              }}
-              className="ui-btn ui-btn-sm ui-btn-danger"
-            >
-              {cancelling ? "..." : t("YES", "Sim")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmCancel(false)}
-              className="ui-btn ui-btn-sm ui-btn-outline"
-            >
-              {t("NO", "Não")}
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            disabled={cancelling || advancing}
-            onClick={() => setConfirmCancel(true)}
-            className="mt-2 w-full py-1.5 text-xs font-bold text-red-500 transition hover:text-red-700 disabled:opacity-40"
-          >
-            {cancelling
-              ? t("KITCHEN_CANCELLING", "Cancelando...")
-              : t("KITCHEN_CANCEL_ORDER_BTN", "Cancelar pedido")}
-          </button>
-        ))}
+      {/* Recusar/cancelar com motivo (o iFood tem o próprio) */}
+      {onCancel && !isIfoodOrder(order) && (
+        <StoreCancelPanel
+          order={order}
+          recusar={needsAcceptance}
+          cancelling={cancelling}
+          disabled={advancing}
+          onConfirm={(motivo) => onCancel({ orderId: order.id, motivo })}
+        />
+      )}
     </article>
   );
 }
@@ -1057,16 +1033,31 @@ function KitchenPage() {
     variables: cancelVars,
     isPending: isCancelling,
   } = useMutation({
-    mutationFn: async (orderId) => {
-      const res = await api.patch(`/orders/${orderId}/cancel`);
+    mutationFn: async ({ orderId, motivo }) => {
+      const res = await api.patch(`/orders/${orderId}/cancel`, { motivo });
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
-      toast.success(t("KITCHEN_ORDER_CANCELLED", "Pedido cancelado"));
+      const estorno = res?.data?.estorno;
+      if (estorno?.tipo === "AUTOMATICO") {
+        toast.success("Pedido cancelado e valor estornado ao cliente.");
+      } else if (estorno?.tipo === "MANUAL") {
+        toast("Pedido cancelado. Lembre de devolver o valor ao cliente.", {
+          icon: "⚠️",
+          duration: 8000,
+        });
+      } else {
+        toast.success(t("KITCHEN_ORDER_CANCELLED", "Pedido cancelado"));
+      }
     },
-    onError: () =>
-      toast.error(t("KITCHEN_CANCEL_ERROR", "Falha ao cancelar pedido")),
+    onError: (err) =>
+      toast.error(
+        err.response?.data?.error?.message ??
+          err.response?.data?.message ??
+          t("KITCHEN_CANCEL_ERROR", "Falha ao cancelar pedido"),
+        { duration: 10000 },
+      ),
   });
 
   const lastUpdate = dataUpdatedAt
@@ -1309,7 +1300,7 @@ function KitchenPage() {
                     }
                     // A cozinha do totem só prepara; cancelar fica com o caixa
                     onCancel={isPreparationOnlyKitchen ? undefined : cancelOrder}
-                    cancelling={isCancelling && cancelVars === order.id}
+                    cancelling={isCancelling && cancelVars?.orderId === order.id}
                     motoboys={motoboys}
                     onAssignMotoboy={
                       !order.isPickup && !order.mesaId
