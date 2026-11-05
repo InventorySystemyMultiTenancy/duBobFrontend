@@ -108,6 +108,15 @@ const ADMIN_GROUPS = [
     icon: "🥤",
     sections: [
       {
+        id: "milkshake_ofertas",
+        label: "Ofertas do dia",
+        item: "oferta",
+        kind: "priced",
+        where:
+          "Primeira coisa que aparece quando o cliente toca em Milk shake (só se tiver oferta ativa). Ligue o botão Ativo para colocar no ar e desligue para tirar.",
+        category: "oferta milkshake",
+      },
+      {
         id: "milkshake_linhas",
         label: "Linhas e tamanhos",
         item: "linha",
@@ -363,6 +372,7 @@ function sectionIdOfProduct(product) {
   if (category.includes("complemento acai sugestao")) return "acai_sugestoes";
   if (category.includes("complemento acai")) return "acai_complementos";
   if (category.includes("complemento milkshake")) return "milkshake_complementos";
+  if (category.includes("oferta milkshake")) return "milkshake_ofertas";
   if (!isConfigCategory(product.category)) return "outros";
   return "fora";
 }
@@ -463,7 +473,22 @@ function useProductActions(product) {
       toast.error(error?.response?.data?.message || "Não foi possível salvar o preço."),
   });
 
-  return { toggleActive, confirmDelete, deleteProduct, savePrice };
+  // "Mais pedido" (sabores do milk shake): rank = posição no topo; null tira
+  const setFeatured = useMutation({
+    mutationFn: async (featuredRank) => {
+      await api.put(`/admin/products/${product.id}`, {
+        category: product.category,
+        featuredRank,
+      });
+    },
+    onSuccess: (_data, featuredRank) => {
+      refresh();
+      toast.success(featuredRank ? "Agora está nos mais pedidos." : "Saiu dos mais pedidos.");
+    },
+    onError: () => toast.error("Não foi possível mudar os mais pedidos."),
+  });
+
+  return { toggleActive, confirmDelete, deleteProduct, savePrice, setFeatured };
 }
 
 function Thumb({ product, size = "h-16 w-16" }) {
@@ -547,7 +572,15 @@ function RowActions({ product, actions, onEdit, extra }) {
 }
 
 // Linha de item escolhido sem custo extra (sabor, complemento incluso) ou fora do cardápio
-function ListRow({ product, onEdit, onMakePremium, showCategory = false, showSection = false }) {
+// nextRank: quando a seção usa "mais pedidos", a posição que o item ganha ao ser marcado
+function ListRow({
+  product,
+  onEdit,
+  onMakePremium,
+  nextRank,
+  showCategory = false,
+  showSection = false,
+}) {
   const { t } = useTranslation();
   const actions = useProductActions(product);
   const name = tProductField(t, product.id, "NAME", product.name);
@@ -563,7 +596,14 @@ function ListRow({ product, onEdit, onMakePremium, showCategory = false, showSec
       <div className="flex items-center gap-3">
         <Thumb product={product} />
         <div className={`min-w-0 flex-1 ${product.isActive ? "" : "opacity-60"}`}>
-          <p className="truncate text-lg font-bold text-gray-900">{name}</p>
+          <p className="truncate text-lg font-bold text-gray-900">
+            {product.featuredRank != null && nextRank != null && (
+              <span className="mr-2 rounded-full bg-orange-100 px-2 py-0.5 text-sm font-black text-orange-700">
+                🔥 {product.featuredRank}º
+              </span>
+            )}
+            {name}
+          </p>
           <p className="truncate text-sm text-gray-500">
             {showSection && `${section.group ? `${section.group.label} › ` : ""}${section.label} · `}
             {showCategory && `Categoria "${product.category || "sem categoria"}" · `}
@@ -578,7 +618,23 @@ function ListRow({ product, onEdit, onMakePremium, showCategory = false, showSec
         actions={actions}
         onEdit={onEdit}
         extra={
-          onMakePremium && product.isActive ? (
+          nextRank != null ? (
+            <button
+              type="button"
+              disabled={actions.setFeatured.isPending}
+              onClick={() =>
+                actions.setFeatured.mutate(product.featuredRank != null ? null : nextRank)
+              }
+              title="Mais pedidos aparecem no topo dos sabores dessa linha"
+              className={`rounded-full border px-5 py-2.5 text-sm font-bold transition disabled:opacity-50 ${
+                product.featuredRank != null
+                  ? "border-orange-300 bg-orange-100 text-orange-700 hover:bg-orange-200"
+                  : "border-orange-200 bg-white text-orange-600 hover:bg-orange-50"
+              }`}
+            >
+              {product.featuredRank != null ? "🔥 Tirar dos mais pedidos" : "🔥 Mais pedido"}
+            </button>
+          ) : onMakePremium && product.isActive ? (
             <button
               type="button"
               onClick={() => onMakePremium(product)}
@@ -618,7 +674,11 @@ function PricedRow({ product, onEdit, showSection = false }) {
           <p className="truncate text-lg font-bold text-gray-900">{name}</p>
           <p className="truncate text-sm text-gray-500">
             {showSection && `${section.group ? `${section.group.label} › ` : ""}${section.label} · `}
-            {currentPrice ? `Cobrado ${fmt(currentPrice)} a mais` : "⚠️ Sem preço: não aparece para o cliente"}
+{currentPrice
+              ? section.id === "milkshake_ofertas"
+                ? `Oferta por ${fmt(currentPrice)}`
+                : `Cobrado ${fmt(currentPrice)} a mais`
+              : "⚠️ Sem preço: não aparece para o cliente"}
           </p>
         </div>
         <ActiveSwitch product={product} actions={actions} requirePrice />
@@ -982,7 +1042,9 @@ function ProductModal({ product, initialSectionId, onClose }) {
           {kind === "priced" && (
             <div className="grid gap-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 sm:grid-cols-2">
               <div>
-                <label className={labelCls} htmlFor="extra-price">Preço cobrado a mais</label>
+<label className={labelCls} htmlFor="extra-price">
+                  {form.sectionId === "milkshake_ofertas" ? "Preço da oferta" : "Preço cobrado a mais"}
+                </label>
                 <div className="flex items-center rounded-2xl border border-gray-200 bg-white px-3 focus-within:border-secondary">
                   <span className="text-sm font-bold text-gray-500">R$</span>
                   <input
@@ -1162,7 +1224,7 @@ function ProductModal({ product, initialSectionId, onClose }) {
             {errors.imageUrl && <p className={errorCls}>{errors.imageUrl}</p>}
           </div>
 
-          {kind === "product" && (
+          {(kind === "product" || form.sectionId === "milkshake_ofertas") && (
             <div>
               <label className={labelCls} htmlFor="product-description">
                 {form.sectionId === "acai_prontos" ? (
@@ -1239,7 +1301,28 @@ function ProductModal({ product, initialSectionId, onClose }) {
   );
 }
 
-function SectionBody({ section, items, onEdit, onMakePremium }) {
+// Linhas de milk shake usam "mais pedidos" (topo dos sabores no totem e no site)
+const FEATURED_SECTIONS = new Set([
+  "milkshake_tradicional",
+  "milkshake_especial",
+  "milkshake_premium",
+  "milkshake_alcoolico",
+]);
+
+function SectionBody({ section, items: rawItems, onEdit, onMakePremium }) {
+  const featurable = FEATURED_SECTIONS.has(section.id);
+  // Mais pedidos primeiro, na ordem em que aparecem para o cliente
+  const items = featurable
+    ? [...rawItems].sort(
+        (a, b) =>
+          (a.featuredRank ?? Infinity) - (b.featuredRank ?? Infinity) ||
+          Number(b.isActive) - Number(a.isActive) ||
+          String(a.name).localeCompare(String(b.name), "pt-BR"),
+      )
+    : rawItems;
+  const nextRank = featurable
+    ? Math.max(0, ...rawItems.map((item) => item.featuredRank ?? 0)) + 1
+    : undefined;
   if (!items.length) {
     return (
       <div className="rounded-3xl border border-dashed border-gray-300 p-10 text-center text-sm text-gray-500">
@@ -1266,6 +1349,7 @@ function SectionBody({ section, items, onEdit, onMakePremium }) {
             key={product.id}
             product={product}
             onEdit={onEdit}
+            nextRank={nextRank}
             showCategory={section.id === "fora"}
             onMakePremium={section.id === "acai_complementos" ? onMakePremium : undefined}
           />

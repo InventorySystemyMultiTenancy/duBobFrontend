@@ -343,7 +343,11 @@ function CheckoutPage() {
       const payload = {
         deliveryAddress: fullAddress || "Endereço não informado",
         isPickup: deliveryType === "retirada",
-        notes: [notes, referencia ? `Ref: ${referencia}` : ""]
+        notes: [
+          notes,
+          referencia ? `Ref: ${referencia}` : "",
+          paymentMethod === "PRESENCIAL" ? "Pagamento na entrega: SOMENTE CARTÃO" : "",
+        ]
           .filter(Boolean)
           .join(" | "),
         paymentMethod,
@@ -1106,9 +1110,11 @@ function CheckoutPage() {
                   >
                     <div>
                       <p className="font-semibold text-gray-900">
-                        {item.title}
+                        {item.title || item.nome}
                       </p>
-                      <p className="text-xs text-smoke">{item.description}</p>
+                      <p className="text-xs text-smoke">
+                        {item.description || item.observation}
+                      </p>
                     </div>
                     <p className="shrink-0 font-semibold text-primary">
                       x{item.quantity}
@@ -1165,7 +1171,7 @@ function CheckoutPage() {
                       : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  💵 Pagar na Entrega
+                  💳 Na entrega (só cartão)
                 </button>
               </div>
 
@@ -1212,12 +1218,16 @@ function CheckoutPage() {
                 </div>
               ) : (
                 <div className="mt-3 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4">
-                  <p className="text-xs font-bold text-amber-800">
+                  <p className="text-base font-black text-amber-900">
+                    💳 Pagamento na {deliveryType === "retirada" ? "retirada" : "entrega"}: SOMENTE CARTÃO
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-amber-800">
+                    Débito ou crédito na maquininha{deliveryType === "retirada" ? " da loja" : " do entregador"}.{" "}
+                    <strong>Não aceitamos dinheiro.</strong>
+                  </p>
+                  <p className="mt-2 text-xs font-bold text-amber-800">
                     ⚠️ O preparo só inicia após confirmação do pagamento pela
                     equipe.
-                  </p>
-                  <p className="mt-1 text-xs text-amber-700">
-                    Aceitos: dinheiro, cartão na maquininha.
                   </p>
                 </div>
               )}

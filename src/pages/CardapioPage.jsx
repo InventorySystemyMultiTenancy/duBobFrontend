@@ -22,6 +22,7 @@ import {
 } from "../lib/paidComplements.js";
 import {
   spokenList,
+  spokenPrice,
   spokenSize,
   useTotemVoice,
 } from "../lib/totemVoice.js";
@@ -233,6 +234,7 @@ function productOptionsByCategory(products, categoryNeedle, fallback) {
       id: product.id,
       name: product.name,
       imageUrl: product.imageUrl ?? "",
+      featuredRank: product.featuredRank ?? null,
     }))
     .filter((product) => product.name);
   return matches.length ? matches : fallbackOptions(fallback);
@@ -371,6 +373,40 @@ export function MenuBuilder({ afterAdd, hideSummary = false }) {
   };
 
   const milkshakeLines = buildMilkshakeLines(products);
+  // Ofertas do dia (admin › Milk shake › Ofertas do dia): aparecem antes das linhas
+  const milkshakeOffers = products
+    .filter(
+      (product) =>
+        product.isActive !== false &&
+        normalizeText(product.category).includes("oferta milkshake") &&
+        Number(product.sizes?.[0]?.price) > 0,
+    )
+    .map((product) => ({
+      id: product.id,
+      name: product.name,
+      description: product.description ?? "",
+      imageUrl: product.imageUrl ?? "",
+      size: product.sizes[0].size,
+      price: Number(product.sizes[0].price),
+    }));
+
+  const handleOfferAdd = (offer) => {
+    const key = [offer.id, "oferta"].join("|");
+    addItem({
+      key,
+      id: offer.id,
+      nome: offer.name,
+      price: offer.price,
+      addons: [],
+      removals: [],
+      observation: ["Oferta do dia", offer.description].filter(Boolean).join(" | "),
+      quantity: 1,
+      size: offer.size,
+      payload: { productId: offer.id, size: offer.size, addonIds: [] },
+    });
+    (afterAdd ?? openCart)();
+    return key;
+  };
   const acaiOptions = buildAcaiOptions(products);
 
   const handleAcaiAdd = ({ size, flavor, complements, premium = [] }) => {
@@ -463,6 +499,8 @@ export function MenuBuilder({ afterAdd, hideSummary = false }) {
         onAddReady={handleReadyAdd}
         isProductReady={!isLoading && !isError && displayProducts.length > 0}
         milkshakeLines={milkshakeLines}
+        milkshakeOffers={milkshakeOffers}
+        onAddOffer={handleOfferAdd}
         acaiOptions={acaiOptions}
         onAddMilkshake={handleGuidedAdd}
         onAddAcai={handleAcaiAdd}
@@ -556,6 +594,8 @@ const PRODUCT_STEPS = {
 };
 
 // Com copos prontos cadastrados: depois do tamanho, sugestão da casa ou "Monte o seu"
+// Com ofertas do dia ativas, o milk shake começa nelas
+const OFFER_STEP = { id: "ofertas", label: "Ofertas", title: "Ofertas do dia" };
 const READY_STEP = { id: "prontos", label: "Sugestão ou monte", title: "Sugestão da casa ou monte o seu" };
 
 function GuidedMenu({
@@ -563,6 +603,8 @@ function GuidedMenu({
   onAddReady,
   isProductReady,
   milkshakeLines,
+  milkshakeOffers = [],
+  onAddOffer,
   acaiOptions,
   onAddMilkshake,
   onAddAcai,
@@ -577,9 +619,11 @@ function GuidedMenu({
   const stepsFor = (type) =>
     type === "acai" && acaiOptions.readyCups.length
       ? [PRODUCT_STEPS.acai[0], READY_STEP, ...PRODUCT_STEPS.acai.slice(1)]
-      : PRODUCT_STEPS[type] ?? [];
+      : type === "milkshake" && milkshakeOffers.length
+        ? [OFFER_STEP, ...PRODUCT_STEPS.milkshake]
+        : PRODUCT_STEPS[type] ?? [];
   const [step, setStep] = useState(
-    initialType ? PRODUCT_STEPS[initialType][0].id : null,
+    initialType ? stepsFor(initialType)[0].id : null,
   );
   const [selectedLineId, setSelectedLineId] = useState(null);
   const [selectedMilkshakeSize, setSelectedMilkshakeSize] = useState(null);
@@ -604,6 +648,13 @@ function GuidedMenu({
     milkshakeLines.find((line) => line.id === selectedLineId) ??
     milkshakeLines[0];
   const steps = productType ? stepsFor(productType) : [];
+  // Mais pedidos da linha (na ordem do admin) e o resto em ordem alfabética
+  const featuredFlavors = selectedLine.flavors
+    .filter((flavor) => flavor.featuredRank != null)
+    .sort((a, b) => a.featuredRank - b.featuredRank);
+  const otherFlavors = selectedLine.flavors
+    .filter((flavor) => flavor.featuredRank == null)
+    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   const stepIndex = steps.findIndex((item) => item.id === step);
   const currentStep = steps[stepIndex];
 
@@ -639,12 +690,13 @@ function GuidedMenu({
 
   // Só deixa ir para uma etapa se as anteriores já foram escolhidas.
   const isStepReachable = (type, stepId) => {
-    if (stepId === PRODUCT_STEPS[type][0].id) return true;
+    if (stepId === stepsFor(type)[0].id) return true;
     if (productType !== type) return false;
     if (type === "acai") {
       if (stepId === "sabor" || stepId === "prontos") return Boolean(selectedAcaiSize);
       return Boolean(selectedAcaiSize && selectedAcaiFlavor);
     }
+    if (stepId === "linha") return true; // depois das ofertas, montar é livre
     if (stepId === "tamanho") return Boolean(selectedLineId);
     return Boolean(selectedLineId && selectedMilkshakeSize);
   };
@@ -653,7 +705,7 @@ function GuidedMenu({
     setJustAdded(false);
     setProductType(type);
     resetSelections();
-    setStep(PRODUCT_STEPS[type][0].id);
+    setStep(stepsFor(type)[0].id);
     scrollTop();
   };
 
@@ -683,7 +735,7 @@ function GuidedMenu({
     scrollTop();
     if (itemKey) {
       setBackAction({
-        type: restore.type,
+        type: restore.backType ?? restore.type,
         run: () => undoLastItem({ itemKey, restore }),
       });
     }
@@ -767,6 +819,11 @@ function GuidedMenu({
     }))
     .filter((entry) => entry.size);
 
+  const pickOffer = (offer) => {
+    const itemKey = onAddOffer(offer);
+    finishItem(itemKey, { type: "milkshake", backType: "oferta", step: "ofertas" });
+  };
+
   const pickReadyCup = ({ cup, size }) => {
     const itemKey = onAddReady({ cup, size });
     finishItem(itemKey, { type: "acai", step: "prontos", acaiSize: selectedAcaiSize });
@@ -802,6 +859,16 @@ function GuidedMenu({
       id: "milkshake",
       title: "Milk shake",
       items: [
+        ...(milkshakeOffers.length
+          ? [
+              {
+                id: "milkshake-ofertas",
+                label: "🏷️ Ofertas do dia",
+                active: productType === "milkshake" && step === "ofertas",
+                onSelect: () => goToStep("milkshake", "ofertas"),
+              },
+            ]
+          : []),
         ...milkshakeLines.map((line) => ({
           id: `linha-${line.id}`,
           label: line.title,
@@ -851,7 +918,9 @@ function GuidedMenu({
 
   const stepSubtitle =
     productType === "milkshake"
-      ? step === "linha"
+      ? step === "ofertas"
+        ? "Toque numa oferta para colocar no carrinho, ou monte o seu milk shake."
+        : step === "linha"
         ? "Toque em uma opção."
         : step === "tamanho"
           ? `${selectedLine.title}. Toque no tamanho.`
@@ -915,7 +984,11 @@ function GuidedMenu({
           : "Pronto, está no carrinho. Quer pedir mais alguma coisa? Milk shake ou açaí?"
         : "Você quer milk shake ou açaí?"
       : productType === "milkshake"
-        ? step === "linha"
+        ? step === "ofertas"
+          ? `Temos ofertas do dia: ${spokenList(
+              milkshakeOffers.map((offer) => `${offer.name} por ${spokenPrice(offer.price)}`),
+            )}. Toque em uma, ou em montar meu milk shake.`
+          : step === "linha"
           ? `Qual linha de milk shake? ${spokenList(milkshakeLines.map((line) => line.title))}.`
           : step === "tamanho"
             ? `Qual o tamanho? ${selectedLine.sizes.map(spokenSize).join(". ")}.`
@@ -1078,6 +1151,67 @@ function GuidedMenu({
             }
           >
             <div className="flex min-w-0 flex-col">
+              {/* Ofertas do dia: antes das linhas; embaixo, montar o próprio */}
+              {productType === "milkshake" && step === "ofertas" && (
+                <div className="space-y-6">
+                  <div className={manyOptionsGrid(big)}>
+                    {milkshakeOffers.map((offer) => (
+                      <button
+                        key={offer.id}
+                        type="button"
+                        disabled={!isProductReady}
+                        onClick={() => pickOffer(offer)}
+                        className={`relative flex flex-col overflow-hidden border-secondary/30 bg-white text-left shadow-card transition hover:border-secondary active:scale-[0.98] disabled:opacity-40 ${
+                          big ? "rounded-3xl border-4" : "rounded-lg border-2"
+                        }`}
+                      >
+                        <span
+                          className={`absolute left-3 top-3 z-10 rounded-full bg-secondary font-black uppercase text-white shadow ${
+                            big ? "px-4 py-1.5 text-base" : "px-3 py-1 text-xs"
+                          }`}
+                        >
+                          Oferta do dia
+                        </span>
+                        {offer.imageUrl ? (
+                          <img
+                            src={offer.imageUrl}
+                            alt=""
+                            className={`w-full object-cover ${big ? "h-56" : "h-40"}`}
+                          />
+                        ) : (
+                          <span className={big ? "h-14" : "h-10"} />
+                        )}
+                        <span className={`flex flex-1 flex-col gap-1 ${big ? "p-6" : "p-4"}`}>
+                          <span className={`font-black leading-tight text-primary ${big ? "text-3xl" : "text-lg"}`}>
+                            {offer.name}
+                          </span>
+                          {offer.description && (
+                            <span className={`font-semibold text-primary/70 ${big ? "text-xl" : "text-sm"}`}>
+                              {offer.description}
+                            </span>
+                          )}
+                          <span className={`mt-auto pt-2 font-black text-secondary ${big ? "text-4xl" : "text-2xl"}`}>
+                            {fmt(offer.price)}
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep("linha");
+                      scrollTop();
+                    }}
+                    className={`flex w-full items-center justify-center gap-3 rounded-3xl border-4 border-dashed border-secondary bg-white font-black text-secondary transition hover:bg-secondary/5 active:scale-[0.98] ${
+                      big ? "px-8 py-8 text-4xl" : "px-6 py-5 text-xl"
+                    }`}
+                  >
+                    🥤 Montar meu milk shake
+                  </button>
+                </div>
+              )}
+
               {productType === "milkshake" && step === "linha" && (
                 <div className={fewOptionsGrid(big)}>
                   {milkshakeLines.map((line) => (
@@ -1118,19 +1252,45 @@ function GuidedMenu({
                 </div>
               )}
 
+              {/* Sabores: os mais pedidos (marcados no admin) em cima, os outros embaixo */}
               {productType === "milkshake" && step === "sabor" && (
-                <div className={manyOptionsGrid(big)}>
-                  {selectedLine.flavors.map((flavor) => (
-                    <OptionTile
-                      key={flavor.id}
-                      big={big}
-                      title={flavor.name}
-                      image={flavor.imageUrl || (big ? "" : MilkShake1)}
-                      selected={selectedFlavor === flavor.name}
-                      disabled={!isProductReady}
-                      onClick={() => pickMilkshakeFlavor(flavor)}
-                    />
-                  ))}
+                <div>
+                  {featuredFlavors.length > 0 && (
+                    <>
+                      <h3 className={`mb-3 font-black text-primary ${big ? "text-3xl" : "text-xl"}`}>
+                        🔥 Mais pedidos
+                      </h3>
+                      <div className={manyOptionsGrid(big)}>
+                        {featuredFlavors.map((flavor) => (
+                          <OptionTile
+                            key={flavor.id}
+                            big={big}
+                            title={flavor.name}
+                            image={flavor.imageUrl || (big ? "" : MilkShake1)}
+                            selected={selectedFlavor === flavor.name}
+                            disabled={!isProductReady}
+                            onClick={() => pickMilkshakeFlavor(flavor)}
+                          />
+                        ))}
+                      </div>
+                      <h3 className={`mb-3 mt-8 font-black text-primary ${big ? "text-3xl" : "text-xl"}`}>
+                        Todos os outros sabores
+                      </h3>
+                    </>
+                  )}
+                  <div className={manyOptionsGrid(big)}>
+                    {otherFlavors.map((flavor) => (
+                      <OptionTile
+                        key={flavor.id}
+                        big={big}
+                        title={flavor.name}
+                        image={flavor.imageUrl || (big ? "" : MilkShake1)}
+                        selected={selectedFlavor === flavor.name}
+                        disabled={!isProductReady}
+                        onClick={() => pickMilkshakeFlavor(flavor)}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
 
