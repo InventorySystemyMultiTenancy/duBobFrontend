@@ -5,9 +5,6 @@ const AdminPanelPage = lazyPage(() => import("./pages/AdminPanelPage.jsx"));
 const AdminProductsPage = lazyPage(
   () => import("./pages/AdminProductsPage.jsx"),
 );
-const AdminProductsHubPage = lazyPage(
-  () => import("./pages/AdminProductsHubPage.jsx"),
-);
 const AtendentePanel = lazyPage(() => import("./pages/AtendentePanel.jsx"));
 const AdminOrderHistoryPage = lazyPage(
   () => import("./pages/AdminOrderHistoryPage.jsx"),
@@ -212,7 +209,8 @@ function AppRoutes() {
 
         {/* Cadastros: a API só aceita ADMIN */}
         <Route element={<PrivateRoute allowedRoles={["ADMIN"]} />}>
-          <Route path="/admin/produtos" element={<AdminProductsHubPage />} />
+          {/* Cardápio do admin abre direto em produtos e preços */}
+          <Route path="/admin/produtos" element={<AdminProductsPage />} />
           <Route path="/admin/produtos/lista" element={<AdminProductsPage />} />
           <Route path="/admin/usuarios" element={<AdminUsersPage />} />
           <Route path="/admin/mesas" element={<AdminMesasPage />} />

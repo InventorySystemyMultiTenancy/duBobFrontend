@@ -1466,8 +1466,8 @@ function AdminProductsPage() {
   return (
     <main className="min-h-screen text-gray-900">
       <PageHeader
-        backTo="/admin/produtos"
-        backLabel="Cardápio"
+        backTo="/admin"
+        backLabel="Painel Admin"
         wide
         title="Produtos e preços"
         subtitle="Escolha a seção e mude o que precisar. Tudo segue a ordem do pedido no totem e no site."
