@@ -33,7 +33,7 @@ const fmt = (value) =>
 const MILKSHAKE_LINES = [
   {
     id: "tradicional",
-    title: "Linha Tradicional",
+    title: "Tradicional",
     productId: "db_milkshake_tradicional",
     sizes: [
       { id: "PEQUENA", label: "P", ml: "300 ml", price: 10 },
@@ -102,7 +102,7 @@ const MILKSHAKE_LINES = [
   },
   {
     id: "especial",
-    title: "Linha Especial",
+    title: "Especial",
     productId: "db_milkshake_especial",
     sizes: [
       { id: "PEQUENA", label: "P", ml: "300 ml", price: 13 },
@@ -137,7 +137,7 @@ const MILKSHAKE_LINES = [
   },
   {
     id: "alcoolica",
-    title: "Linha Alcoolica",
+    title: "Alcoolica",
     productId: "db_milkshake_alcoolico",
     sizes: [
       { id: "PEQUENA", label: "P", ml: "300 ml", price: 13 },
@@ -157,7 +157,7 @@ const MILKSHAKE_LINES = [
   },
   {
     id: "premium",
-    title: "Linha Premium",
+    title: "Premium",
     productId: "db_milkshake_premium",
     sizes: [
       { id: "PEQUENA", label: "P", ml: "300 ml", price: 16 },
